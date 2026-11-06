@@ -17,12 +17,20 @@ La conexión del backend con Flowable y las funciones del proceso todavía está
 - Docker con Docker Compose, para ejecutar el entorno Flowable.
 - Git.
 
-## Estructura
+## Estructura y responsabilidades
 
-- `backend/`: aplicación Spring Boot.
-- `contexto/`: consigna y modelos BPMN.
-- `docker-compose.yml`: configuración del entorno Docker.
-- `README.md`: instrucciones de ejecución.
+| Ruta real | Objetivo | Responsable |
+|---|---|---|
+| [motor-flowable/](motor-flowable/) | BPMN ejecutable, DMN, identidades, listeners, mensajes, temporizadores y compensación. | Alejo |
+| [backend/](backend/) | Backend y BD institucional, empresas, cursos, vínculo con instancias, acceso empresarial y PDFs. Equivale a `backend-institucion/`; conserva su nombre. | Lauty |
+| [web/](web/) | Sitio público y funciones de empresas/personal. | Luka |
+| [app-materiales/](app-materiales/) | Aplicación gráfica intranet mediante API Java de Flowable. | Luka |
+| [simulador-rest/](simulador-rest/) | CLI de comunicaciones REST; permitida para el equipo de tres. | Luka |
+| [docs/](docs/) | Acuerdos y documentación compartida. | Los tres |
+| [contexto/](contexto/) | Consigna y modelos de referencia existentes. | Referencia común |
+| [docker-compose.yml](docker-compose.yml) | Infraestructura existente; cambios coordinados. | Los tres |
+
+El [acuerdo de integración](docs/ACUERDO_DE_INTEGRACION.md) define contratos iniciales, identificadores y decisiones pendientes. Las carpetas nuevas contienen documentación preparatoria; no implican funcionalidades implementadas ni motores adicionales.
 
 ## Probar el backend
 
@@ -70,9 +78,12 @@ Para detener el backend, presionar Ctrl+C en la terminal donde se inició.
 Desde la raíz del repositorio, revisar las variables requeridas por
 `docker-compose.yml`.
 
-Si utiliza un archivo local `env`, crear uno tomando `env.example`
-como referencia y completar sus valores. El archivo real no se incluye
-en Git porque puede contener contraseñas.
+Los comandos siguientes utilizan el archivo local `env`. El ejemplo
+`env.example` todavía no está disponible. El inventario de Git muestra
+`env` y `.env` rastreados, aunque estén enumerados en `.gitignore`;
+no se revisa ni publica su contenido en esta tarea. Consultar la sección J
+del [acuerdo de integración](docs/ACUERDO_DE_INTEGRACION.md) antes de
+acordar ejemplos de configuración o incorporar credenciales nuevas.
 
 Validar y levantar el entorno:
 
