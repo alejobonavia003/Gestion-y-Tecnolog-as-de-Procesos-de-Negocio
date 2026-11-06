@@ -1,0 +1,35 @@
+# Maven
+**/target/
+
+# Variables y configuración local
+/env
+/.env
+/.env.*
+!/.env.example
+!/env.example
+**/application-local.properties
+**/application-local.yml
+**/application-local.yaml
+
+# Copias y archivos temporales
+*.antes-spring
+*.bak
+*.orig
+*.swp
+*.swo
+*~
+
+# Registros
+*.log
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
