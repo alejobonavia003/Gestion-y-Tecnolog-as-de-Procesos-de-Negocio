@@ -1,0 +1,3 @@
+POSTGRES_DB=flowable
+POSTGRES_USER=flowable
+POSTGRES_PASSWORD=flow10
