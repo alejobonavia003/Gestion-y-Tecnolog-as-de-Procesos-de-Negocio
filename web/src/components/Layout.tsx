@@ -12,6 +12,9 @@ export function Layout() {
 
   return (
     <>
+      {import.meta.env.VITE_USAR_MOCKS === 'true' && (
+        <div className="aviso-mock">Modo mock: los datos son de prueba, no hay backend real.</div>
+      )}
       <header className="cabecera">
         <Link to="/" className="marca">
           Institución de Capacitación
