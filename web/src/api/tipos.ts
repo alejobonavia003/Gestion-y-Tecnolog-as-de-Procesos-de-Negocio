@@ -37,3 +37,24 @@ export type SolicitudCreada = {
   processInstanceId: string
   businessKey: string
 }
+
+// --- Tareas (GET /tareas, POST /tareas/{id}/reclamo) ---
+
+export type Pagina<T> = {
+  items: T[]
+  total: number
+  page: number
+  size: number
+}
+
+export type TareaResumen = {
+  taskId: string
+  taskDefinitionKey: string
+  nombre: string
+  cursoId: string
+  cursoNombre: string
+  empresaNombre: string
+  creada: string // fecha ISO
+  asignado: string | null // null = tarea de grupo sin reclamar
+  reclamable: boolean
+}

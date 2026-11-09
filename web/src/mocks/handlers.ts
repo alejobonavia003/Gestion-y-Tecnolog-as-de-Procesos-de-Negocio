@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw/http'
 import type { NuevaSolicitud, Sesion, SolicitudCreada } from '../api/tipos'
-import { CLAVE_DEMO, cuentasEmpresa, cursos, personal } from './datos'
+import { CLAVE_DEMO, cuentasEmpresa, cursos, guardarDatos, personal, tareas, type TareaMock } from './datos'
 
 const API = '/api/v1'
 
@@ -19,6 +19,16 @@ function guardarSesion(sesion: Sesion | null) {
 
 function error(status: number, codigo: string, mensaje: string) {
   return HttpResponse.json({ codigo, mensaje }, { status })
+}
+
+/** Convierte una tarea del mock al formato que devuelve la API. */
+function aResumen(t: TareaMock) {
+  const { grupoCandidato, ...resto } = t
+  return { ...resto, reclamable: t.asignado === null && grupoCandidato !== null }
+}
+
+function pagina<T>(items: T[]) {
+  return { items, total: items.length, page: 0, size: items.length }
 }
 
 // Idempotencia de POST /solicitudes: clave -> { cuerpo enviado, respuesta dada }
@@ -98,7 +108,39 @@ export const handlers = [
       creadoEn: new Date().toISOString(),
     })
     solicitudesPorClave.set(clave, { cuerpo: texto, respuesta })
+    guardarDatos()
 
     return HttpResponse.json(respuesta, { status: 201 })
   }),
+
+  // --- Tareas ---------------------------------------------------------------
+
+    http.get(`${API}/tareas`, ({ request }) => {
+      const sesion = leerSesion()
+      if (sesion?.tipo !== 'PERSONAL') return error(401, 'NO_AUTENTICADO', 'Iniciá sesión.')
+
+      const bandeja = new URL(request.url).searchParams.get('bandeja')
+      const resultado =
+        bandeja === 'disponibles'
+          ? tareas.filter((t) => t.asignado === null && t.grupoCandidato !== null && sesion.grupos.includes(t.grupoCandidato))
+          : tareas.filter((t) => t.asignado === sesion.usuarioId)
+
+      return HttpResponse.json(pagina(resultado.map(aResumen)))
+    }),
+
+    http.post(`${API}/tareas/:taskId/reclamo`, ({ params }) => {
+      const sesion = leerSesion()
+      if (sesion?.tipo !== 'PERSONAL') return error(401, 'NO_AUTENTICADO', 'Iniciá sesión.')
+
+      const tarea = tareas.find((t) => t.taskId === params.taskId)
+      if (!tarea) return error(404, 'NO_ENCONTRADO', 'La tarea no existe.')
+      if (!tarea.grupoCandidato || !sesion.grupos.includes(tarea.grupoCandidato)) {
+        return error(403, 'SIN_PERMISO', 'No sos candidato para esta tarea.')
+      }
+      if (tarea.asignado !== null) return error(409, 'YA_RECLAMADA', 'Otra persona ya reclamó esta tarea.')
+
+      tarea.asignado = sesion.usuarioId
+      guardarDatos()
+      return HttpResponse.json(aResumen(tarea))
+    }),
 ]

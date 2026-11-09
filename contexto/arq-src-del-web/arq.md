@@ -31,3 +31,7 @@ mocks/datos.ts: usuarios de prueba. En las próximas etapas acá vamos a sumar c
 mocks/handlers.ts: las respuestas falsas de los 4 endpoints de sesión, con el mismo formato que definimos en ENDPOINTS_WEB.md. Para simular la cookie guarda la sesión en localStorage, así sobrevive a una recarga.
 LoginPersonal y LoginEmpresa: formularios que llaman a la API. Si /sesiones/... responde con un 401 muestran “usuario o contraseña incorrectos” y, si es otro error, “no se pudo conectar”. Después del login te mandan a la página a la que intentabas entrar.
 Cabecera: muestra un aviso amarillo cuando estás en modo mock, para no confundirte.
+
+Comandos
+'npm run dev:mock'	Con datos de prueba, sin backend.
+'npm run dev'	Contra el backend real en el puerto 8081, cuando tenga los endpoints.

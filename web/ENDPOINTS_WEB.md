@@ -28,9 +28,9 @@ Registro de los endpoints del backend que consume el sitio web. Se completa **a 
 | 6 | `GET /cursos` | Mis cursos | Empresa | Sí | 📝 |
 | 7 | `GET /cursos/{cursoId}` | Detalle y estado del curso | Empresa dueña / personal | Sí | 📝 |
 | 8 | `GET /cursos/{cursoId}/actividades` | Actividades en curso (ramas paralelas) | Empresa dueña / personal | Sí | 📝 |
-| 9 | `GET /tareas?bandeja=asignadas\|disponibles` | Bandeja de tareas | Personal | Sí | 📝 |
+| 9 | `GET /tareas?bandeja=asignadas\|disponibles` | Bandeja de tareas | Personal | Sí | 🧪 |
 | 10 | `GET /tareas/{taskId}` | Abrir el formulario de una tarea | Personal (asignado o candidato) | **No — nuevo** | 📝 |
-| 11 | `POST /tareas/{taskId}/reclamo` | Botón Reclamar | Personal candidato | Sí | 📝 |
+| 11 | `POST /tareas/{taskId}/reclamo` | Botón Reclamar | Personal candidato | Sí | 🧪 |
 | 12 | `POST /tareas/{taskId}/completado` | Completar tareas simples | Asignado | Sí | 📝 |
 | 13 | `POST /tareas/{taskId}/propuesta` | Registrar/elaborar y revisar propuesta | Jefe administrativo | Sí | 📝 |
 | 14 | `GET /cursos/{cursoId}/propuestas` | Historial de versiones de la propuesta | Jefe admin / empresa dueña | **No — nuevo** | 📝 |
