@@ -7,6 +7,7 @@ import {
   cursosPortal,
   esperas,
   guardarDatos,
+  informes,
   motivosArchivo,
   nominas,
   personal,
@@ -43,6 +44,38 @@ function aResumen(t: TareaMock) {
   return { ...resto, reclamable: t.asignado === null && grupoCandidato !== null }
 }
 
+/** Datos del curso para las tareas de docentes y de cierre. */
+function datosCurso(cursoId: string) {
+  const c = cursosPortal.find((x) => x.cursoId === cursoId)
+  return c && { descripcion: c.descripcion, cantidadParticipantes: c.cantidadParticipantes, fechaCurso: c.fechaCurso }
+}
+
+/** Los tres integrantes del equipo docente (el jefe incluido). */
+function docentes() {
+  return personal
+    .filter((p) => p.grupos.includes('docentes'))
+    .map((p) => ({ usuarioId: p.usuarioId, nombre: p.nombre, esJefe: p.esJefe }))
+}
+
+/** Simula que el proceso avanza: cambia el estado del curso que ve la empresa. */
+function cambiarEstadoCurso(cursoId: string, estado: string, estadoEtiqueta: string) {
+  const curso = cursosPortal.find((c) => c.cursoId === cursoId)
+  if (curso) Object.assign(curso, { estado, estadoEtiqueta })
+}
+
+/** Simula que el motor crea la tarea siguiente del proceso. */
+function crearTarea(base: TareaMock, clave: string, nombre: string, asignado: string | null) {
+  tareas.push({
+    ...base,
+    taskId: `t-${clave.toLowerCase()}-${Date.now()}`,
+    taskDefinitionKey: clave,
+    nombre,
+    creada: new Date().toISOString(),
+    asignado,
+    grupoCandidato: null,
+  })
+}
+
 /** Arma el contexto que necesita el formulario de cada tipo de tarea. */
 function contextoDe(t: TareaMock): ContextoTarea {
   const solicitud = solicitudes[t.cursoId]
@@ -57,6 +90,12 @@ function contextoDe(t: TareaMock): ContextoTarea {
       return { motivoArchivo: motivosArchivo[t.cursoId] ?? 'RECHAZADA' }
     case 'Lista':
       return { participantes: nominas[t.cursoId] ?? [] }
+    case 'Activity_1018bdz':
+      return { curso: datosCurso(t.cursoId), docentes: docentes() }
+    case 'Dictar':
+      return { curso: datosCurso(t.cursoId) }
+    case 'EnviarInforme':
+      return { curso: datosCurso(t.cursoId), informe: informes[t.cursoId] }
     default:
       return {}
   }
@@ -278,6 +317,7 @@ export const handlers = [
 
       if (tarea.taskDefinitionKey === 'Activity_12i2hpf') crearTareasDeRecursos(tarea, datos)
       quitarTarea(tarea.taskId)
+      if (tarea.taskDefinitionKey === 'EnviarInforme') cambiarEstadoCurso(tarea.cursoId, 'FINALIZADO', 'Finalizado')
       return HttpResponse.json({ completada: true })
     }),
 
@@ -380,5 +420,59 @@ export const handlers = [
         ...(esperas[curso.cursoId] ?? []),
       ]
       return HttpResponse.json({ estado: curso.estado, items })
+    }),
+
+    // --- Docentes e informe -------------------------------------------------------
+
+    http.post(`${API}/tareas/:taskId/docente`, async ({ params, request }) => {
+      const sesion = leerSesion()
+      if (sesion?.tipo !== 'PERSONAL') return error(401, 'NO_AUTENTICADO', 'Iniciá sesión.')
+
+      const { tarea, respuesta } = tareaParaCompletar(String(params.taskId), sesion.usuarioId)
+      if (!tarea) return respuesta
+      if (tarea.taskDefinitionKey !== 'Activity_1018bdz') {
+        return error(409, 'ESTADO_INCOMPATIBLE', 'Esta tarea no es de definir docente.')
+      }
+
+      const { docenteId } = (await request.json()) as { docenteId?: string }
+      if (!docentes().some((d) => d.usuarioId === docenteId)) {
+        return error(400, 'VALIDACION', 'El docente tiene que ser uno de los tres del equipo.')
+      }
+
+      // En el motor real, "Desarrollar curso" aparece cuando llega fechaCurso (timer).
+      // En el mock la creamos enseguida para poder probarla.
+      crearTarea(tarea, 'Dictar', 'Desarrollar curso', docenteId!)
+      cambiarEstadoCurso(tarea.cursoId, 'EN_DESARROLLO', 'En desarrollo')
+      quitarTarea(tarea.taskId)
+      return HttpResponse.json({ completada: true })
+    }),
+
+    http.post(`${API}/tareas/:taskId/finalizacion-dictado`, ({ params }) => {
+      const sesion = leerSesion()
+      if (sesion?.tipo !== 'PERSONAL') return error(401, 'NO_AUTENTICADO', 'Iniciá sesión.')
+
+      const { tarea, respuesta } = tareaParaCompletar(String(params.taskId), sesion.usuarioId)
+      if (!tarea) return respuesta
+      if (tarea.taskDefinitionKey !== 'Dictar') return error(409, 'ESTADO_INCOMPATIBLE', 'Esta tarea no es de dictado.')
+
+      // Sigue "Elaborar informe de resultados", que el jefe docente hace desde Flowable
+      crearTarea(tarea, 'Informe', 'Elaborar informe de resultados', 'docente_jefe')
+      cambiarEstadoCurso(tarea.cursoId, 'EN_ELABORACION_INFORME', 'En elaboración del informe')
+      quitarTarea(tarea.taskId)
+      return HttpResponse.json({ completada: true })
+    }),
+
+    http.get(`${API}/cursos/:cursoId/informe/pdf`, ({ params }) => {
+      const informe = informes[String(params.cursoId)]
+      if (!informe?.pdfDisponible) return error(404, 'NO_ENCONTRADO', 'El informe no está disponible.')
+
+      const curso = cursosPortal.find((c) => c.cursoId === params.cursoId)
+      const pdf = generarPdf([
+        `Informe de resultados - ${curso?.nombre ?? params.cursoId}`,
+        `Participantes previstos: ${curso?.cantidadParticipantes ?? '-'}`,
+        '',
+        ...informe.resumen.split('. ').map((frase) => frase.trim()),
+      ])
+      return new HttpResponse(pdf, { headers: { 'Content-Type': 'application/pdf' } })
     }),
 ]

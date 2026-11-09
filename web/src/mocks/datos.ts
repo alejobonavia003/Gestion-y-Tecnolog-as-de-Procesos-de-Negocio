@@ -16,6 +16,7 @@ export function guardarDatos() {
   localStorage.setItem('mock-cursos', JSON.stringify(cursos))
   localStorage.setItem('mock-tareas', JSON.stringify(tareas))
   localStorage.setItem('mock-propuestas', JSON.stringify(propuestas))
+  localStorage.setItem('mock-cursos-portal', JSON.stringify(cursosPortal))
 }
 
 export const personal = [
@@ -100,6 +101,11 @@ const TAREAS_INICIALES: TareaMock[] = [
     cursoId: 'c-6', cursoNombre: 'Ventas consultivas', empresaNombre: 'Otra Empresa SRL',
     creada: '2026-11-09T12:30:00-03:00', asignado: 'admin_jefe', grupoCandidato: null,
   },
+  {
+    taskId: 't-9', taskDefinitionKey: 'EnviarInforme', nombre: 'Enviar informe a empresa y archivar expediente',
+    cursoId: 'c-12', cursoNombre: 'Gestión del tiempo', empresaNombre: 'Empresa Demo S.A.',
+    creada: '2026-11-09T16:00:00-03:00', asignado: 'admin_jefe', grupoCandidato: null,
+  },
 ]
 
 export const tareas: TareaMock[] = cargar('mock-tareas', TAREAS_INICIALES)
@@ -168,7 +174,7 @@ export const nominas: Record<string, Participante[]> = {
 // Cursos que ve cada empresa en su portal (empresaId sale de cuentasEmpresa)
 export type CursoPortalMock = CursoDetalle & { empresaId: string }
 
-export const cursosPortal: CursoPortalMock[] = [
+const CURSOS_PORTAL_INICIALES: CursoPortalMock[] = [
   {
     cursoId: 'c-3', empresaId: 'emp-1', nombre: 'Atención al cliente', estado: 'EN_PREPARACION',
     estadoEtiqueta: 'En preparación', fechaCurso: '2026-11-25T09:00:00-03:00',
@@ -199,9 +205,27 @@ export const cursosPortal: CursoPortalMock[] = [
     estadoEtiqueta: 'Cancelado', fechaCurso: null,
     descripcion: 'Introducción a planillas de cálculo.', cantidadParticipantes: 6,
   },
+  {
+    cursoId: 'c-12', empresaId: 'emp-1', nombre: 'Gestión del tiempo', estado: 'EN_CIERRE',
+    estadoEtiqueta: 'Cierre en curso', fechaCurso: '2026-10-20T09:00:00-03:00',
+    descripcion: 'Organización personal y priorización de tareas.', cantidadParticipantes: 14,
+  },
 ]
+
+export const cursosPortal: CursoPortalMock[] = cargar('mock-cursos-portal', CURSOS_PORTAL_INICIALES)
 
 // Esperas de mensajes activas por curso (por ejemplo, la nómina que todavía no mandó la empresa)
 export const esperas: Record<string, Actividad[]> = {
   'c-9': [{ activityId: 'Nomina', nombre: 'Recibir nómina de participantes', tipo: 'ESPERA_MENSAJE' }],
+}
+
+
+// Informes de resultados ya elaborados por el jefe docente
+export const informes: Record<string, { resumen: string; pdfDisponible: boolean }> = {
+  'c-12': {
+    resumen:
+      'Asistieron 13 de 14 participantes. Se cumplieron todos los módulos. ' +
+      'La evaluación final tuvo un promedio de 8,4 y la encuesta de satisfacción, 4,6 sobre 5.',
+    pdfDisponible: true,
+  },
 }

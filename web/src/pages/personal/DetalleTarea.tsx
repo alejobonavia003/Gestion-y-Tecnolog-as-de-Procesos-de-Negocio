@@ -6,6 +6,9 @@ import type { TareaDetalle } from '../../api/tipos'
 import { TEXTO_DONDE, infoTarea } from '../../tareas/catalogo'
 import { formatearFecha } from '../../tareas/formato'
 import { FormArchivar } from '../../tareas/formularios/FormArchivar'
+import { FormDictado } from '../../tareas/formularios/FormDictado'
+import { FormDocente } from '../../tareas/formularios/FormDocente'
+import { FormEnviarInforme } from '../../tareas/formularios/FormEnviarInforme'
 import { FormLista } from '../../tareas/formularios/FormLista'
 import { FormPropuesta } from '../../tareas/formularios/FormPropuesta'
 import { FormRecursos } from '../../tareas/formularios/FormRecursos'
@@ -81,6 +84,12 @@ function renderFormulario(tarea: TareaDetalle, alCompletar: (mensaje: string) =>
       return <FormLista tarea={tarea} alCompletar={alCompletar} />
     case 'Activity_12i2hpf':
       return <FormRecursos tarea={tarea} alCompletar={alCompletar} />
+    case 'Activity_1018bdz':
+      return <FormDocente tarea={tarea} alCompletar={alCompletar} />
+    case 'Dictar':
+      return <FormDictado tarea={tarea} alCompletar={alCompletar} />
+    case 'EnviarInforme':
+      return <FormEnviarInforme tarea={tarea} alCompletar={alCompletar} />
     default: {
       const info = infoTarea(tarea.taskDefinitionKey)
       return (

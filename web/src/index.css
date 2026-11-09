@@ -471,3 +471,85 @@ h2 {
 .espacio-arriba {
   margin-top: 1rem;
 }
+
+
+/* --- Etapa 9: docentes, informe y celular --- */
+
+.texto-informe {
+  white-space: pre-line;
+  line-height: 1.5;
+}
+
+/* Celular: el jefe docente define el docente "mediante la aplicación móvil" (§1.4) */
+@media (max-width: 600px) {
+  .cabecera {
+    padding: 0.6rem 1rem;
+  }
+
+  .menu {
+    width: 100%;
+    gap: 0.75rem;
+    font-size: 0.95rem;
+  }
+
+  .menu button {
+    margin-left: auto;
+  }
+
+  .contenido {
+    padding: 1rem;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  .bloque,
+  .tarjeta {
+    padding: 1rem;
+  }
+
+  /* Datos en una sola columna: etiqueta arriba, valor abajo */
+  .datos {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
+  }
+
+  .datos dd {
+    margin-bottom: 0.6rem;
+  }
+
+  /* Botones de ancho completo, más fáciles de tocar */
+  .tarea .boton,
+  .tarea button,
+  .formulario button[type='submit'],
+  .bloque > button,
+  .acciones > * {
+    width: 100%;
+    text-align: center;
+  }
+
+  .tarea > div {
+    width: 100%;
+  }
+
+  .encabezado {
+    flex-wrap: wrap;
+  }
+
+  .progreso li {
+    flex-basis: 100%;
+    padding: 0.4rem 0.6rem;
+    border-top: none;
+    border-left: 4px solid var(--color-borde);
+  }
+
+  .progreso li.hecha,
+  .progreso li.actual {
+    border-top: none;
+  }
+
+  .participantes li input {
+    width: calc(100% - 5.5rem);
+  }
+}

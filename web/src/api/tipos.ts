@@ -87,6 +87,24 @@ export type Participante = {
   nombre: string
 }
 
+
+export type Docente = {
+  usuarioId: string
+  nombre: string
+  esJefe: boolean
+}
+
+export type DatosCursoTarea = {
+  descripcion: string
+  cantidadParticipantes: number
+  fechaCurso: string | null
+}
+
+export type Informe = {
+  resumen: string
+  pdfDisponible: boolean
+}
+
 /** Datos extra que trae GET /tareas/{taskId} según el tipo de tarea. */
 export type ContextoTarea = {
   solicitud?: DatosSolicitud
@@ -94,6 +112,9 @@ export type ContextoTarea = {
   observacionesEmpresa?: string
   motivoArchivo?: 'RECHAZADA' | 'SIN_RESPUESTA'
   participantes?: Participante[] // nómina enviada por la empresa (tarea Lista)
+  curso?: DatosCursoTarea // Definir docente, Desarrollar curso y Enviar informe
+  docentes?: Docente[] // opciones de Definir docente
+  informe?: Informe // Enviar informe y archivar expediente
 }
 
 export type TareaDetalle = TareaResumen & {

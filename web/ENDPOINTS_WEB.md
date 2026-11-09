@@ -15,6 +15,7 @@ Registro de los endpoints del backend que consume el sitio web. Se completa **a 
 | ✅ Acordado | El contrato está confirmado con el back |
 | 🧪 Mock | La web lo usa con un mock (MSW) |
 | 🚀 Implementado | Está en el backend y probado desde la web |
+| ➖ Descartado | Se resolvió de otra forma |
 
 ## Resumen
 
@@ -35,10 +36,10 @@ Registro de los endpoints del backend que consume el sitio web. Se completa **a 
 | 13 | `POST /tareas/{taskId}/propuesta` | Registrar/elaborar y revisar propuesta | Jefe administrativo | Sí | 🧪 |
 | 14 | `GET /cursos/{cursoId}/propuestas` | Historial de versiones; propuesta aceptada en el portal | Jefe admin / empresa dueña | **No — nuevo** | 🧪 |
 | 15 | `GET /cursos/{cursoId}/propuestas/{version}/pdf` | Ver el PDF de la propuesta (Revisar y portal de empresa) | Jefe admin / empresa dueña | Sí | 🧪 |
-| 16 | `GET /docentes` | Opciones del selector de docente | Jefe docente | **No — nuevo** | 📝 |
-| 17 | `POST /tareas/{taskId}/docente` | Definir docente | Jefe docente | Sí | 📝 |
-| 18 | `POST /tareas/{taskId}/finalizacion-dictado` | Desarrollar curso | Docente asignado | Sí | 📝 |
-| 19 | `GET /cursos/{cursoId}/informe/pdf` | Ver el informe antes de enviarlo | Jefe admin / jefe docente / empresa dueña | Sí | 📝 |
+| 16 | ~~`GET /docentes`~~ | **No hace falta**: los docentes vienen en el `contexto` del #10 | — | — | ➖ |
+| 17 | `POST /tareas/{taskId}/docente` | Definir docente | Jefe docente | Sí | 🧪 |
+| 18 | `POST /tareas/{taskId}/finalizacion-dictado` | Desarrollar curso | Docente asignado | Sí | 🧪 |
+| 19 | `GET /cursos/{cursoId}/informe/pdf` | Ver el informe antes de enviarlo | Jefe admin / jefe docente / empresa dueña | Sí | 🧪 |
 
 ---
 
@@ -162,9 +163,9 @@ o
 | `Archivar` | `motivoArchivo`: `RECHAZADA` o `SIN_RESPUESTA` |
 | `Lista` | `participantes`: `[{ "nombre": "..." }]` (la nómina que envió la empresa) |
 | `Activity_12i2hpf` | Nada extra |
-| `EnviarInforme` | `informeId` / informe disponible |
-| `Activity_1018bdz` | Datos del curso y `fechaCurso` |
-| `Dictar` | Datos del curso y `fechaCurso` |
+| `Activity_1018bdz` | `curso`: `{ descripcion, cantidadParticipantes, fechaCurso }` + `docentes`: `[{ usuarioId, nombre, esJefe }]` (los tres del equipo, el jefe incluido) |
+| `Dictar` | `curso`: `{ descripcion, cantidadParticipantes, fechaCurso }` |
+| `EnviarInforme` | `curso` + `informe`: `{ resumen, pdfDisponible }` |
 
 - **Ejemplo (Revisar):**
 ```json
@@ -232,21 +233,27 @@ o
 - **Errores:** `404` si no existe la versión o el curso es de otra empresa.
 - **Notas:** la empresa dueña del curso también lo usa, para ver la propuesta aceptada en su portal.
 
-### 16. `GET /docentes` — nuevo
-- **Uso:** selector de "Definir docente".
-- **Response 200:** `{"items": [{"usuarioId": "docente_jefe", "nombre": "..."}, {"usuarioId": "docente_01", "nombre": "..."}, {"usuarioId": "docente_02", "nombre": "..."}]}`
-- **Notas:** alternativa más simple: incluir la lista en el `contexto` de `GET /tareas/{taskId}`.
+### 16. ~~`GET /docentes`~~ — descartado
+Se eligió la alternativa más simple: la lista de docentes viene en `contexto.docentes` de `GET /tareas/{taskId}` cuando la tarea es `Activity_1018bdz`. El back no necesita implementar este endpoint.
 
 ### 17. `POST /tareas/{taskId}/docente`
+- **Uso:** tarea `Activity_1018bdz` (Definir docente), solo el jefe docente asignado.
 - **Request:** `{"docenteId": "docente_01"}`
-- **Response 200.** **Errores:** `400` si no es uno de los tres.
+- **Response 200:** `{"completada": true}`.
+- **Errores:** `400 VALIDACION` si no es uno de los tres docentes, `403` si no es el asignado, `409` si la tarea no es de este tipo.
+- **Notas:** el back guarda `docenteId` como variable del proceso y completa la tarea. "Desarrollar curso" queda asignada directamente a ese usuario (sin reclamo).
 
 ### 18. `POST /tareas/{taskId}/finalizacion-dictado`
+- **Uso:** tarea `Dictar` (Desarrollar curso), solo el docente asignado.
 - **Request:** `{}`
-- **Response 200.** **Errores:** `409` si la tarea no está activa.
+- **Response 200:** `{"completada": true}`.
+- **Errores:** `403` si no es el asignado, `409` si la tarea no está activa (la web muestra "el curso no está en desarrollo").
 
 ### 19. `GET /cursos/{cursoId}/informe/pdf`
+- **Uso:** botón "Ver informe (PDF)" en Enviar informe y archivar expediente.
 - **Response 200:** `application/pdf`.
+- **Errores:** `404` si no hay PDF.
+- **Notas:** el PDF del informe ya no es obligatorio en la V3 (está tachado en rojo). La web muestra siempre `contexto.informe.resumen` y el botón del PDF solo si `pdfDisponible` es `true`.
 
 ---
 

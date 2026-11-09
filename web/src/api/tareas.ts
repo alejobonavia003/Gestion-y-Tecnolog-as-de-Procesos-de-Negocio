@@ -35,3 +35,18 @@ export function listarPropuestas(cursoId: string) {
 export function abrirPdfPropuesta(cursoId: string, version: number) {
   return abrirArchivo(`/cursos/${cursoId}/propuestas/${version}/pdf`)
 }
+
+
+/** Definir docente: el jefe docente elige uno de los tres (puede ser él mismo). */
+export function definirDocente(taskId: string, docenteId: string) {
+  return api<void>(`/tareas/${taskId}/docente`, { method: 'POST', body: JSON.stringify({ docenteId }) })
+}
+
+/** Desarrollar curso: el docente asignado registra que terminó el dictado. */
+export function registrarFinDictado(taskId: string) {
+  return api<void>(`/tareas/${taskId}/finalizacion-dictado`, { method: 'POST', body: '{}' })
+}
+
+export function abrirPdfInforme(cursoId: string) {
+  return abrirArchivo(`/cursos/${cursoId}/informe/pdf`)
+}
