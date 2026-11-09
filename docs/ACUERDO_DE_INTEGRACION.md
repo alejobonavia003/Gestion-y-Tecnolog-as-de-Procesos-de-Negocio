@@ -2,6 +2,14 @@
 
 Proyecto universitario **Gestión y Tecnologías de Procesos de Negocio**. Equipo: **Alejo, Lauty y Luka**.
 
+**Actualización de infraestructura (2026-11-09):** a pedido del usuario,
+Compose incorpora el servicio `backend`, construido desde `backend/Dockerfile`
+con Java 21 y publicado en `127.0.0.1:8081`. Comparte `flowable-net` y la política
+`restart: unless-stopped` de Flowable. El backend aún es independiente del motor
+y de PostgreSQL; este cambio solo incorpora su compilación y arranque con
+`docker compose up`. Las menciones siguientes a no modificar Compose describen
+el alcance del acuerdo documental inicial. Los pasos actuales están en el README.
+
 Este documento permite preparar cambios en paralelo; no acredita funcionalidades ejecutadas. Todas las rutas, variables, cuentas y modelos de datos propuestos requieren implementación posterior. No se incorporan lógica, dependencias ni cambios de infraestructura con este acuerdo.
 
 ## Base revisada y forma de leer el acuerdo

@@ -1,5 +1,16 @@
 
 services:
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+      SERVER_ADDRESS: 0.0.0.0
+    ports:
+      - "127.0.0.1:8081:8081"
+    networks:
+      - flowable-net
+
   postgres:
     image: postgres:15
     container_name: flowable-postgres
