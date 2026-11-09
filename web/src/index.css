@@ -143,3 +143,43 @@ button:disabled {
   opacity: 0.6;
   cursor: default;
 }
+
+/* --- Etapa 4: formulario de solicitud --- */
+
+fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 0;
+  padding: 1rem;
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+}
+
+legend {
+  padding: 0 0.4rem;
+  font-weight: 600;
+}
+
+.fila {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+ul.error {
+  padding-left: 1.2rem;
+}
+
+.acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.contenido .boton.secundario {
+  background: white;
+  color: var(--color-primario);
+  border: 1px solid var(--color-primario);
+}

@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw/http'
-import type { Sesion } from '../api/tipos'
-import { CLAVE_DEMO, cuentasEmpresa, personal } from './datos'
+import type { NuevaSolicitud, Sesion, SolicitudCreada } from '../api/tipos'
+import { CLAVE_DEMO, cuentasEmpresa, cursos, personal } from './datos'
 
 const API = '/api/v1'
 
@@ -20,6 +20,9 @@ function guardarSesion(sesion: Sesion | null) {
 function error(status: number, codigo: string, mensaje: string) {
   return HttpResponse.json({ codigo, mensaje }, { status })
 }
+
+// Idempotencia de POST /solicitudes: clave -> { cuerpo enviado, respuesta dada }
+const solicitudesPorClave = new Map<string, { cuerpo: string; respuesta: SolicitudCreada }>()
 
 export const handlers = [
   // --- Sesiones -------------------------------------------------------------
@@ -58,5 +61,44 @@ export const handlers = [
   http.delete(`${API}/sesiones/actual`, () => {
     guardarSesion(null)
     return new HttpResponse(null, { status: 204 })
+  }),
+
+  // --- Solicitud pública ----------------------------------------------------
+
+  http.post(`${API}/solicitudes`, async ({ request }) => {
+    const clave = request.headers.get('Idempotency-Key')
+    if (!clave) return error(400, 'VALIDACION', 'Falta el header Idempotency-Key.')
+
+    const texto = await request.text()
+    const previa = solicitudesPorClave.get(clave)
+    if (previa) {
+      // Reintento: misma clave y mismos datos -> misma respuesta; datos distintos -> 409
+      return previa.cuerpo === texto
+        ? HttpResponse.json(previa.respuesta, { status: 201 })
+        : error(409, 'ESTADO_INCOMPATIBLE', 'La clave ya se usó con otros datos.')
+    }
+
+    const s = JSON.parse(texto) as NuevaSolicitud
+    if (!s.empresa?.nombre || !s.contacto?.email || !s.tematica || s.cantidadEstimadaParticipantes < 1) {
+      return error(400, 'VALIDACION', 'Faltan datos obligatorios de la solicitud.')
+    }
+
+    const cursoId = crypto.randomUUID()
+    const respuesta: SolicitudCreada = {
+      cursoId,
+      processInstanceId: `pi-mock-${cursos.length + 1}`,
+      businessKey: `curso:${cursoId}`,
+    }
+    cursos.push({
+      cursoId,
+      processInstanceId: respuesta.processInstanceId,
+      empresaNombre: s.empresa.nombre,
+      tematica: s.tematica,
+      estado: 'EN_ACUERDO',
+      creadoEn: new Date().toISOString(),
+    })
+    solicitudesPorClave.set(clave, { cuerpo: texto, respuesta })
+
+    return HttpResponse.json(respuesta, { status: 201 })
   }),
 ]

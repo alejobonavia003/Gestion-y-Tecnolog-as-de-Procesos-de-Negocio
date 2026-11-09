@@ -15,3 +15,15 @@ export const cuentasEmpresa = [
   { usuario: 'empresa-demo', empresaId: 'emp-1', nombre: 'Empresa Demo S.A.' },
   { usuario: 'otra-empresa', empresaId: 'emp-2', nombre: 'Otra Empresa SRL' },
 ]
+
+// Cursos creados desde el formulario público (se pierden al recargar la página)
+export type CursoMock = {
+  cursoId: string
+  processInstanceId: string
+  empresaNombre: string
+  tematica: string
+  estado: string
+  creadoEn: string
+}
+
+export const cursos: CursoMock[] = []
