@@ -25,16 +25,16 @@ Registro de los endpoints del backend que consume el sitio web. Se completa **a 
 | 3 | `POST /sesiones/empresa` | Login de empresa | Público | Sí | 🧪 |
 | 4 | `GET /sesiones/actual` | Saber quién está logueado al recargar | Cualquiera logueado | **No — nuevo** | 🧪 |
 | 5 | `DELETE /sesiones/actual` | Logout | Cualquiera logueado | Sí | 🧪 |
-| 6 | `GET /cursos` | Mis cursos | Empresa | Sí | 📝 |
-| 7 | `GET /cursos/{cursoId}` | Detalle y estado del curso | Empresa dueña / personal | Sí | 📝 |
-| 8 | `GET /cursos/{cursoId}/actividades` | Actividades en curso (ramas paralelas) | Empresa dueña / personal | Sí | 📝 |
+| 6 | `GET /cursos` | Mis cursos | Empresa | Sí | 🧪 |
+| 7 | `GET /cursos/{cursoId}` | Detalle y estado del curso | Empresa dueña / personal | Sí | 🧪 |
+| 8 | `GET /cursos/{cursoId}/actividades` | Actividades en curso (ramas paralelas) | Empresa dueña / personal | Sí | 🧪 |
 | 9 | `GET /tareas?bandeja=asignadas\|disponibles` | Bandeja de tareas | Personal | Sí | 🧪 |
-| 10 | `GET /tareas/{taskId}` | Abrir el formulario de una tarea | Personal (asignado o candidato) | **No — nuevo** | 📝 |
+| 10 | `GET /tareas/{taskId}` | Abrir el formulario de una tarea | Personal (asignado o candidato) | **No — nuevo** | 🧪 |
 | 11 | `POST /tareas/{taskId}/reclamo` | Botón Reclamar | Personal candidato | Sí | 🧪 |
-| 12 | `POST /tareas/{taskId}/completado` | Completar tareas simples | Asignado | Sí | 📝 |
-| 13 | `POST /tareas/{taskId}/propuesta` | Registrar/elaborar y revisar propuesta | Jefe administrativo | Sí | 📝 |
-| 14 | `GET /cursos/{cursoId}/propuestas` | Historial de versiones de la propuesta | Jefe admin / empresa dueña | **No — nuevo** | 📝 |
-| 15 | `GET /cursos/{cursoId}/propuestas/{version}/pdf` | Ver o descargar el PDF de la propuesta | Jefe admin / empresa dueña | Sí | 📝 |
+| 12 | `POST /tareas/{taskId}/completado` | Completar tareas simples | Asignado | Sí | 🧪 |
+| 13 | `POST /tareas/{taskId}/propuesta` | Registrar/elaborar y revisar propuesta | Jefe administrativo | Sí | 🧪 |
+| 14 | `GET /cursos/{cursoId}/propuestas` | Historial de versiones; propuesta aceptada en el portal | Jefe admin / empresa dueña | **No — nuevo** | 🧪 |
+| 15 | `GET /cursos/{cursoId}/propuestas/{version}/pdf` | Ver el PDF de la propuesta (Revisar y portal de empresa) | Jefe admin / empresa dueña | Sí | 🧪 |
 | 16 | `GET /docentes` | Opciones del selector de docente | Jefe docente | **No — nuevo** | 📝 |
 | 17 | `POST /tareas/{taskId}/docente` | Definir docente | Jefe docente | Sí | 📝 |
 | 18 | `POST /tareas/{taskId}/finalizacion-dictado` | Desarrollar curso | Docente asignado | Sí | 📝 |
@@ -97,8 +97,32 @@ o
 - **Notas:** solo cursos de la empresa de la sesión (escenario 10).
 
 ### 7. `GET /cursos/{cursoId}`
-- **Response 200:** datos de la solicitud, `estado`, `estadoEtiqueta`, `resultadoFinal` (nullable), `fechaCurso`, versión de propuesta vigente y documentos disponibles.
-- **Errores:** `404` también si el curso es de otra empresa.
+- **Response 200:**
+```json
+{
+  "cursoId": "...",
+  "nombre": "Atención al cliente",
+  "estado": "EN_PREPARACION",
+  "estadoEtiqueta": "En preparación",
+  "fechaCurso": "2026-11-25T09:00:00-03:00",
+  "descripcion": "Comunicación y manejo de reclamos para el equipo de atención.",
+  "cantidadParticipantes": 5
+}
+```
+- **Errores:** `404` también si el curso es de otra empresa (no revelar que existe).
+- **Notas:** la web muestra una línea de progreso según `estado`. Códigos que usa:
+
+| `estado` | Etiqueta |
+|---|---|
+| `EN_ACUERDO` | En evaluación o acuerdo |
+| `EN_PREPARACION` | En preparación |
+| `CONFIRMADO_PENDIENTE_INICIO` | Confirmado y pendiente de inicio |
+| `EN_DESARROLLO` | En desarrollo |
+| `EN_ELABORACION_INFORME` | En elaboración del informe |
+| `EN_CIERRE` | Cierre en curso |
+| `CANCELACION_EN_CURSO` | Cancelación en curso |
+| `FINALIZADO` | Finalizado |
+| `CANCELADO` | Cancelado |
 
 ### 8. `GET /cursos/{cursoId}/actividades`
 - **Response 200:**
@@ -111,14 +135,21 @@ o
   ]
 }
 ```
-- **Notas:** pedir que incluya `nombre` legible para mostrar a la empresa sin exponer IDs internos ni nombres del personal.
+- **Notas:**
+  - `tipo` puede ser `TAREA_USUARIO` (se muestra "En curso"), `ESPERA_MENSAJE` ("Esperando a la empresa", por ejemplo la nómina) o `AUTOMATICA`.
+  - `nombre` tiene que ser legible para la empresa, sin exponer nombres del personal.
+  - Durante la preparación hay que devolver **todas** las actividades activas (una por rama paralela). Fuera de la preparación, `items` vacío.
+  - Mismo control de acceso que el #7: `404` si el curso es de otra empresa.
 
 ### 9. `GET /tareas?bandeja=asignadas|disponibles`
 - **Response 200:**
 ```json
 {"items": [{"taskId": "...", "taskDefinitionKey": "Propuesta", "nombre": "Registrar y elaborar propuesta", "cursoId": "...", "cursoNombre": "...", "empresaNombre": "...", "creada": "2026-11-09T18:00:00-03:00", "asignado": "admin_jefe", "reclamable": false}], "total": 1, "page": 0, "size": 20}
 ```
-- **Notas:** pedir `reclamable` calculado por el back para mostrar u ocultar el botón Reclamar.
+- **Notas:**
+  - `asignadas`: tareas con `assignee` = usuario de la sesión. `disponibles`: tareas sin asignar cuyo grupo candidato incluye al usuario.
+  - La web muestra el botón Reclamar solo si `reclamable` es `true` (lo calcula el back). Con `409 YA_RECLAMADA` refresca la lista.
+  - Las tareas que no se completan en la web (Preparar materiales, aula virtual, equipamiento, liberar equipamiento, elaborar informe) se muestran con una etiqueta, sin botón.
 
 ### 10. `GET /tareas/{taskId}` — nuevo
 - **Uso:** abrir `/tareas/:id` y elegir el formulario por `taskDefinitionKey`.
@@ -126,16 +157,36 @@ o
 
 | `taskDefinitionKey` | `contexto` necesario |
 |---|---|
-| `Propuesta` | Datos de la solicitud (temática, descripción, cantidad, fechas preferidas) |
-| `Revisar` | Propuesta vigente + `observacionesEmpresa` |
-| `Archivar` | Motivo (`RECHAZADA` / `SIN_RESPUESTA`) |
-| `Lista` | `participantes` (nómina recibida) |
+| `Propuesta` | `solicitud`: `{ tematica, descripcion, cantidadEstimadaParticipantes, fechasPreferidas }` |
+| `Revisar` | `solicitud` + `propuestaVigente`: `{ version, programa, presupuesto, fechasPosibles, estado, observacionesEmpresa, creada }` + `observacionesEmpresa` |
+| `Archivar` | `motivoArchivo`: `RECHAZADA` o `SIN_RESPUESTA` |
+| `Lista` | `participantes`: `[{ "nombre": "..." }]` (la nómina que envió la empresa) |
 | `Activity_12i2hpf` | Nada extra |
 | `EnviarInforme` | `informeId` / informe disponible |
 | `Activity_1018bdz` | Datos del curso y `fechaCurso` |
 | `Dictar` | Datos del curso y `fechaCurso` |
 
-- **Errores:** `403` si no es asignado ni candidato, `404`.
+- **Ejemplo (Revisar):**
+```json
+{
+  "taskId": "t-8",
+  "taskDefinitionKey": "Revisar",
+  "nombre": "Revisar propuesta",
+  "cursoId": "c-6",
+  "cursoNombre": "Ventas consultivas",
+  "empresaNombre": "Otra Empresa SRL",
+  "creada": "2026-11-09T12:30:00-03:00",
+  "asignado": "admin_jefe",
+  "reclamable": false,
+  "contexto": {
+    "solicitud": {"tematica": "Ventas consultivas", "descripcion": "...", "cantidadEstimadaParticipantes": 8, "fechasPreferidas": "Martes y jueves por la tarde"},
+    "propuestaVigente": {"version": 1, "programa": "...", "presupuesto": {"importe": "200000.00", "moneda": "ARS"}, "fechasPosibles": ["2026-12-02T14:00:00-03:00"], "estado": "MODIFICACIONES", "observacionesEmpresa": "...", "creada": "..."},
+    "observacionesEmpresa": "El presupuesto nos queda alto..."
+  }
+}
+```
+- **Errores:** `403` si no es asignado ni candidato, `404` si no existe o ya fue completada.
+- **Notas:** si la tarea es de grupo y nadie la reclamó (`reclamable: true`), la web no muestra el formulario: pide reclamarla desde la bandeja.
 
 ### 11. `POST /tareas/{taskId}/reclamo`
 - **Request:** `{}`
@@ -152,7 +203,11 @@ o
 | `Archivar`, `EnviarInforme` | `{}` |
 | `Enviar` | `{}` (solo si Alejo la deja como tarea humana) |
 
-- **Errores:** `400`, `403`, `409`.
+- **Response 200:** `{"completada": true}` (la web no usa el cuerpo).
+- **Errores:** `400 VALIDACION` con mensaje (la web lo muestra tal cual), `403` si no es el asignado, `409`.
+- **Notas:**
+  - Validar en el back: lista definitiva con al menos un participante; en Evaluar recursos, al menos un recurso en `true`.
+  - Los nombres `requiereAula`, `requierePlataforma`, `requiereEquipamiento` tienen que coincidir con las condiciones del gateway inclusivo del BPMN.
 
 ### 13. `POST /tareas/{taskId}/propuesta`
 - **Uso:** tareas `Propuesta` y `Revisar`. Genera el PDF y completa la tarea.
@@ -161,14 +216,21 @@ o
 {"programa": "...", "presupuesto": {"importe": "150000.00", "moneda": "ARS"}, "fechasPosibles": ["2026-12-01T09:00:00-03:00"]}
 ```
 - **Response 201:** `{"propuestaId": "...", "propuestaVersion": 1, "pdfDisponible": true}`
-- **Errores:** `400`, `409 VERSION_DESACTUALIZADA`.
+- **Errores:** `400` (programa vacío, importe ≤ 0 o sin fechas), `403`, `409 VERSION_DESACTUALIZADA` (la web pide reabrir la tarea).
+- **Notas:** importe como texto con 2 decimales (evita redondeos). Fechas en ISO con offset de Argentina (`-03:00`). En `Revisar` se crea la versión siguiente sin pisar las anteriores.
 
 ### 14. `GET /cursos/{cursoId}/propuestas` — nuevo
-- **Uso:** en Revisar propuesta, mostrar las versiones anteriores con su PDF.
-- **Response 200:** `{"items": [{"version": 1, "estado": "MODIFICACIONES", "creada": "...", "observacionesEmpresa": "..."}]}`
+- **Uso:** en Revisar propuesta, mostrar las versiones anteriores con su PDF. En el portal de empresa, encontrar la propuesta `ACEPTADA` para mostrar presupuesto y PDF.
+- **Response 200:**
+```json
+{"items": [{"version": 1, "programa": "...", "presupuesto": {"importe": "200000.00", "moneda": "ARS"}, "fechasPosibles": ["2026-12-02T14:00:00-03:00"], "estado": "MODIFICACIONES", "observacionesEmpresa": "...", "creada": "2026-11-05T10:00:00-03:00"}]}
+```
+- **Notas:** `estado` de cada versión: `ENVIADA`, `MODIFICACIONES`, `ACEPTADA` o `RECHAZADA`. La empresa dueña del curso también lo usa (filtrar por sesión).
 
 ### 15. `GET /cursos/{cursoId}/propuestas/{version}/pdf`
-- **Response 200:** `application/pdf`. La web lo abre en otra pestaña.
+- **Response 200:** `application/pdf`. La web lo descarga con la cookie de sesión y lo abre en otra pestaña.
+- **Errores:** `404` si no existe la versión o el curso es de otra empresa.
+- **Notas:** la empresa dueña del curso también lo usa, para ver la propuesta aceptada en su portal.
 
 ### 16. `GET /docentes` — nuevo
 - **Uso:** selector de "Definir docente".

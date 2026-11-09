@@ -1,4 +1,4 @@
-import type { ContextoTarea, Participante, Propuesta } from '../api/tipos'
+import type { Actividad, ContextoTarea, CursoDetalle, Participante, Propuesta } from '../api/tipos'
 // Datos de prueba para los mocks. Simulan lo que tendrán Flowable y la BD institucional.
 // Las contraseñas son solo para desarrollo local; en el sistema real valida Flowable.
 
@@ -139,6 +139,15 @@ const PROPUESTAS_INICIALES: PropuestaMock[] = [
     observacionesEmpresa: 'El presupuesto nos queda alto. ¿Se puede reducir a 6 horas y bajar el costo?',
     creada: '2026-11-05T10:00:00-03:00',
   },
+  {
+    cursoId: 'c-3',
+    version: 1,
+    programa: 'Módulo 1: comunicación con el cliente.\nMódulo 2: manejo de reclamos.',
+    presupuesto: { importe: '120000.00', moneda: 'ARS' },
+    fechasPosibles: ['2026-11-25T09:00:00-03:00'],
+    estado: 'ACEPTADA',
+    creada: '2026-11-03T11:00:00-03:00',
+  },
 ]
 
 export const propuestas: PropuestaMock[] = cargar('mock-propuestas', PROPUESTAS_INICIALES)
@@ -153,4 +162,46 @@ export const nominas: Record<string, Participante[]> = {
     { nombre: 'Juan Pérez' },
     { nombre: 'Valentina López' },
   ],
+}
+
+
+// Cursos que ve cada empresa en su portal (empresaId sale de cuentasEmpresa)
+export type CursoPortalMock = CursoDetalle & { empresaId: string }
+
+export const cursosPortal: CursoPortalMock[] = [
+  {
+    cursoId: 'c-3', empresaId: 'emp-1', nombre: 'Atención al cliente', estado: 'EN_PREPARACION',
+    estadoEtiqueta: 'En preparación', fechaCurso: '2026-11-25T09:00:00-03:00',
+    descripcion: 'Comunicación y manejo de reclamos para el equipo de atención.', cantidadParticipantes: 5,
+  },
+  {
+    cursoId: 'c-5', empresaId: 'emp-1', nombre: 'Liderazgo', estado: 'EN_DESARROLLO',
+    estadoEtiqueta: 'En desarrollo', fechaCurso: '2026-11-06T09:00:00-03:00',
+    descripcion: 'Liderazgo de equipos para mandos medios.', cantidadParticipantes: 10,
+  },
+  {
+    cursoId: 'c-7', empresaId: 'emp-1', nombre: 'Seguridad informática', estado: 'FINALIZADO',
+    estadoEtiqueta: 'Finalizado', fechaCurso: '2026-10-01T09:00:00-03:00',
+    descripcion: 'Buenas prácticas de seguridad para usuarios.', cantidadParticipantes: 20,
+  },
+  {
+    cursoId: 'c-4', empresaId: 'emp-2', nombre: 'Seguridad e higiene', estado: 'CONFIRMADO_PENDIENTE_INICIO',
+    estadoEtiqueta: 'Confirmado y pendiente de inicio', fechaCurso: '2026-12-10T08:00:00-03:00',
+    descripcion: 'Normativa y prevención de riesgos.', cantidadParticipantes: 15,
+  },
+  {
+    cursoId: 'c-9', empresaId: 'emp-2', nombre: 'Primeros auxilios', estado: 'EN_PREPARACION',
+    estadoEtiqueta: 'En preparación', fechaCurso: '2026-12-15T09:00:00-03:00',
+    descripcion: 'RCP y primeros auxilios básicos.', cantidadParticipantes: 12,
+  },
+  {
+    cursoId: 'c-10', empresaId: 'emp-2', nombre: 'Excel inicial', estado: 'CANCELADO',
+    estadoEtiqueta: 'Cancelado', fechaCurso: null,
+    descripcion: 'Introducción a planillas de cálculo.', cantidadParticipantes: 6,
+  },
+]
+
+// Esperas de mensajes activas por curso (por ejemplo, la nómina que todavía no mandó la empresa)
+export const esperas: Record<string, Actividad[]> = {
+  'c-9': [{ activityId: 'Nomina', nombre: 'Recibir nómina de participantes', tipo: 'ESPERA_MENSAJE' }],
 }

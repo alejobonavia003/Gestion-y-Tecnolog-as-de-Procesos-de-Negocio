@@ -1,9 +1,11 @@
 import { http, HttpResponse } from 'msw/http'
-import type { ContextoTarea, NuevaPropuesta, NuevaSolicitud, Sesion, SolicitudCreada } from '../api/tipos'
+import type { Actividad, ContextoTarea, NuevaPropuesta, NuevaSolicitud, Sesion, SolicitudCreada } from '../api/tipos'
 import {
   CLAVE_DEMO,
   cuentasEmpresa,
   cursos,
+  cursosPortal,
+  esperas,
   guardarDatos,
   motivosArchivo,
   nominas,
@@ -13,6 +15,7 @@ import {
   tareas,
   type TareaMock,
 } from './datos'
+import { infoTarea } from '../tareas/catalogo'
 import { generarPdf } from './pdf'
 
 const API = '/api/v1'
@@ -113,6 +116,20 @@ function quitarTarea(taskId: string) {
     1,
   )
   guardarDatos()
+}
+
+/**
+ * Busca un curso del portal y verifica que la sesión pueda verlo.
+ * Una empresa solo ve los suyos: si es de otra, responde 404 (no revela que existe).
+ */
+function cursoVisible(cursoId: string) {
+  const sesion = leerSesion()
+  if (!sesion) return { respuesta: error(401, 'NO_AUTENTICADO', 'Iniciá sesión.') }
+  const curso = cursosPortal.find((c) => c.cursoId === cursoId)
+  if (!curso || (sesion.tipo === 'EMPRESA' && curso.empresaId !== sesion.empresaId)) {
+    return { respuesta: error(404, 'NO_ENCONTRADO', 'El curso no existe.') }
+  }
+  return { curso }
 }
 
 function pagina<T>(items: T[]) {
@@ -317,5 +334,51 @@ export const handlers = [
         ...p.programa.split('\n'),
       ])
       return new HttpResponse(pdf, { headers: { 'Content-Type': 'application/pdf' } })
+    }),
+
+
+    // --- Portal de empresa --------------------------------------------------------
+
+    http.get(`${API}/cursos`, () => {
+      const sesion = leerSesion()
+      if (sesion?.tipo !== 'EMPRESA') return error(401, 'NO_AUTENTICADO', 'Iniciá sesión como empresa.')
+
+      const propios = cursosPortal
+        .filter((c) => c.empresaId === sesion.empresaId)
+        .map(({ cursoId, nombre, estado, estadoEtiqueta, fechaCurso }) => ({
+          cursoId,
+          nombre,
+          estado,
+          estadoEtiqueta,
+          fechaCurso,
+        }))
+      return HttpResponse.json(pagina(propios))
+    }),
+
+    http.get(`${API}/cursos/:cursoId`, ({ params }) => {
+      const { curso, respuesta } = cursoVisible(String(params.cursoId))
+      if (!curso) return respuesta
+
+      const { empresaId: _empresaId, ...detalle } = curso
+      return HttpResponse.json(detalle)
+    }),
+
+    http.get(`${API}/cursos/:cursoId/actividades`, ({ params }) => {
+      const { curso, respuesta } = cursoVisible(String(params.cursoId))
+      if (!curso) return respuesta
+      if (curso.estado !== 'EN_PREPARACION') return HttpResponse.json({ estado: curso.estado, items: [] })
+
+      // Tareas abiertas del curso (todas las ramas paralelas) + esperas de mensajes
+      const items: Actividad[] = [
+        ...tareas
+          .filter((t) => t.cursoId === curso.cursoId)
+          .map((t) => ({
+            activityId: t.taskDefinitionKey,
+            nombre: infoTarea(t.taskDefinitionKey).titulo,
+            tipo: 'TAREA_USUARIO' as const,
+          })),
+        ...(esperas[curso.cursoId] ?? []),
+      ]
+      return HttpResponse.json({ estado: curso.estado, items })
     }),
 ]

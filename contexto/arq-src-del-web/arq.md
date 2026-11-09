@@ -2,7 +2,7 @@
 
 Sitio web de la institución: sección pública, portal de empresas y funciones del personal. Hecho con **React + Vite + TypeScript + React Router**. Mientras el backend no tenga los endpoints, usa **MSW** (Mock Service Worker) para simular la API.
 
-**Estado:** etapas 1 a 7 terminadas (base, router, sesión, mocks, logins, formulario de solicitud, bandeja de tareas, formularios del jefe administrativo —propuesta, revisión y archivo— y de administración: lista definitiva y evaluar recursos).
+**Estado:** etapas 1 a 8 terminadas (base, router, sesión, mocks, logins, formulario de solicitud, bandeja de tareas, formularios del jefe administrativo —propuesta, revisión y archivo—, de administración —lista definitiva y evaluar recursos— y portal de empresa).
 
 ---
 
@@ -36,6 +36,11 @@ Para volver a los datos iniciales del mock: F12 → Console → `localStorage.cl
 | `docente_jefe` | Definir docente |
 | `docente_01` | Desarrollar curso |
 
+| Empresa | Cursos de prueba en el portal |
+|---|---|
+| `empresa-demo` | Atención al cliente (en preparación, 3 actividades en paralelo), Liderazgo (en desarrollo), Seguridad informática (finalizado) |
+| `otra-empresa` | Seguridad e higiene (confirmado y pendiente de inicio), Primeros auxilios (en preparación, esperando la nómina), Excel inicial (cancelado) |
+
 ---
 
 ## Estructura
@@ -55,12 +60,16 @@ web/
     ├── api/
     │   ├── cliente.ts       → api(): TODAS las llamadas pasan por acá; abrirArchivo() para PDFs
     │   ├── tipos.ts         → tipos del contrato (Sesion, NuevaSolicitud, TareaResumen, TareaDetalle, Propuesta…)
-    │   └── tareas.ts        → listar, reclamar, obtener y completar tareas; propuestas y sus PDF
+    │   ├── tareas.ts        → listar, reclamar, obtener y completar tareas; propuestas y sus PDF
+    │   └── cursos.ts        → cursos de la empresa, detalle y actividades en curso
     ├── auth/
     │   ├── contexto.ts      → define qué guarda la sesión
     │   ├── AuthContext.tsx  → al abrir la web pregunta GET /sesiones/actual
     │   ├── useAuth.ts       → hook para usar la sesión en cualquier página
     │   └── RutaProtegida.tsx→ si no tenés sesión del tipo correcto, te manda al login
+    ├── cursos/
+    │   ├── estados.ts       → etiqueta y color de cada estado del curso; etapas de la línea de progreso
+    │   └── EstadoCurso.tsx  → etiqueta de color con el estado
     ├── components/
     │   └── Layout.tsx       → cabecera con menú según quién esté logueado + aviso de modo mock
     ├── tareas/
@@ -73,7 +82,7 @@ web/
     │       └── FormRecursos.tsx  → Evaluar recursos
     ├── mocks/
     │   ├── browser.ts       → crea el worker de MSW
-    │   ├── datos.ts         → usuarios, empresas, cursos, tareas, propuestas y nóminas de prueba (persisten en localStorage)
+    │   ├── datos.ts         → usuarios, empresas, cursos, tareas, propuestas, nóminas y cursos del portal de prueba
     │   ├── handlers.ts      → respuestas falsas de la API, con el formato de ENDPOINTS_WEB.md
     │   └── pdf.ts           → genera un PDF simple para simular los del backend
     └── pages/
@@ -83,8 +92,8 @@ web/
         ├── NoEncontrado.tsx     → 404
         ├── empresa/
         │   ├── LoginEmpresa.tsx → ✅ login de empresas
-        │   ├── MisCursos.tsx    → (relleno — etapa 8)
-        │   └── DetalleCurso.tsx → (relleno — etapa 8)
+        │   ├── MisCursos.tsx    → ✅ cursos de la empresa con su estado
+        │   └── DetalleCurso.tsx → ✅ estado, progreso, datos, propuesta aceptada y actividades en paralelo
         └── personal/
             ├── Bandeja.tsx      → ✅ tareas asignadas y disponibles, reclamar
             └── DetalleTarea.tsx → ✅ abre una tarea y muestra su formulario según el tipo
@@ -102,8 +111,8 @@ web/
 | `/empresa/login` | Empresa | ✅ |
 | `/tareas` | Personal (protegida) | ✅ |
 | `/tareas/:taskId` | Personal (protegida) | ✅ Propuesta, Revisar, Archivar, Lista, Evaluar recursos · docentes y Enviar informe en etapa 9 |
-| `/empresa/cursos` | Empresa (protegida) | Relleno |
-| `/empresa/cursos/:cursoId` | Empresa (protegida) | Relleno |
+| `/empresa/cursos` | Empresa (protegida) | ✅ |
+| `/empresa/cursos/:cursoId` | Empresa (protegida) | ✅ |
 
 ---
 
@@ -202,6 +211,26 @@ Muestra el motivo (propuesta rechazada o sin respuesta tras dos recordatorios) y
 - La falta de aulas (escenario 7) la maneja el motor después de completar esta tarea; la web no hace nada especial.
 - En el mock, al elegir aula virtual o equipamiento aparecen las tareas nuevas en "Disponibles" con la etiqueta "Se completa desde Flowable".
 
+### Portal de empresa — escenario 10
+- **Mis cursos** (`/empresa/cursos`): solo los cursos de la empresa logueada (el backend filtra por la sesión; la web nunca manda `empresaId`). Cada uno con su estado y fecha de inicio.
+- **Detalle** (`/empresa/cursos/:id`):
+  - Estado con etiqueta de color y **línea de progreso**: en preparación → confirmado y pendiente de inicio → en desarrollo → en elaboración del informe → finalizado. Si está cancelado, muestra un aviso en lugar del progreso.
+  - Datos del curso y, si hay, presupuesto y **PDF de la propuesta aceptada**.
+  - Durante la preparación: **actividades en curso**, que pueden ser varias a la vez (ramas paralelas): tareas en curso y esperas ("Esperando a la empresa", por ejemplo la nómina). Botón Actualizar.
+- Si una empresa entra a la URL de un curso ajeno, el back responde 404 y la web muestra "No encontramos ese curso entre los de tu empresa" (no revela que existe).
+
+| Código de estado | Etiqueta |
+|---|---|
+| `EN_ACUERDO` | En evaluación o acuerdo |
+| `EN_PREPARACION` | En preparación |
+| `CONFIRMADO_PENDIENTE_INICIO` | Confirmado y pendiente de inicio |
+| `EN_DESARROLLO` | En desarrollo |
+| `EN_ELABORACION_INFORME` | En elaboración del informe |
+| `EN_CIERRE` | Cierre en curso |
+| `CANCELACION_EN_CURSO` | Cancelación en curso |
+| `FINALIZADO` | Finalizado |
+| `CANCELADO` | Cancelado |
+
 ---
 
 ## Endpoints en uso
@@ -221,7 +250,10 @@ Detalle completo en `ENDPOINTS_WEB.md`. Todos están en 🧪 Mock por ahora.
 | `POST /tareas/{taskId}/completado` | Archivar solicitud, Lista definitiva, Evaluar recursos |
 | `POST /tareas/{taskId}/propuesta` | Propuesta y Revisar propuesta |
 | `GET /cursos/{cursoId}/propuestas` | Versiones anteriores en Revisar |
-| `GET /cursos/{cursoId}/propuestas/{version}/pdf` | Botón Ver PDF |
+| `GET /cursos/{cursoId}/propuestas/{version}/pdf` | Botón Ver PDF (personal y empresa) |
+| `GET /cursos` | Mis cursos (empresa) |
+| `GET /cursos/{cursoId}` | Detalle del curso |
+| `GET /cursos/{cursoId}/actividades` | Actividades en curso durante la preparación |
 
 ---
 
@@ -229,6 +261,5 @@ Detalle completo en `ENDPOINTS_WEB.md`. Todos están en 🧪 Mock por ahora.
 
 | Etapa | Qué | Escenarios |
 |---|---|---|
-| 8 | Portal de empresa: mis cursos, estado, actividades paralelas | 10 |
 | 9 | Docentes (definir docente, desarrollar curso), Enviar informe, ajustes para celular | 1 |
 | 10 | Cambiar los mocks por el backend real | Todos |

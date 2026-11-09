@@ -111,3 +111,30 @@ export type PropuestaCreada = {
   propuestaVersion: number
   pdfDisponible: boolean
 }
+
+
+// --- Portal de empresa (etapa 8) ---
+
+export type CursoResumen = {
+  cursoId: string
+  nombre: string
+  estado: string // ver cursos/estados.ts
+  estadoEtiqueta: string
+  fechaCurso: string | null // fecha acordada de inicio (ISO)
+}
+
+export type CursoDetalle = CursoResumen & {
+  descripcion: string
+  cantidadParticipantes: number
+}
+
+export type Actividad = {
+  activityId: string
+  nombre: string // nombre legible, sin datos del personal
+  tipo: 'TAREA_USUARIO' | 'ESPERA_MENSAJE' | 'AUTOMATICA'
+}
+
+export type ActividadesCurso = {
+  estado: string
+  items: Actividad[]
+}
