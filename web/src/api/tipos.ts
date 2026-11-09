@@ -83,12 +83,17 @@ export type Propuesta = {
   creada: string
 }
 
+export type Participante = {
+  nombre: string
+}
+
 /** Datos extra que trae GET /tareas/{taskId} según el tipo de tarea. */
 export type ContextoTarea = {
   solicitud?: DatosSolicitud
   propuestaVigente?: Propuesta
   observacionesEmpresa?: string
   motivoArchivo?: 'RECHAZADA' | 'SIN_RESPUESTA'
+  participantes?: Participante[] // nómina enviada por la empresa (tarea Lista)
 }
 
 export type TareaDetalle = TareaResumen & {

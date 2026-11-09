@@ -6,7 +6,9 @@ import type { TareaDetalle } from '../../api/tipos'
 import { TEXTO_DONDE, infoTarea } from '../../tareas/catalogo'
 import { formatearFecha } from '../../tareas/formato'
 import { FormArchivar } from '../../tareas/formularios/FormArchivar'
+import { FormLista } from '../../tareas/formularios/FormLista'
 import { FormPropuesta } from '../../tareas/formularios/FormPropuesta'
+import { FormRecursos } from '../../tareas/formularios/FormRecursos'
 
 /** Abre una tarea y muestra el formulario que corresponde según su taskDefinitionKey. */
 export function DetalleTarea() {
@@ -54,7 +56,16 @@ export function DetalleTarea() {
         {tarea.cursoNombre} · {tarea.empresaNombre} · creada el {formatearFecha(tarea.creada)}
       </p>
 
-      {renderFormulario(tarea, alCompletar)}
+      {tarea.reclamable ? (
+        <div className="bloque">
+          <p>Esta tarea es del grupo y todavía nadie la reclamó.</p>
+          <Link to="/tareas" className="boton">
+            Ir a la bandeja para reclamarla
+          </Link>
+        </div>
+      ) : (
+        renderFormulario(tarea, alCompletar)
+      )}
     </section>
   )
 }
@@ -66,6 +77,10 @@ function renderFormulario(tarea: TareaDetalle, alCompletar: (mensaje: string) =>
       return <FormPropuesta tarea={tarea} alCompletar={alCompletar} />
     case 'Archivar':
       return <FormArchivar tarea={tarea} alCompletar={alCompletar} />
+    case 'Lista':
+      return <FormLista tarea={tarea} alCompletar={alCompletar} />
+    case 'Activity_12i2hpf':
+      return <FormRecursos tarea={tarea} alCompletar={alCompletar} />
     default: {
       const info = infoTarea(tarea.taskDefinitionKey)
       return (

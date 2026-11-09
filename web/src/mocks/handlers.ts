@@ -6,6 +6,7 @@ import {
   cursos,
   guardarDatos,
   motivosArchivo,
+  nominas,
   personal,
   propuestas,
   solicitudes,
@@ -51,6 +52,8 @@ function contextoDe(t: TareaMock): ContextoTarea {
       return { solicitud, propuestaVigente: vigente, observacionesEmpresa: vigente?.observacionesEmpresa }
     case 'Archivar':
       return { motivoArchivo: motivosArchivo[t.cursoId] ?? 'RECHAZADA' }
+    case 'Lista':
+      return { participantes: nominas[t.cursoId] ?? [] }
     default:
       return {}
   }
@@ -64,6 +67,43 @@ function tareaParaCompletar(taskId: string, usuarioId: string) {
     return { respuesta: error(403, 'SIN_PERMISO', 'Solo la persona asignada puede completar la tarea.') }
   }
   return { tarea }
+}
+
+/** Valida los `datos` que admite cada tarea al completarla (como hará el backend). */
+function validarDatos(t: TareaMock, datos: Record<string, unknown>): string | null {
+  switch (t.taskDefinitionKey) {
+    case 'Lista': {
+      const participantes = datos.participantes
+      return Array.isArray(participantes) && participantes.length > 0
+        ? null
+        : 'La lista definitiva tiene que tener al menos un participante.'
+    }
+    case 'Activity_12i2hpf':
+      return datos.requiereAula || datos.requierePlataforma || datos.requiereEquipamiento
+        ? null
+        : 'Elegí al menos un recurso.'
+    default:
+      return null
+  }
+}
+
+/** Simula lo que hace el motor después de "Evaluar recursos": crea las tareas de las ramas elegidas. */
+function crearTareasDeRecursos(t: TareaMock, datos: Record<string, unknown>) {
+  const nuevas = [
+    { condicion: datos.requierePlataforma, clave: 'Virtual', nombre: 'Solicitar aula virtual' },
+    { condicion: datos.requiereEquipamiento, clave: 'Equipo', nombre: 'Contratar equipamiento' },
+  ]
+  for (const n of nuevas.filter((x) => x.condicion)) {
+    tareas.push({
+      ...t,
+      taskId: `t-${n.clave.toLowerCase()}-${Date.now()}`,
+      taskDefinitionKey: n.clave,
+      nombre: n.nombre,
+      creada: new Date().toISOString(),
+      asignado: null,
+      grupoCandidato: 'administracion',
+    })
+  }
 }
 
 /** Simula que el motor completa la tarea: desaparece de la bandeja. */
@@ -208,13 +248,18 @@ export const handlers = [
       return HttpResponse.json({ ...aResumen(tarea), contexto: contextoDe(tarea) })
     }),
 
-    http.post(`${API}/tareas/:taskId/completado`, ({ params }) => {
+    http.post(`${API}/tareas/:taskId/completado`, async ({ params, request }) => {
       const sesion = leerSesion()
       if (sesion?.tipo !== 'PERSONAL') return error(401, 'NO_AUTENTICADO', 'Iniciá sesión.')
 
       const { tarea, respuesta } = tareaParaCompletar(String(params.taskId), sesion.usuarioId)
       if (!tarea) return respuesta
 
+      const { datos = {} } = (await request.json()) as { datos?: Record<string, unknown> }
+      const problema = validarDatos(tarea, datos)
+      if (problema) return error(400, 'VALIDACION', problema)
+
+      if (tarea.taskDefinitionKey === 'Activity_12i2hpf') crearTareasDeRecursos(tarea, datos)
       quitarTarea(tarea.taskId)
       return HttpResponse.json({ completada: true })
     }),

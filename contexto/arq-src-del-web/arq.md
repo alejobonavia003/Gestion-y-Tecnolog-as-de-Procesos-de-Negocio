@@ -2,7 +2,7 @@
 
 Sitio web de la institución: sección pública, portal de empresas y funciones del personal. Hecho con **React + Vite + TypeScript + React Router**. Mientras el backend no tenga los endpoints, usa **MSW** (Mock Service Worker) para simular la API.
 
-**Estado:** etapas 1 a 6 terminadas (base, router, sesión, mocks, logins, formulario de solicitud, bandeja de tareas y formularios del jefe administrativo: propuesta, revisión y archivo).
+**Estado:** etapas 1 a 7 terminadas (base, router, sesión, mocks, logins, formulario de solicitud, bandeja de tareas, formularios del jefe administrativo —propuesta, revisión y archivo— y de administración: lista definitiva y evaluar recursos).
 
 ---
 
@@ -68,10 +68,12 @@ web/
     │   ├── formato.ts       → formato de fechas e importes; conversión datetime-local ↔ ISO (-03:00)
     │   └── formularios/
     │       ├── FormPropuesta.tsx → Registrar y elaborar propuesta / Revisar propuesta
-    │       └── FormArchivar.tsx  → Archivar solicitud
+    │       ├── FormArchivar.tsx  → Archivar solicitud
+    │       ├── FormLista.tsx     → Confeccionar lista definitiva
+    │       └── FormRecursos.tsx  → Evaluar recursos
     ├── mocks/
     │   ├── browser.ts       → crea el worker de MSW
-    │   ├── datos.ts         → usuarios, empresas, cursos, tareas y propuestas de prueba (persisten en localStorage)
+    │   ├── datos.ts         → usuarios, empresas, cursos, tareas, propuestas y nóminas de prueba (persisten en localStorage)
     │   ├── handlers.ts      → respuestas falsas de la API, con el formato de ENDPOINTS_WEB.md
     │   └── pdf.ts           → genera un PDF simple para simular los del backend
     └── pages/
@@ -99,7 +101,7 @@ web/
 | `/login` | Personal | ✅ |
 | `/empresa/login` | Empresa | ✅ |
 | `/tareas` | Personal (protegida) | ✅ |
-| `/tareas/:taskId` | Personal (protegida) | ✅ Propuesta, Revisar, Archivar · resto en etapas 7 y 9 |
+| `/tareas/:taskId` | Personal (protegida) | ✅ Propuesta, Revisar, Archivar, Lista, Evaluar recursos · docentes y Enviar informe en etapa 9 |
 | `/empresa/cursos` | Empresa (protegida) | Relleno |
 | `/empresa/cursos/:cursoId` | Empresa (protegida) | Relleno |
 
@@ -133,6 +135,14 @@ Solo mejora la experiencia en la UI (redirige al login que corresponde). La segu
 - Pide `GET /tareas/{taskId}`, que devuelve la tarea más un `contexto` con lo que necesita su formulario (datos de la solicitud, propuesta vigente, observaciones de la empresa, motivo de archivo).
 - `DetalleTarea.tsx` elige el formulario con un `switch` sobre `taskDefinitionKey`. **Para agregar el formulario de una tarea nueva**: crear el componente en `tareas/formularios/` y sumar un `case`.
 - Cada formulario recibe `tarea` y `alCompletar(mensaje)`. Al terminar bien, vuelve a la bandeja y muestra el mensaje en verde.
+- Si la tarea es de grupo y nadie la reclamó (`reclamable: true`), no muestra el formulario: pide reclamarla desde la bandeja.
+
+| `taskDefinitionKey` | Formulario | Cómo completa |
+|---|---|---|
+| `Propuesta`, `Revisar` | `FormPropuesta` | `POST /tareas/{id}/propuesta` |
+| `Archivar` | `FormArchivar` | `POST /tareas/{id}/completado` con `{}` |
+| `Lista` | `FormLista` | `POST /tareas/{id}/completado` con `{ participantes: [{ nombre }] }` |
+| `Activity_12i2hpf` | `FormRecursos` | `POST /tareas/{id}/completado` con `{ requiereAula, requierePlataforma, requiereEquipamiento }` |
 
 ### PDFs
 `abrirArchivo()` abre la pestaña **antes** de descargar (para que el navegador no la bloquee), baja el PDF con la cookie de sesión y lo muestra. Así funciona igual con el mock y con el backend real.
@@ -180,6 +190,18 @@ Si Alejo cambia algún ID en el BPMN, se actualiza acá.
 ### Archivar solicitud — escenarios 3 y 4
 Muestra el motivo (propuesta rechazada o sin respuesta tras dos recordatorios) y completa la tarea.
 
+### Confeccionar lista definitiva — escenario 8
+- La asigna el Task Listener al administrativo con menos tareas (por eso aparece directo en "Asignadas a mí", sin reclamar).
+- Muestra la **nómina enviada por la empresa** (`contexto.participantes`). Se pueden corregir nombres, quitar y agregar. No se verifica a cada participante (lo aclara el enunciado).
+- Exige al menos un participante.
+
+### Evaluar recursos — escenarios 6, 7 y 8
+- Es tarea de grupo: hay que reclamarla primero.
+- Tres opciones: **aula física** (se reserva automáticamente), **aula virtual** y **equipamiento especial** (generan tareas que se completan desde Flowable). Se puede elegir más de una y **al menos una es obligatoria** (el botón queda deshabilitado si no hay ninguna).
+- Los nombres de las variables (`requiereAula`, `requierePlataforma`, `requiereEquipamiento`) tienen que coincidir con las condiciones del gateway inclusivo del BPMN.
+- La falta de aulas (escenario 7) la maneja el motor después de completar esta tarea; la web no hace nada especial.
+- En el mock, al elegir aula virtual o equipamiento aparecen las tareas nuevas en "Disponibles" con la etiqueta "Se completa desde Flowable".
+
 ---
 
 ## Endpoints en uso
@@ -196,7 +218,7 @@ Detalle completo en `ENDPOINTS_WEB.md`. Todos están en 🧪 Mock por ahora.
 | `GET /tareas?bandeja=asignadas\|disponibles` | Bandeja |
 | `POST /tareas/{taskId}/reclamo` | Botón Reclamar |
 | `GET /tareas/{taskId}` | Abrir una tarea (con su `contexto`) |
-| `POST /tareas/{taskId}/completado` | Archivar solicitud |
+| `POST /tareas/{taskId}/completado` | Archivar solicitud, Lista definitiva, Evaluar recursos |
 | `POST /tareas/{taskId}/propuesta` | Propuesta y Revisar propuesta |
 | `GET /cursos/{cursoId}/propuestas` | Versiones anteriores en Revisar |
 | `GET /cursos/{cursoId}/propuestas/{version}/pdf` | Botón Ver PDF |
@@ -207,7 +229,6 @@ Detalle completo en `ENDPOINTS_WEB.md`. Todos están en 🧪 Mock por ahora.
 
 | Etapa | Qué | Escenarios |
 |---|---|---|
-| 7 | Lista definitiva y Evaluar recursos (al menos uno) | 6, 7, 8 |
 | 8 | Portal de empresa: mis cursos, estado, actividades paralelas | 10 |
 | 9 | Docentes (definir docente, desarrollar curso), Enviar informe, ajustes para celular | 1 |
 | 10 | Cambiar los mocks por el backend real | Todos |

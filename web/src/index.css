@@ -312,3 +312,55 @@ h2 {
 .contenido fieldset > button.secundario {
   align-self: flex-start;
 }
+
+
+/* --- Etapa 7: lista definitiva y recursos --- */
+
+.participantes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0;
+  padding-left: 1.5rem;
+}
+
+.participantes li input {
+  width: calc(100% - 6rem);
+  margin-right: 0.5rem;
+}
+
+.opciones {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.formulario label.opcion {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--color-borde);
+  border-radius: 8px;
+  font-weight: normal;
+  cursor: pointer;
+}
+
+.formulario label.opcion.marcada {
+  border-color: var(--color-primario);
+  background: #eef4fa;
+}
+
+.opcion input {
+  margin-top: 0.25rem;
+}
+
+.opcion .detalle {
+  display: block;
+  color: #5b6773;
+  font-size: 0.9rem;
+}
+
+.formulario.bloque h2 {
+  margin-bottom: 0;
+}

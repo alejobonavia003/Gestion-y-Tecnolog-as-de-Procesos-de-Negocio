@@ -1,4 +1,4 @@
-import type { ContextoTarea, Propuesta } from '../api/tipos'
+import type { ContextoTarea, Participante, Propuesta } from '../api/tipos'
 // Datos de prueba para los mocks. Simulan lo que tendrán Flowable y la BD institucional.
 // Las contraseñas son solo para desarrollo local; en el sistema real valida Flowable.
 
@@ -142,3 +142,15 @@ const PROPUESTAS_INICIALES: PropuestaMock[] = [
 ]
 
 export const propuestas: PropuestaMock[] = cargar('mock-propuestas', PROPUESTAS_INICIALES)
+
+
+// Nómina enviada por la empresa (la usa la tarea "Confeccionar lista definitiva")
+export const nominas: Record<string, Participante[]> = {
+  'c-3': [
+    { nombre: 'Lucía Fernández' },
+    { nombre: 'Martín Gómez' },
+    { nombre: 'Sofía Rodríguez' },
+    { nombre: 'Juan Pérez' },
+    { nombre: 'Valentina López' },
+  ],
+}
