@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { ApiError } from '../../api/cliente'
 import { listarTareas, reclamarTarea } from '../../api/tareas'
 import type { TareaResumen } from '../../api/tipos'
 import { TEXTO_DONDE, infoTarea } from '../../tareas/catalogo'
+import { formatearFecha } from '../../tareas/formato'
 
 /** Pide en paralelo las tareas asignadas y las disponibles para el grupo. */
 async function obtenerTareas() {
@@ -11,16 +12,14 @@ async function obtenerTareas() {
   return { asignadas: mias.items, disponibles: libres.items }
 }
 
-function formatearFecha(iso: string) {
-  return new Date(iso).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })
-}
-
 export function Bandeja() {
   const [asignadas, setAsignadas] = useState<TareaResumen[]>([])
   const [disponibles, setDisponibles] = useState<TareaResumen[]>([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
-  const [aviso, setAviso] = useState('')
+  // Si venimos de completar una tarea, DetalleTarea manda un aviso para mostrar
+  const location = useLocation()
+  const [aviso, setAviso] = useState((location.state as { aviso?: string } | null)?.aviso ?? '')
   const [reclamando, setReclamando] = useState<string | null>(null)
 
   const mostrar = useCallback((resultado: { asignadas: TareaResumen[]; disponibles: TareaResumen[] }) => {

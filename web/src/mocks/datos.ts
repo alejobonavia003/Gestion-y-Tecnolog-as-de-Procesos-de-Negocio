@@ -1,3 +1,4 @@
+import type { ContextoTarea, Propuesta } from '../api/tipos'
 // Datos de prueba para los mocks. Simulan lo que tendrán Flowable y la BD institucional.
 // Las contraseñas son solo para desarrollo local; en el sistema real valida Flowable.
 
@@ -14,6 +15,7 @@ function cargar<T>(clave: string, inicial: T): T {
 export function guardarDatos() {
   localStorage.setItem('mock-cursos', JSON.stringify(cursos))
   localStorage.setItem('mock-tareas', JSON.stringify(tareas))
+  localStorage.setItem('mock-propuestas', JSON.stringify(propuestas))
 }
 
 export const personal = [
@@ -93,6 +95,50 @@ const TAREAS_INICIALES: TareaMock[] = [
     cursoId: 'c-5', cursoNombre: 'Liderazgo', empresaNombre: 'Empresa Demo S.A.',
     creada: '2026-11-06T09:00:00-03:00', asignado: 'docente_01', grupoCandidato: null,
   },
+  {
+    taskId: 't-8', taskDefinitionKey: 'Revisar', nombre: 'Revisar propuesta',
+    cursoId: 'c-6', cursoNombre: 'Ventas consultivas', empresaNombre: 'Otra Empresa SRL',
+    creada: '2026-11-09T12:30:00-03:00', asignado: 'admin_jefe', grupoCandidato: null,
+  },
 ]
 
 export const tareas: TareaMock[] = cargar('mock-tareas', TAREAS_INICIALES)
+
+// Datos de la solicitud original de cada curso (los usa el contexto de las tareas)
+export const solicitudes: Record<string, NonNullable<ContextoTarea['solicitud']>> = {
+  'c-1': {
+    tematica: 'Excel avanzado',
+    descripcion: 'Tablas dinámicas, fórmulas avanzadas y macros para el área contable.',
+    cantidadEstimadaParticipantes: 12,
+    fechasPreferidas: 'Primera semana de diciembre, por la mañana',
+  },
+  'c-6': {
+    tematica: 'Ventas consultivas',
+    descripcion: 'Técnicas de venta consultiva para el equipo comercial.',
+    cantidadEstimadaParticipantes: 8,
+    fechasPreferidas: 'Martes y jueves por la tarde',
+  },
+}
+
+// Motivo de archivo de las tareas "Archivar solicitud" (por curso)
+export const motivosArchivo: Record<string, 'RECHAZADA' | 'SIN_RESPUESTA'> = {
+  'c-2': 'SIN_RESPUESTA',
+}
+
+// Propuestas emitidas, con todas sus versiones
+export type PropuestaMock = Propuesta & { cursoId: string }
+
+const PROPUESTAS_INICIALES: PropuestaMock[] = [
+  {
+    cursoId: 'c-6',
+    version: 1,
+    programa: 'Módulo 1: escucha activa.\nMódulo 2: detección de necesidades.\nMódulo 3: cierre.',
+    presupuesto: { importe: '200000.00', moneda: 'ARS' },
+    fechasPosibles: ['2026-12-02T14:00:00-03:00', '2026-12-04T14:00:00-03:00'],
+    estado: 'MODIFICACIONES',
+    observacionesEmpresa: 'El presupuesto nos queda alto. ¿Se puede reducir a 6 horas y bajar el costo?',
+    creada: '2026-11-05T10:00:00-03:00',
+  },
+]
+
+export const propuestas: PropuestaMock[] = cargar('mock-propuestas', PROPUESTAS_INICIALES)

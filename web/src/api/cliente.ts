@@ -43,3 +43,22 @@ export async function api<T>(ruta: string, opciones: RequestInit = {}): Promise<
   if (respuesta.status === 204) return undefined as T
   return respuesta.json() as Promise<T>
 }
+
+
+/**
+ * Descarga un archivo (por ejemplo, un PDF) y lo abre en una pestaña nueva.
+ * La pestaña se abre ANTES de la descarga para que el navegador no la bloquee como popup.
+ */
+export async function abrirArchivo(ruta: string) {
+  const pestania = window.open('', '_blank')
+  try {
+    const respuesta = await fetch(BASE + ruta, { credentials: 'include' })
+    if (!respuesta.ok) throw new Error(`Error ${respuesta.status}`)
+    const url = URL.createObjectURL(await respuesta.blob())
+    if (pestania) pestania.location.href = url
+    else window.location.href = url
+  } catch (err) {
+    pestania?.close()
+    throw err
+  }
+}

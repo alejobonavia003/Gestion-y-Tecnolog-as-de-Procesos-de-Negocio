@@ -1,6 +1,18 @@
 import { http, HttpResponse } from 'msw/http'
-import type { NuevaSolicitud, Sesion, SolicitudCreada } from '../api/tipos'
-import { CLAVE_DEMO, cuentasEmpresa, cursos, guardarDatos, personal, tareas, type TareaMock } from './datos'
+import type { ContextoTarea, NuevaPropuesta, NuevaSolicitud, Sesion, SolicitudCreada } from '../api/tipos'
+import {
+  CLAVE_DEMO,
+  cuentasEmpresa,
+  cursos,
+  guardarDatos,
+  motivosArchivo,
+  personal,
+  propuestas,
+  solicitudes,
+  tareas,
+  type TareaMock,
+} from './datos'
+import { generarPdf } from './pdf'
 
 const API = '/api/v1'
 
@@ -25,6 +37,42 @@ function error(status: number, codigo: string, mensaje: string) {
 function aResumen(t: TareaMock) {
   const { grupoCandidato, ...resto } = t
   return { ...resto, reclamable: t.asignado === null && grupoCandidato !== null }
+}
+
+/** Arma el contexto que necesita el formulario de cada tipo de tarea. */
+function contextoDe(t: TareaMock): ContextoTarea {
+  const solicitud = solicitudes[t.cursoId]
+  const versiones = propuestas.filter((p) => p.cursoId === t.cursoId)
+  const vigente = versiones.at(-1)
+  switch (t.taskDefinitionKey) {
+    case 'Propuesta':
+      return { solicitud }
+    case 'Revisar':
+      return { solicitud, propuestaVigente: vigente, observacionesEmpresa: vigente?.observacionesEmpresa }
+    case 'Archivar':
+      return { motivoArchivo: motivosArchivo[t.cursoId] ?? 'RECHAZADA' }
+    default:
+      return {}
+  }
+}
+
+/** La tarea existe y está asignada al usuario de la sesión: se puede completar. */
+function tareaParaCompletar(taskId: string, usuarioId: string) {
+  const tarea = tareas.find((t) => t.taskId === taskId)
+  if (!tarea) return { respuesta: error(404, 'NO_ENCONTRADO', 'La tarea no existe o ya fue completada.') }
+  if (tarea.asignado !== usuarioId) {
+    return { respuesta: error(403, 'SIN_PERMISO', 'Solo la persona asignada puede completar la tarea.') }
+  }
+  return { tarea }
+}
+
+/** Simula que el motor completa la tarea: desaparece de la bandeja. */
+function quitarTarea(taskId: string) {
+  tareas.splice(
+    tareas.findIndex((t) => t.taskId === taskId),
+    1,
+  )
+  guardarDatos()
 }
 
 function pagina<T>(items: T[]) {
@@ -142,5 +190,87 @@ export const handlers = [
       tarea.asignado = sesion.usuarioId
       guardarDatos()
       return HttpResponse.json(aResumen(tarea))
+    }),
+
+    // --- Detalle y completado de tareas -----------------------------------------
+
+    http.get(`${API}/tareas/:taskId`, ({ params }) => {
+      const sesion = leerSesion()
+      if (sesion?.tipo !== 'PERSONAL') return error(401, 'NO_AUTENTICADO', 'Iniciá sesión.')
+
+      const tarea = tareas.find((t) => t.taskId === params.taskId)
+      if (!tarea) return error(404, 'NO_ENCONTRADO', 'La tarea no existe o ya fue completada.')
+      const esCandidato = tarea.grupoCandidato !== null && sesion.grupos.includes(tarea.grupoCandidato)
+      if (tarea.asignado !== sesion.usuarioId && !esCandidato) {
+        return error(403, 'SIN_PERMISO', 'No tenés acceso a esta tarea.')
+      }
+
+      return HttpResponse.json({ ...aResumen(tarea), contexto: contextoDe(tarea) })
+    }),
+
+    http.post(`${API}/tareas/:taskId/completado`, ({ params }) => {
+      const sesion = leerSesion()
+      if (sesion?.tipo !== 'PERSONAL') return error(401, 'NO_AUTENTICADO', 'Iniciá sesión.')
+
+      const { tarea, respuesta } = tareaParaCompletar(String(params.taskId), sesion.usuarioId)
+      if (!tarea) return respuesta
+
+      quitarTarea(tarea.taskId)
+      return HttpResponse.json({ completada: true })
+    }),
+
+    // --- Propuestas -------------------------------------------------------------
+
+    http.post(`${API}/tareas/:taskId/propuesta`, async ({ params, request }) => {
+      const sesion = leerSesion()
+      if (sesion?.tipo !== 'PERSONAL') return error(401, 'NO_AUTENTICADO', 'Iniciá sesión.')
+
+      const { tarea, respuesta } = tareaParaCompletar(String(params.taskId), sesion.usuarioId)
+      if (!tarea) return respuesta
+      if (tarea.taskDefinitionKey !== 'Propuesta' && tarea.taskDefinitionKey !== 'Revisar') {
+        return error(409, 'ESTADO_INCOMPATIBLE', 'Esta tarea no es de propuesta.')
+      }
+
+      const datos = (await request.json()) as NuevaPropuesta
+      if (!datos.programa || Number(datos.presupuesto?.importe) <= 0 || !datos.fechasPosibles?.length) {
+        return error(400, 'VALIDACION', 'Completá programa, presupuesto y al menos una fecha.')
+      }
+
+      const version = propuestas.filter((p) => p.cursoId === tarea.cursoId).length + 1
+      propuestas.push({
+        cursoId: tarea.cursoId,
+        version,
+        ...datos,
+        estado: 'ENVIADA',
+        creada: new Date().toISOString(),
+      })
+      quitarTarea(tarea.taskId)
+
+      return HttpResponse.json(
+        { propuestaId: `prop-${tarea.cursoId}-${version}`, propuestaVersion: version, pdfDisponible: true },
+        { status: 201 },
+      )
+    }),
+
+    http.get(`${API}/cursos/:cursoId/propuestas`, ({ params }) => {
+      const items = propuestas
+        .filter((p) => p.cursoId === params.cursoId)
+        .map(({ cursoId: _cursoId, ...resto }) => resto)
+      return HttpResponse.json({ items })
+    }),
+
+    http.get(`${API}/cursos/:cursoId/propuestas/:version/pdf`, ({ params }) => {
+      const p = propuestas.find((x) => x.cursoId === params.cursoId && x.version === Number(params.version))
+      if (!p) return error(404, 'NO_ENCONTRADO', 'No existe esa versión de la propuesta.')
+
+      const pdf = generarPdf([
+        `Propuesta de capacitacion - version ${p.version}`,
+        `Curso: ${params.cursoId}`,
+        `Presupuesto: ${p.presupuesto.moneda} ${p.presupuesto.importe}`,
+        `Fechas posibles: ${p.fechasPosibles.join(', ')}`,
+        'Programa:',
+        ...p.programa.split('\n'),
+      ])
+      return new HttpResponse(pdf, { headers: { 'Content-Type': 'application/pdf' } })
     }),
 ]
