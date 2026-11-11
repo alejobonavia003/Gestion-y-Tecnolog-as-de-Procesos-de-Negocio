@@ -5,7 +5,7 @@ Proyecto académico para implementar la gestión de cursos de capacitación medi
 ## Estado actual
 
 - Backend Spring Boot con endpoint de estado.
-- Entorno Docker para el backend, Flowable, PostgreSQL y pgAdmin.
+- Entorno Docker para la web, Flowable, PostgreSQL y pgAdmin.
 - Consigna y modelos BPMN en `contexto/`.
 
 La conexión del backend con Flowable y las funciones del proceso todavía están pendientes. Arrancar el backend no despliega los modelos BPMN.
@@ -117,7 +117,7 @@ Validar y levantar el entorno:
 
 ```bash
 docker compose --env-file env config --quiet
-docker compose --env-file env up -d
+docker compose --env-file env up -d --build
 docker compose --env-file env ps
 ```
 
@@ -129,6 +129,13 @@ Con los puertos actuales, los accesos son:
 - Flowable: http://localhost:8080/flowable-ui/
 - Backend: http://localhost:8081/api/estado
 - pgAdmin: http://localhost:5050
+- Web: http://localhost:5173
+
+También se puede iniciar todo con `docker compose up -d --build`, usando el
+archivo `.env` que Compose carga automáticamente. La web se compila dentro de
+Docker y se sirve con Nginx. Las peticiones `/api/` se reenvían al backend del
+equipo en el puerto 8081; el backend se inicia por separado con Maven.
+Ver [web/README.md](web/README.md) para configurar otro destino de la API.
 
 Las credenciales corresponden a la configuración del entorno.
 

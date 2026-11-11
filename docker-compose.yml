@@ -1,5 +1,15 @@
 
 services:
+  web:
+    build:
+      context: ./web
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5173:80"
+    environment:
+      BACKEND_URL: ${WEB_BACKEND_URL:-http://host.docker.internal:8081}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
   backend:
     build:
       context: ./backend
