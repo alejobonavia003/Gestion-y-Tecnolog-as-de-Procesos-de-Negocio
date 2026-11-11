@@ -22,10 +22,10 @@ Registro de los endpoints del backend que consume el sitio web. Se completa **a 
 | # | Método y ruta | Pantalla / uso | Rol | En el acuerdo | Estado |
 |---|---|---|---|---|---|
 | 1 | `POST /solicitudes` | Formulario público | Público | Sí | 🧪 |
-| 2 | `POST /sesiones/personal` | Login del personal | Público | Sí | 🧪 |
-| 3 | `POST /sesiones/empresa` | Login de empresa | Público | Sí | 🧪 |
-| 4 | `GET /sesiones/actual` | Saber quién está logueado al recargar | Cualquiera logueado | **No — nuevo** | 🧪 |
-| 5 | `DELETE /sesiones/actual` | Logout | Cualquiera logueado | Sí | 🧪 |
+| 2 | `POST /sesiones/personal` | Login del personal | Público | Sí | 🚀 |
+| 3 | `POST /sesiones/empresa` | Login de empresa | Público | Sí | 🚀 |
+| 4 | `GET /sesiones/actual` | Saber quién está logueado al recargar | Cualquiera logueado | **No — nuevo** | 🚀 |
+| 5 | `DELETE /sesiones/actual` | Logout | Cualquiera logueado | Sí | 🚀 |
 | 6 | `GET /cursos` | Mis cursos | Empresa | Sí | 🧪 |
 | 7 | `GET /cursos/{cursoId}` | Detalle y estado del curso | Empresa dueña / personal | Sí | 🧪 |
 | 8 | `GET /cursos/{cursoId}/actividades` | Actividades en curso (ramas paralelas) | Empresa dueña / personal | Sí | 🧪 |
