@@ -1,0 +1,17 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - link "Institución de Capacitación" [ref=e4] [cursor=pointer]:
+      - /url: /
+    - navigation [ref=e5]:
+      - link "Solicitar capacitación" [ref=e6] [cursor=pointer]:
+        - /url: /solicitar
+      - link "Acceso empresas" [ref=e7] [cursor=pointer]:
+        - /url: /empresa/login
+      - link "Acceso personal" [ref=e8] [cursor=pointer]:
+        - /url: /login
+  - main [ref=e9]:
+    - generic [ref=e10]:
+      - heading "Capacitaciones para empresas" [level=1] [ref=e11]
+      - paragraph [ref=e12]: Diseñamos y dictamos cursos a medida para los equipos de tu empresa.
+      - link "Solicitar una capacitación" [ref=e13] [cursor=pointer]:
+        - /url: /solicitar
