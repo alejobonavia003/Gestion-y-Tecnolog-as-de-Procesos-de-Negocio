@@ -12,9 +12,8 @@ La conexión del backend con Flowable y las funciones del proceso todavía está
 
 ## Requisitos
 
-- JDK 21.
-- Maven.
-- Docker con Docker Compose, para ejecutar el entorno Flowable.
+- Docker con Docker Compose, para ejecutar todo el entorno.
+- JDK 21 y Maven, solo para ejecutar el backend fuera de Docker.
 - Git.
 
 ## Estructura y responsabilidades
@@ -33,6 +32,35 @@ La conexión del backend con Flowable y las funciones del proceso todavía está
 El [acuerdo de integración](docs/ACUERDO_DE_INTEGRACION.md) define contratos iniciales, identificadores y decisiones pendientes. Las carpetas nuevas contienen documentación preparatoria; no implican funcionalidades implementadas ni motores adicionales.
 
 ## Probar el backend
+
+Desde la raíz, iniciar todos los servicios (incluido el backend):
+
+```bash
+docker compose up -d
+curl -i http://localhost:8081/api/estado
+```
+
+Compose construye la imagen del backend en el primer inicio; no hace falta
+tener Java ni Maven instalados en la máquina. **No tiene hot reload:** los
+cambios en el código no se aplican automáticamente al contenedor. Para
+actualizar el backend después de modificarlo, ejecutar desde la raíz:
+
+```bash
+docker compose up -d --build backend
+```
+
+Este comando reconstruye la imagen y recrea el contenedor con los cambios.
+Para ver los logs del backend:
+
+```bash
+docker compose logs -f backend
+```
+
+El backend participa de la red `flowable-net` y se reinicia automáticamente
+con la misma política que Flowable. Actualmente funciona de forma independiente:
+todavía no consume Flowable ni PostgreSQL, por lo que no necesita esperar su arranque.
+
+### Ejecución local sin Docker
 
 Clonar el repositorio usando su URL de GitHub y entrar en la carpeta descargada.
 
@@ -73,7 +101,7 @@ Esta prueba no necesita que Flowable o PostgreSQL estén ejecutándose.
 
 Para detener el backend, presionar Ctrl+C en la terminal donde se inició.
 
-## Ejecutar el entorno Flowable
+## Ejecutar el entorno completo con Docker
 
 Desde la raíz del repositorio, revisar las variables requeridas por
 `docker-compose.yml`.
@@ -99,6 +127,7 @@ Las variables y sus nombres deben coincidir con los definidos en
 Con los puertos actuales, los accesos son:
 
 - Flowable: http://localhost:8080/flowable-ui/
+- Backend: http://localhost:8081/api/estado
 - pgAdmin: http://localhost:5050
 - Web: http://localhost:5173
 
