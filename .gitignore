@@ -1,35 +1,66 @@
-# Maven
-**/target/
+# =====================================================================
+# .gitignore de la raíz del repo
+# Regla general: no se sube nada que se genere al compilar/instalar,
+# ni credenciales, ni configuración personal del IDE o del sistema.
+# =====================================================================
 
-# Variables y configuración local
+# --- Dependencias y compilados -----------------------------------------
+# Java / Maven (backend, app-materiales, motor-flowable, simulador)
+**/target/
+*.class
+# Gradle (por si alguna app lo usa)
+**/.gradle/
+**/build/
+# Node (web y cualquier otra app JS)
+**/node_modules/
+**/dist/
+**/dist-ssr/
+
+# --- Credenciales y configuración local --------------------------------
+# Se sube solo la plantilla env.example, nunca los valores reales
 /env
 /.env
 /.env.*
-!/.env.example
 !/env.example
+!/.env.example
+# Overrides locales de Vite (web/.env.local, etc.). web/.env.mock SÍ se sube: no tiene secretos
+**/*.local
+# Configuración local de Spring
 **/application-local.properties
 **/application-local.yml
 **/application-local.yaml
 
-# Copias y archivos temporales
+# --- Archivos que genera el sistema al ejecutarse ----------------------
+# PDF de propuestas e informes que guarda el backend (ajustar a la carpeta real)
+/backend/almacenamiento/
+/backend/archivos/
+
+# --- Python (minería de procesos, sección 4.4) --------------------------
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+# Ojo: el CSV exportado y la captura de PM4Py SÍ se entregan. No ignorar *.csv ni *.png.
+
+# --- Copias, temporales y registros ------------------------------------
 *.antes-spring
 *.bak
 *.orig
 *.swp
 *.swo
 *~
-
-# Registros
 *.log
 
-# IDE
+# --- IDE ----------------------------------------------------------------
 .idea/
 *.iml
 .vscode/
 .classpath
 .project
 .settings/
+.factorypath
 
-# Sistema operativo
+# --- Sistema operativo -------------------------------------------------
 .DS_Store
 Thumbs.db
