@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -33,13 +34,17 @@ public class FlowableClient {
     private static final Logger log = LoggerFactory.getLogger(FlowableClient.class);
 
     private final RestClient rest;
+    private final RestClient identidad;
+    private final SimpleClientHttpRequestFactory fabrica;
+    private final String identidadUrl;
     private final String procesoClave;
 
     public FlowableClient(@Value("${flowable.rest.url}") String url,
+                          @Value("${flowable.rest.identidad-url}") String identidadUrl,
                           @Value("${flowable.rest.usuario}") String usuario,
                           @Value("${flowable.rest.clave}") String clave,
                           @Value("${flowable.proceso.clave}") String procesoClave) {
-        SimpleClientHttpRequestFactory fabrica = new SimpleClientHttpRequestFactory();
+        this.fabrica = new SimpleClientHttpRequestFactory();
         fabrica.setConnectTimeout(Duration.ofSeconds(3));
         fabrica.setReadTimeout(Duration.ofSeconds(15));
 
@@ -48,6 +53,12 @@ public class FlowableClient {
                 .requestFactory(fabrica)
                 .defaultHeaders(h -> h.setBasicAuth(usuario, clave))
                 .build();
+        this.identidad = RestClient.builder()
+                .baseUrl(identidadUrl)
+                .requestFactory(fabrica)
+                .defaultHeaders(h -> h.setBasicAuth(usuario, clave))
+                .build();
+        this.identidadUrl = identidadUrl;
         this.procesoClave = procesoClave;
     }
 
@@ -93,6 +104,69 @@ public class FlowableClient {
                 .body(JsonNode.class));
         JsonNode data = respuesta.path("data");
         return data.isArray() && !data.isEmpty() ? Optional.of(data.get(0)) : Optional.empty();
+    }
+
+    // --- Identidad (usuarios y grupos de Flowable IDM) -------------------------
+
+    /**
+     * Verifica usuario y contraseña haciendo una consulta CON ESAS credenciales.
+     * 401 = incorrectas. 200 o 403 = correctas (403 solo indica que el usuario no tiene
+     * permiso para la API REST, pero Flowable lo autenticó).
+     */
+    public boolean credencialesValidas(String usuarioId, String clave) {
+        RestClient comoUsuario = RestClient.builder()
+                .baseUrl(identidadUrl)
+                .requestFactory(fabrica)
+                .defaultHeaders(h -> h.setBasicAuth(usuarioId, clave))
+                .build();
+        try {
+            comoUsuario.get().uri("/users/{id}", usuarioId).retrieve().toBodilessEntity();
+            return true;
+        } catch (RestClientResponseException e) {
+            int status = e.getStatusCode().value();
+            if (status == 401) return false;
+            if (status == 403) return true;
+            log.warn("Flowable respondió {} al validar credenciales", status);
+            throw ApiException.motorNoDisponible();
+        } catch (ResourceAccessException e) {
+            log.warn("No se pudo conectar con Flowable: {}", e.getMessage());
+            throw ApiException.motorNoDisponible();
+        }
+    }
+
+    /** Datos del usuario (firstName, lastName, email), o vacío si no existe. */
+    public Optional<JsonNode> buscarUsuario(String usuarioId) {
+        try {
+            return Optional.ofNullable(llamar(() -> identidad.get()
+                    .uri("/users/{id}", usuarioId)
+                    .retrieve()
+                    .body(JsonNode.class)));
+        } catch (ApiException e) {
+            if ("NO_ENCONTRADO".equals(e.getCodigo())) return Optional.empty();
+            throw e;
+        }
+    }
+
+    /** IDs de los grupos a los que pertenece el usuario. */
+    public List<String> gruposDe(String usuarioId) {
+        JsonNode respuesta = llamar(() -> identidad.get()
+                .uri("/groups?member={id}&size=100", usuarioId)
+                .retrieve()
+                .body(JsonNode.class));
+        List<String> grupos = new ArrayList<>();
+        respuesta.path("data").forEach(g -> grupos.add(g.path("id").asText()));
+        return grupos;
+    }
+
+    /** IDs de los usuarios de un grupo (para listar docentes y para el listener de la lista). */
+    public List<String> miembrosDe(String grupoId) {
+        JsonNode respuesta = llamar(() -> identidad.get()
+                .uri("/users?memberOfGroup={g}&size=100", grupoId)
+                .retrieve()
+                .body(JsonNode.class));
+        List<String> usuarios = new ArrayList<>();
+        respuesta.path("data").forEach(u -> usuarios.add(u.path("id").asText()));
+        return usuarios;
     }
 
     // --- Utilidades -----------------------------------------------------------
