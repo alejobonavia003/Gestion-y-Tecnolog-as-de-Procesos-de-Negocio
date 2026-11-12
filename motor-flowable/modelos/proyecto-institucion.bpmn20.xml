@@ -133,12 +133,10 @@
 ">
       <messageEventDefinition messageRef="rechazo"></messageEventDefinition>
     </intermediateCatchEvent>
-    <userTask id="archivar_solicitud" name="Archivar solicitud" flowable:assignee="Jefe-Administrativo" flowable:formFieldValidation="true">
+    <userTask id="archivar_solicitud" name="Archivar solicitud" flowable:candidateGroups="Equipo-Administrativo" flowable:formFieldValidation="true">
       <extensionElements>
-        <modeler:activiti-idm-assignee xmlns:modeler="http://flowable.org/modeler"><![CDATA[true]]></modeler:activiti-idm-assignee>
-        <modeler:assignee-info-email xmlns:modeler="http://flowable.org/modeler"><![CDATA[Jefeadm@gmail.com]]></modeler:assignee-info-email>
-        <modeler:assignee-info-firstname xmlns:modeler="http://flowable.org/modeler"><![CDATA[marcos]]></modeler:assignee-info-firstname>
-        <modeler:assignee-info-lastname xmlns:modeler="http://flowable.org/modeler"><![CDATA[jefeadm]]></modeler:assignee-info-lastname>
+        <modeler:group-info-name-Equipo-Administrativo xmlns:modeler="http://flowable.org/modeler"><![CDATA[Equipo-Administrativo]]></modeler:group-info-name-Equipo-Administrativo>
+        <modeler:activiti-idm-candidate-group xmlns:modeler="http://flowable.org/modeler"><![CDATA[true]]></modeler:activiti-idm-candidate-group>
         <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
       </extensionElements>
     </userTask>
@@ -278,10 +276,12 @@ empresa" flowable:candidateGroups="Equipo-Administrativo" flowable:formFieldVali
     <scriptTask id="enviar_informe" name="Enviar informe a empresa" scriptFormat="groovy" flowable:autoStoreVariables="false">
       <script><![CDATA[println('[Enviar informe] curso ' + execution.getVariable('cursoId'))]]></script>
     </scriptTask>
-    <userTask id="archivar_expediente" name="Archivar expediente" flowable:candidateGroups="Equipo-Administrativo" flowable:formFieldValidation="true">
+    <userTask id="archivar_expediente" name="Archivar expediente" flowable:assignee="Jefe-Administrativo" flowable:formFieldValidation="true">
       <extensionElements>
-        <modeler:group-info-name-Equipo-Administrativo xmlns:modeler="http://flowable.org/modeler"><![CDATA[Equipo-Administrativo]]></modeler:group-info-name-Equipo-Administrativo>
-        <modeler:activiti-idm-candidate-group xmlns:modeler="http://flowable.org/modeler"><![CDATA[true]]></modeler:activiti-idm-candidate-group>
+        <modeler:activiti-idm-assignee xmlns:modeler="http://flowable.org/modeler"><![CDATA[true]]></modeler:activiti-idm-assignee>
+        <modeler:assignee-info-email xmlns:modeler="http://flowable.org/modeler"><![CDATA[Jefeadm@gmail.com]]></modeler:assignee-info-email>
+        <modeler:assignee-info-firstname xmlns:modeler="http://flowable.org/modeler"><![CDATA[marcos]]></modeler:assignee-info-firstname>
+        <modeler:assignee-info-lastname xmlns:modeler="http://flowable.org/modeler"><![CDATA[jefeadm]]></modeler:assignee-info-lastname>
         <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
       </extensionElements>
     </userTask>
