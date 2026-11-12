@@ -221,9 +221,6 @@ empresa" flowable:candidateGroups="Equipo-Administrativo" flowable:formFieldVali
           <modeler:activiti-idm-candidate-group xmlns:modeler="http://flowable.org/modeler"><![CDATA[true]]></modeler:activiti-idm-candidate-group>
           <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
         </extensionElements>
-        <multiInstanceLoopCharacteristics isSequential="true" flowable:collection="nominaParticipantes" flowable:elementVariable="participante">
-          <extensionElements></extensionElements>
-        </multiInstanceLoopCharacteristics>
       </userTask>
       <parallelGateway id="fin_parallelo_preparar_curso"></parallelGateway>
       <endEvent id="sid-F2CCE570-D641-4098-8FED-906C6CBD0504"></endEvent>
@@ -246,9 +243,15 @@ empresa" flowable:candidateGroups="Equipo-Administrativo" flowable:formFieldVali
       <sequenceFlow id="sid-86852A56-83DF-4376-804F-851357E84A2C" sourceRef="parallelo_preparar_curso" targetRef="recibir_nomina"></sequenceFlow>
       <sequenceFlow id="sid-150A0F53-F1C5-48DA-8DD1-F2345FBA7F36" sourceRef="parallelo_preparar_curso" targetRef="evaluar_recursos"></sequenceFlow>
       <sequenceFlow id="sid-74109E1B-A2A4-4017-8562-86A8480C6FA3" sourceRef="evaluar_recursos" targetRef="sid-4CDDB009-F6EA-41A5-BF4B-F1CD23E2B239"></sequenceFlow>
-      <sequenceFlow id="sid-86A01C76-E300-4405-85A1-3663B40AE667" sourceRef="sid-4CDDB009-F6EA-41A5-BF4B-F1CD23E2B239" targetRef="sid-CA7FB99A-93C3-4E18-A119-B6BBE442249A"></sequenceFlow>
-      <sequenceFlow id="sid-177C8CCD-0416-496A-958F-40551C68E1B3" sourceRef="sid-4CDDB009-F6EA-41A5-BF4B-F1CD23E2B239" targetRef="sid-EF3846A7-97AF-4125-BD28-2C448092597D"></sequenceFlow>
-      <sequenceFlow id="sid-C7240CF8-9E91-485F-BA12-B0DB18078EC5" sourceRef="sid-4CDDB009-F6EA-41A5-BF4B-F1CD23E2B239" targetRef="sid-47962569-4911-4D06-94FD-21AE786C3BBF"></sequenceFlow>
+      <sequenceFlow id="sid-86A01C76-E300-4405-85A1-3663B40AE667" sourceRef="sid-4CDDB009-F6EA-41A5-BF4B-F1CD23E2B239" targetRef="sid-CA7FB99A-93C3-4E18-A119-B6BBE442249A">
+        <conditionExpression xsi:type="tFormalExpression"><![CDATA[${requierePlataforma}]]></conditionExpression>
+      </sequenceFlow>
+      <sequenceFlow id="sid-177C8CCD-0416-496A-958F-40551C68E1B3" sourceRef="sid-4CDDB009-F6EA-41A5-BF4B-F1CD23E2B239" targetRef="sid-EF3846A7-97AF-4125-BD28-2C448092597D">
+        <conditionExpression xsi:type="tFormalExpression"><![CDATA[${requiereAula}]]></conditionExpression>
+      </sequenceFlow>
+      <sequenceFlow id="sid-C7240CF8-9E91-485F-BA12-B0DB18078EC5" sourceRef="sid-4CDDB009-F6EA-41A5-BF4B-F1CD23E2B239" targetRef="sid-47962569-4911-4D06-94FD-21AE786C3BBF">
+        <conditionExpression xsi:type="tFormalExpression"><![CDATA[${requiereEquipamiento}]]></conditionExpression>
+      </sequenceFlow>
       <sequenceFlow id="sid-E6A2C96D-D54D-41DA-8D19-A59E73EF3707" sourceRef="sid-16D99AD4-12C2-44F8-9B09-9AC4526792A2" targetRef="liberar_aula"></sequenceFlow>
       <sequenceFlow id="sid-055E8B42-1AA2-45BE-AC8D-96EFDBFEFD9C" sourceRef="sid-93AE2488-5B12-413D-A40B-EB5A6E37CA86" targetRef="liberar_equipamento"></sequenceFlow>
       <sequenceFlow id="sid-96A3E8F1-7F97-4103-B7C1-C6C566337D9C" sourceRef="sid-EF3846A7-97AF-4125-BD28-2C448092597D" targetRef="sid-76E4E49D-A355-4933-9F9D-660D1B1B6F5F"></sequenceFlow>
@@ -278,7 +281,7 @@ empresa" flowable:candidateGroups="Equipo-Administrativo" flowable:formFieldVali
     <scriptTask id="enviar_informe" name="Enviar informe a empresa" scriptFormat="groovy" flowable:autoStoreVariables="false">
       <script><![CDATA[println('[Enviar informe] curso ' + execution.getVariable('cursoId'))]]></script>
     </scriptTask>
-    <userTask id="archivar_expediente" name="Archivar expediente" flowable:candidateGroups="Equipo-Administrativo" flowable:formFieldValidation="true">
+    <userTask id="archivar_expediente" name="Archivar expediente" flowable:assignee="Jefe-Administrativo" flowable:formFieldValidation="true">
       <extensionElements>
         <modeler:group-info-name-Equipo-Administrativo xmlns:modeler="http://flowable.org/modeler"><![CDATA[Equipo-Administrativo]]></modeler:group-info-name-Equipo-Administrativo>
         <modeler:activiti-idm-candidate-group xmlns:modeler="http://flowable.org/modeler"><![CDATA[true]]></modeler:activiti-idm-candidate-group>

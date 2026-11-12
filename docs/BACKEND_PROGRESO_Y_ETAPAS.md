@@ -14,7 +14,8 @@ Este documento sirve para seguir el avance: qué quedó implementado y probado, 
 | Usuarios y grupos en Flowable (`motor-flowable/idm`) | ✅ Script idempotente |
 | Modelo del proceso publicado en Flowable | ✅ Se despliega (con marcadores en tareas automáticas) |
 | Backend etapas 1 a 5 | ✅ Implementadas y probadas |
-| Backend etapas 6 a 11 | ⏳ Pendientes |
+| Backend etapa 6 | Implementada; validación integrada con motor/web pendiente |
+| Backend etapas 7 a 11 | ⏳ Pendientes |
 | Web (etapas 1 a 9) | ✅ Completa contra mocks; falta conectarla al backend real |
 | Extensiones del motor (listeners en Java) | ⏳ Pendiente |
 
@@ -137,6 +138,8 @@ Conviene definirlos **una sola vez** en una clase del backend (por ejemplo `Tare
 ---
 
 ### Etapa 6 — Tareas (#9, #10, #11, #12)
+
+Implementada en `backend-alejo`: controlador, servicio, DTOs, cliente REST y pruebas automatizadas. La validación real con Flowable y web sigue pendiente; no se marcan como 🚀 hasta realizarla. Ver `BACKEND.md`.
 **Objetivo:** que el personal vea su bandeja, abra una tarea con su contexto, la reclame y complete las tareas simples.
 
 | Endpoint | Llamadas a Flowable |

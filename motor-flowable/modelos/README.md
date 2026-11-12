@@ -12,3 +12,13 @@
 2. Volver a exportar la app (.zip) y los XML (.bpmn20.xml y .dmn).
 3. Reemplazar los archivos de esta carpeta y commitear.
 4. Avisar al equipo para que reimporten y publiquen.
+
+## Correcciones de etapa 6 en el XML
+
+`organizacion-cursos.bpmn20.xml` ahora define una única tarea `confeccionar_lista`,
+`archivar_expediente` asignada a `Jefe-Administrativo` y condiciones del gateway
+inclusivo `requiereAula`, `requierePlataforma` y `requiereEquipamiento`.
+Los exports `.zip` y `.bar` previos **no incluyen estos ajustes**. Importar el XML
+actualizado en el Modeler, incorporarlo a la app y volver a publicar/exportar.
+Las instancias existentes conservan su definición anterior. No se realizó un
+despliegue automático ni se migraron instancias.

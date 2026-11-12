@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -106,6 +105,47 @@ public class FlowableClient {
         return data.isArray() && !data.isEmpty() ? Optional.of(data.get(0)) : Optional.empty();
     }
 
+    // --- Tareas ---------------------------------------------------------------
+    public JsonNode tareas(String usuario, List<String> grupos, boolean disponibles, int page, int size) {
+        return llamar(() -> rest.get().uri(b -> {
+            b.path("/runtime/tasks").queryParam("processDefinitionKey", procesoClave)
+                .queryParam("start", (long) page * size).queryParam("size", size)
+                .queryParam("sort", "createTime").queryParam("order", "asc");
+            if (disponibles) b.queryParam("candidateGroups", String.join(",", grupos)).queryParam("unassigned", true);
+            else b.queryParam("assignee", usuario);
+            return b.build();
+        }).retrieve().body(JsonNode.class));
+    }
+
+    public JsonNode tarea(String id) {
+        return llamar(() -> rest.get().uri("/runtime/tasks/{id}", id).retrieve().body(JsonNode.class));
+    }
+
+    public JsonNode identityLinks(String id) {
+        return llamar(() -> rest.get().uri("/runtime/tasks/{id}/identitylinks", id).retrieve().body(JsonNode.class));
+    }
+
+    public JsonNode variables(String processInstanceId) {
+        return llamar(() -> rest.get().uri("/runtime/process-instances/{id}/variables", processInstanceId)
+                .retrieve().body(JsonNode.class));
+    }
+
+    public void reclamar(String id, String usuario) {
+        try {
+            llamar(() -> rest.post().uri("/runtime/tasks/{id}", id).contentType(MediaType.APPLICATION_JSON)
+                    .body(Map.of("action", "claim", "assignee", usuario)).retrieve().toBodilessEntity());
+        } catch (ApiException e) {
+            if (e.getStatus().value() == 409) throw ApiException.conflicto("YA_RECLAMADA", "La tarea ya fue reclamada.");
+            throw e;
+        }
+    }
+
+    public void completar(String id, Map<String, Object> variables) {
+        llamar(() -> rest.post().uri("/runtime/tasks/{id}", id).contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("action", "complete", "variables", aVariablesRest(variables)))
+                .retrieve().toBodilessEntity());
+    }
+
     // --- Identidad (usuarios y grupos de Flowable IDM) -------------------------
 
     /**
@@ -184,13 +224,14 @@ public class FlowableClient {
             Map<String, Object> v = new LinkedHashMap<>();
             v.put("name", nombre);
             v.put("type", tipoRest(valor));
-            v.put("value", valor instanceof Number || valor instanceof Boolean ? valor : valor.toString());
+            v.put("value", valor instanceof Number || valor instanceof Boolean || valor instanceof JsonNode ? valor : valor.toString());
             lista.add(v);
         });
         return lista;
     }
 
     private static String tipoRest(Object valor) {
+        if (valor instanceof JsonNode) return "json";
         if (valor instanceof Integer) return "integer";
         if (valor instanceof Long) return "long";
         if (valor instanceof Boolean) return "boolean";
