@@ -1,6 +1,6 @@
 # Backend: qué está hecho y qué falta
 
-Proyecto **Organización de cursos de capacitación** (GyTPN, UNRC). Estado al **11/11/2026**.
+Proyecto **Organización de cursos de capacitación** (GyTPN, UNRC). Estado al **16/11/2026**.
 
 Este documento sirve para seguir el avance: qué quedó implementado y probado, y qué etapas faltan para completar todos los endpoints que usa la web (`docs/ENDPOINTS_WEB.md`).
 
@@ -15,7 +15,8 @@ Este documento sirve para seguir el avance: qué quedó implementado y probado, 
 | Modelo del proceso publicado en Flowable | ✅ Se despliega (con marcadores en tareas automáticas) |
 | Backend etapas 1 a 5 | ✅ Implementadas y probadas |
 | Backend etapa 6 | Implementada; validación integrada con motor/web pendiente |
-| Backend etapas 7 a 11 | ⏳ Pendientes |
+| Backend etapa 7 | Implementada; validación integrada con motor/web pendiente |
+| Backend etapas 8 a 11 | ⏳ Pendientes |
 | Web (etapas 1 a 9) | ✅ Completa contra mocks; falta conectarla al backend real |
 | Extensiones del motor (listeners en Java) | ⏳ Pendiente |
 
@@ -173,6 +174,8 @@ Implementada en `backend-alejo`: controlador, servicio, DTOs, cliente REST y pru
 ---
 
 ### Etapa 7 — Propuestas y PDF (#13, #14, #15)
+
+Implementada en `backend`: controlador (`PropuestaController`), servicio (`PropuestaService`), DTOs (`NuevaPropuestaRequest`, `PropuestaCreadaResponse`, `PropuestaItemResponse`), generación de PDF con OpenPDF (`2.0.3` en `pom.xml`) y pruebas unitarias (`PropuestaServiceTest`). La validación integrada con Flowable, PostgreSQL y web sigue pendiente; no se marcan como 🚀 hasta realizarla.
 **Objetivo:** el jefe administrativo elabora y revisa propuestas; se genera un PDF por cada versión.
 
 **A implementar:**
