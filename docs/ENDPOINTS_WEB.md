@@ -263,3 +263,11 @@ Se eligió la alternativa más simple: la lista de docentes viene en `contexto.d
 - [ ] Protección CSRF: cómo obtiene la web el token y en qué header lo envía.
 - [ ] Si la web se sirve desde el backend (`static/`) o por separado (y si hace falta CORS).
 - [ ] Si `Enviar propuesta` es tarea humana (necesita pantalla) o automática.
+
+## Implementación etapa 6 (backend-alejo)
+
+Los endpoints #9–#12 están implementados en `/api/v1`, con pruebas automatizadas.
+Se conserva 🧪 en la tabla hasta comprobarlos desde la web. Devuelven los IDs
+actuales del BPMN (tabla en `BACKEND_PROGRESO_Y_ETAPAS.md`), sin traducirlos a los
+IDs viejos de los mocks. `archivar_expediente` también admite completado con datos
+vacíos. La adaptación de los formularios web a esos IDs queda pendiente.

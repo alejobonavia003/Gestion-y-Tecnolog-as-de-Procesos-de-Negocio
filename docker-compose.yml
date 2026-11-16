@@ -7,32 +7,53 @@ services:
     ports:
       - "127.0.0.1:5173:80"
     environment:
-      BACKEND_URL: ${WEB_BACKEND_URL:-http://host.docker.internal:8081}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      BACKEND_URL: ${WEB_BACKEND_URL:-http://backend:8081}
+    depends_on:
+      - backend
+    networks:
+      - flowable-net
   backend:
     build:
       context: ./backend
     restart: unless-stopped
     environment:
       SERVER_ADDRESS: 0.0.0.0
+      INSTITUCION_DB_URL: jdbc:postgresql://postgres:5432/${INSTITUCION_DB_NAME:-institucion}
+      POSTGRES_USER: ${POSTGRES_USER:?Configurar POSTGRES_USER en .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configurar POSTGRES_PASSWORD en .env}
+      FLOWABLE_REST_URL: http://flowable:8080/flowable-ui/process-api
+      FLOWABLE_IDENTIDAD_URL: http://flowable:8080/flowable-ui/process-api/identity
+      FLOWABLE_REST_USUARIO: ${FLOWABLE_REST_USUARIO:?Configurar FLOWABLE_REST_USUARIO en .env}
+      FLOWABLE_REST_CLAVE: ${FLOWABLE_REST_CLAVE:?Configurar FLOWABLE_REST_CLAVE en .env}
+      FLOWABLE_PROCESO_CLAVE: ${FLOWABLE_PROCESO_CLAVE:-process}
+      CURSOS_DATOS_DEMO: ${CURSOS_DATOS_DEMO:-false}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      institucion-db:
+        condition: service_completed_successfully
+      flowable:
+        condition: service_started
     ports:
       - "127.0.0.1:8081:8081"
     networks:
       - flowable-net
+
 
   postgres:
     image: postgres:15
     container_name: flowable-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:?Configurar POSTGRES_DB en .env}
+      POSTGRES_USER: ${POSTGRES_USER:?Configurar POSTGRES_USER en .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configurar POSTGRES_PASSWORD en .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5433:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -44,7 +65,8 @@ services:
     container_name: flowable-persistente
     restart: unless-stopped
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
       SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
@@ -52,6 +74,25 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "127.0.0.1:8080:8080"
+    networks:
+      - flowable-net
+
+  # También funciona con volúmenes existentes: no elimina ni reinicializa datos.
+  institucion-db:
+    image: postgres:15
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB}
+      INSTITUCION_DB_NAME: ${INSTITUCION_DB_NAME:-institucion}
+    volumes:
+      - ./docker/crear-base-institucion.sh:/crear-base-institucion.sh:ro
+    entrypoint: ["sh", "/crear-base-institucion.sh"]
     networks:
       - flowable-net
 

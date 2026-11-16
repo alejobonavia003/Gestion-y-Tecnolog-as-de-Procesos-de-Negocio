@@ -368,3 +368,19 @@ Prueba de integración clave: crear un curso desde la web, localizar su instanci
 - [Configuración de Flowable OSS](https://www.flowable.com/open-source/docs/bpmn/ch03-Configuration): configuración del motor y jobs.
 
 Los diagramas y contratos de este documento son una propuesta de implementación fundada en la consigna. No se generaron scripts SQL ni se modificó el BPMN, el código o el despliegue.
+
+## Implementación de tareas (etapa 6)
+
+`TareaController` expone `/api/v1/tareas`; obtiene el personal con `SesionService`.
+`TareaService` autoriza por asignado o grupo candidato, vincula la instancia al
+curso institucional y construye el contexto de tarea. Solo el asignado completa.
+`FlowableClient` consulta tareas, identity links y variables y envía claim/complete
+por REST. No se agregan tablas de tareas ni acceso a `ACT_*`. Los participantes
+se transfieren como JSON y los recursos como booleanos. Las lecturas institucionales
+usan transacciones de solo lectura para resolver las relaciones JPA.
+
+El XML de proceso elimina la multiinstancia de la lista, asigna archivo al jefe
+administrativo y condiciona las tres ramas de recursos con los mismos nombres
+que acepta la API. Debe volver a desplegarse para afectar nuevas instancias;
+los exports de Modeler aún deben regenerarse. Prueba integrada con el motor y
+adaptación de IDs en la web pendientes.

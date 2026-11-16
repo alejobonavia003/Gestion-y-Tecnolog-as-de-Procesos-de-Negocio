@@ -1,0 +1,1010 @@
+{
+  "info": {
+    "name": "Cursos - Backend etapa 6",
+    "description": "Pruebas manuales por escenarios. Leer README.md antes de ejecutar. No correr toda la colección de una vez: las carpetas requieren estados distintos del BPMN. La sesión se conserva en cookies de Postman.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (pm.request.url.toString().includes(\"{{taskId}}\") && !pm.environment.get(\"taskId\")) { throw new Error(\"Falta taskId: seleccionar una tarea activa desde la bandeja.\"); }"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Sesión y solicitud de prueba",
+      "description": "Preparación. Contraseñas de demo: ajustar el environment a cada instalación.",
+      "item": [
+        {
+          "name": "01 Login jefe administrativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"{{jefeAdministrativo}}\",\n  \"clave\": \"{{clavePersonal}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 Consultar sesión",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/sesiones/actual",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Es personal\", function () { pm.expect(pm.response.json().tipo).to.eql(\"PERSONAL\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 Crear solicitud (opcional, inicia una instancia)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/solicitudes",
+            "description": "Reutilizar la clave reintenta la misma solicitud. Para otra instancia, cambiar idempotencyKey. Con 5 instancias activas el proceso puede terminar NO_VIABLE y no generar tarea.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empresa\": {\n    \"nombre\": \"Empresa pruebas Postman\",\n    \"identificador\": \"postman-etapa6\"\n  },\n  \"contacto\": {\n    \"nombre\": \"Contacto pruebas\",\n    \"email\": \"pruebas@example.com\",\n    \"telefono\": \"3581234567\"\n  },\n  \"tematica\": \"Capacitación de prueba etapa 6\",\n  \"descripcion\": \"Solicitud para verificar bandejas, permisos y tareas del backend.\",\n  \"cantidadEstimadaParticipantes\": 3,\n  \"fechasPreferidas\": \"A coordinar con la empresa\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code === 201) { const r = pm.response.json(); pm.environment.set(\"cursoId\", r.cursoId); pm.environment.set(\"processInstanceId\", r.processInstanceId); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - Bandeja y detalle",
+      "description": "Por defecto taskDefinitionKey=registrar_elaborar_propuesta. La captura busca coincidencia en la primera página y en cursoId si está informado.",
+      "item": [
+        {
+          "name": "01 Asignadas (captura taskId)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas?bandeja=asignadas&page=0&size=20",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {\n  const pagina = pm.response.json();\n  pm.test(\"Bandeja paginada\", function () { pm.expect(pagina.items).to.be.an(\"array\"); pm.expect(pagina).to.have.keys(\"items\", \"total\", \"page\", \"size\"); });\n  pm.environment.unset(\"taskId\");\n  const tarea = pagina.items.find(t => t.taskDefinitionKey === pm.environment.get(\"taskDefinitionKey\") && (!pm.environment.get(\"cursoId\") || t.cursoId === pm.environment.get(\"cursoId\")));\n  if (tarea) { pm.environment.set(\"taskId\", tarea.taskId); console.log(\"Tarea seleccionada\", tarea.taskId); }\n  else { console.warn(\"No hay tarea coincidente. Revisar cursoId/taskDefinitionKey o avanzar el proceso desde Flowable.\"); }\n}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 Detalle de tarea seleccionada",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas/{{taskId}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Detalle con contexto\", function () { const r = pm.response.json(); pm.expect(r.taskId).to.eql(pm.environment.get(\"taskId\")); pm.expect(r.contexto).to.be.an(\"object\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 Bandeja inválida",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas?bandeja=inexistente",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"Código de error\", function () { pm.expect(pm.response.json().codigo).to.eql(\"VALIDACION\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 Tamaño inválido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas?size=101",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"Código de error\", function () { pm.expect(pm.response.json().codigo).to.eql(\"VALIDACION\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05 Tarea inexistente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas/postman-tarea-inexistente",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", function () { pm.response.to.have.status(404); });",
+                  "pm.test(\"Código de error\", function () { pm.expect(pm.response.json().codigo).to.eql(\"NO_ENCONTRADO\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06 Propuesta rechaza completado simple",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/completado",
+            "description": "Solo ejecutar con taskId de registrar_elaborar_propuesta/revisar_propuesta asignada al usuario actual.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"datos\": {}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", function () { pm.response.to.have.status(409); });",
+                  "pm.test(\"Código de error\", function () { pm.expect(pm.response.json().codigo).to.eql(\"ESTADO_INCOMPATIBLE\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Reclamo de tarea de grupo",
+      "description": "Requiere una tarea de grupo sin asignado: por ejemplo evaluar_recursos. Ajustar taskDefinitionKey antes de capturar. La creación de solicitud deja una propuesta asignada al jefe, no una tarea disponible.",
+      "item": [
+        {
+          "name": "01 Login empleado administrativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"{{empleadoAdministrativo}}\",\n  \"clave\": \"{{clavePersonal}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 Disponibles (captura taskId)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas?bandeja=disponibles&page=0&size=20",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {\n  const pagina = pm.response.json();\n  pm.test(\"Bandeja paginada\", function () { pm.expect(pagina.items).to.be.an(\"array\"); pm.expect(pagina).to.have.keys(\"items\", \"total\", \"page\", \"size\"); });\n  pm.environment.unset(\"taskId\");\n  const tarea = pagina.items.find(t => t.taskDefinitionKey === pm.environment.get(\"taskDefinitionKey\") && (!pm.environment.get(\"cursoId\") || t.cursoId === pm.environment.get(\"cursoId\")));\n  if (tarea) { pm.environment.set(\"taskId\", tarea.taskId); console.log(\"Tarea seleccionada\", tarea.taskId); }\n  else { console.warn(\"No hay tarea coincidente. Revisar cursoId/taskDefinitionKey o avanzar el proceso desde Flowable.\"); }\n}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 Detalle candidato",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas/{{taskId}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 Reclamar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/reclamo",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Asignada al empleado\", function () { const r = pm.response.json(); pm.expect(r.asignado).to.eql(pm.environment.get(\"empleadoAdministrativo\")); pm.expect(r.reclamable).to.eql(false); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05 Reclamar nuevamente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/reclamo",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", function () { pm.response.to.have.status(409); });",
+                  "pm.test(\"Código de error\", function () { pm.expect(pm.response.json().codigo).to.eql(\"YA_RECLAMADA\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06 Cambiar al jefe administrativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"{{jefeAdministrativo}}\",\n  \"clave\": \"{{clavePersonal}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "07 Otro usuario no puede completar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/completado",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"datos\": {}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", function () { pm.response.to.have.status(403); });",
+                  "pm.test(\"Código de error\", function () { pm.expect(pm.response.json().codigo).to.eql(\"SIN_PERMISO\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "08 Volver al empleado asignado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"{{empleadoAdministrativo}}\",\n  \"clave\": \"{{clavePersonal}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - Completar evaluación de recursos",
+      "description": "Precondición: taskId de evaluar_recursos activa y asignada al usuario de sesión. Ejecutar el caso válido al final.",
+      "item": [
+        {
+          "name": "01 Sin recursos seleccionados",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/completado",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"datos\": {\n    \"requiereAula\": false,\n    \"requierePlataforma\": false,\n    \"requiereEquipamiento\": false\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"Código de error\", function () { pm.expect(pm.response.json().codigo).to.eql(\"VALIDACION\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 Booleano inválido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/completado",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"datos\": {\n    \"requiereAula\": \"true\",\n    \"requierePlataforma\": false,\n    \"requiereEquipamiento\": false\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"Código de error\", function () { pm.expect(pm.response.json().codigo).to.eql(\"VALIDACION\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 Campo extra",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/completado",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"datos\": {\n    \"requiereAula\": true,\n    \"requierePlataforma\": false,\n    \"requiereEquipamiento\": false,\n    \"assignee\": \"otro\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"Código de error\", function () { pm.expect(pm.response.json().codigo).to.eql(\"VALIDACION\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 Completar con recursos válidos (avanza proceso)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/completado",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"datos\": {\n    \"requiereAula\": true,\n    \"requierePlataforma\": false,\n    \"requiereEquipamiento\": true\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Completada\", function () { pm.expect(pm.response.json().completada).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 - Completar lista definitiva",
+      "description": "Precondición: seleccionar/reclamar confeccionar_lista. Cambiar taskDefinitionKey y recapturar taskId desde la bandeja correspondiente.",
+      "item": [
+        {
+          "name": "01 Lista vacía",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/completado",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"datos\": {\n    \"participantes\": []\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"Código de error\", function () { pm.expect(pm.response.json().codigo).to.eql(\"VALIDACION\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 Participante sin nombre",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/completado",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"datos\": {\n    \"participantes\": [\n      {\n        \"nombre\": \" \"\n      }\n    ]\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"Código de error\", function () { pm.expect(pm.response.json().codigo).to.eql(\"VALIDACION\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 Lista válida (avanza proceso)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/completado",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"datos\": {\n    \"participantes\": [\n      {\n        \"nombre\": \"Ana Pérez\"\n      },\n      {\n        \"nombre\": \"Juan Gómez\"\n      }\n    ]\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Completada\", function () { pm.expect(pm.response.json().completada).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 - Archivar o enviar informe",
+      "description": "Precondición: taskId de archivar_solicitud, enviar_informe o archivar_expediente asignada al usuario de sesión. Cada ejecución completa una sola tarea.",
+      "item": [
+        {
+          "name": "01 Datos extra rechazados",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/completado",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"datos\": {\n    \"campoNoPermitido\": true\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"Código de error\", function () { pm.expect(pm.response.json().codigo).to.eql(\"VALIDACION\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 Completar sin datos (avanza proceso)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/completado",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"datos\": {}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Completada\", function () { pm.expect(pm.response.json().completada).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 - Acceso denegado y cierre",
+      "description": "taskIdAjena debe apuntar a una tarea administrativa ACTIVA. Empresa demo requiere CURSOS_DATOS_DEMO=true. Esta carpeta cambia/cierra la sesión.",
+      "item": [
+        {
+          "name": "01 Login jefe docente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"{{jefeDocente}}\",\n  \"clave\": \"{{clavePersonal}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 No puede ver tarea administrativa ajena",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas/{{taskIdAjena}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", function () { pm.response.to.have.status(403); });",
+                  "pm.test(\"Código de error\", function () { pm.expect(pm.response.json().codigo).to.eql(\"SIN_PERMISO\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 Cerrar sesión",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/sesiones/actual",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 Sin sesión no puede listar",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", function () { pm.response.to.have.status(401); });",
+                  "pm.test(\"Código de error\", function () { pm.expect(pm.response.json().codigo).to.eql(\"NO_AUTENTICADO\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05 Login empresa demo (opcional)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/empresa",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario\": \"{{empresaUsuario}}\",\n  \"clave\": \"{{empresaClave}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06 Empresa no puede listar tareas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", function () { pm.response.to.have.status(403); });",
+                  "pm.test(\"Código de error\", function () { pm.expect(pm.response.json().codigo).to.eql(\"SIN_PERMISO\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
