@@ -1,0 +1,838 @@
+{
+  "info": {
+    "name": "Cursos - Backend etapa 7",
+    "description": "Pruebas manuales de la etapa 7 (propuestas, versionado y PDFs). Leer README_Etapa_7.md antes de ejecutar. No correr toda la colección de una vez: la carpeta 04 requiere que el proceso esté en revisar_propuesta con la v1 en estado MODIFICACIONES. La sesión se conserva en cookies de Postman.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (pm.request.url.toString().includes(\"{{taskId}}\") && !pm.environment.get(\"taskId\")) { throw new Error(\"Falta taskId: capturar una tarea activa desde la bandeja.\"); }",
+          "if (pm.request.url.toString().includes(\"{{cursoId}}\") && !pm.environment.get(\"cursoId\")) { throw new Error(\"Falta cursoId: crear una solicitud o definir cursoId en el environment.\"); }"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Sesión y solicitud inicial",
+      "description": "Preparación: login del Jefe Administrativo, creación de una solicitud de prueba y captura del taskId de registrar_elaborar_propuesta.",
+      "item": [
+        {
+          "name": "01 Login jefe administrativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"{{jefeAdministrativo}}\",\n  \"clave\": \"{{clavePersonal}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Es jefe\", function () { pm.expect(pm.response.json().esJefe).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 Crear solicitud de prueba",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/solicitudes",
+            "description": "Inicia una instancia nueva y guarda cursoId y processInstanceId. Para crear otro curso, cambiar idempotencyKey.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empresa\": {\n    \"nombre\": \"Empresa pruebas Etapa 7\",\n    \"identificador\": \"postman-etapa7\"\n  },\n  \"contacto\": {\n    \"nombre\": \"Contacto pruebas\",\n    \"email\": \"pruebas7@example.com\",\n    \"telefono\": \"3581234567\"\n  },\n  \"tematica\": \"Capacitación Docker y Kubernetes\",\n  \"descripcion\": \"Solicitud para probar propuestas, versionado y generación de PDFs.\",\n  \"cantidadEstimadaParticipantes\": 10,\n  \"fechasPreferidas\": \"Primera quincena de diciembre por la mañana\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code === 201) { const r = pm.response.json(); pm.environment.set(\"cursoId\", r.cursoId); pm.environment.set(\"processInstanceId\", r.processInstanceId); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 Asignadas (captura taskId propuesta inicial)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas?bandeja=asignadas&page=0&size=20",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {\n  const pagina = pm.response.json();\n  pm.environment.unset(\"taskId\");\n  const tarea = pagina.items.find(t => t.taskDefinitionKey === \"registrar_elaborar_propuesta\" && (!pm.environment.get(\"cursoId\") || t.cursoId === pm.environment.get(\"cursoId\")));\n  pm.test(\"Existe tarea registrar_elaborar_propuesta\", function () { pm.expect(tarea).to.not.be.undefined; });\n  if (tarea) { pm.environment.set(\"taskId\", tarea.taskId); console.log(\"Tarea seleccionada:\", tarea.taskId); }\n}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 Detalle de tarea (contexto solicitud)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas/{{taskId}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Incluye contexto solicitud\", function () { const r = pm.response.json(); pm.expect(r.contexto).to.have.property(\"solicitud\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - Validaciones y permisos al registrar propuesta",
+      "description": "Ejecutar antes de enviar la propuesta válida. Verifica errores 400 VALIDACION y 403 SIN_PERMISO sin completar la tarea.",
+      "item": [
+        {
+          "name": "01 Programa vacío (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/propuesta",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"programa\": \"   \",\n  \"presupuesto\": {\n    \"importe\": \"150000.00\",\n    \"moneda\": \"ARS\"\n  },\n  \"fechasPosibles\": [\n    \"2026-12-01T09:00:00-03:00\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"Código VALIDACION\", function () { pm.expect(pm.response.json().codigo).to.eql(\"VALIDACION\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 Importe cero (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/propuesta",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"programa\": \"Módulo 1: Contenedores\",\n  \"presupuesto\": {\n    \"importe\": \"0.00\",\n    \"moneda\": \"ARS\"\n  },\n  \"fechasPosibles\": [\n    \"2026-12-01T09:00:00-03:00\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"Código VALIDACION\", function () { pm.expect(pm.response.json().codigo).to.eql(\"VALIDACION\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 Sin fechas posibles (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/propuesta",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"programa\": \"Módulo 1: Contenedores\",\n  \"presupuesto\": {\n    \"importe\": \"150000.00\",\n    \"moneda\": \"ARS\"\n  },\n  \"fechasPosibles\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"Código VALIDACION\", function () { pm.expect(pm.response.json().codigo).to.eql(\"VALIDACION\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 Moneda inválida (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/propuesta",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"programa\": \"Módulo 1: Contenedores\",\n  \"presupuesto\": {\n    \"importe\": \"150000.00\",\n    \"moneda\": \"BRL\"\n  },\n  \"fechasPosibles\": [\n    \"2026-12-01T09:00:00-03:00\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"Código VALIDACION\", function () { pm.expect(pm.response.json().codigo).to.eql(\"VALIDACION\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05 Login empleado administrativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"{{empleadoAdministrativo}}\",\n  \"clave\": \"{{clavePersonal}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06 Empleado no puede registrar propuesta (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/propuesta",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"programa\": \"Módulo 1: Contenedores\",\n  \"presupuesto\": {\n    \"importe\": \"150000.00\",\n    \"moneda\": \"ARS\"\n  },\n  \"fechasPosibles\": [\n    \"2026-12-01T09:00:00-03:00\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", function () { pm.response.to.have.status(403); });",
+                  "pm.test(\"Código SIN_PERMISO\", function () { pm.expect(pm.response.json().codigo).to.eql(\"SIN_PERMISO\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "07 Volver a login jefe administrativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"{{jefeAdministrativo}}\",\n  \"clave\": \"{{clavePersonal}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Registrar propuesta v1 y descargar PDF",
+      "description": "Crea la versión 1 de la propuesta, genera el PDF en disco y completa la tarea en Flowable.",
+      "item": [
+        {
+          "name": "01 Registrar propuesta inicial v1 (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/propuesta",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"programa\": \"Módulo 1: Introducción a Contenedores.\\nMódulo 2: Orquestación con Kubernetes.\\nMódulo 3: Práctica guiada.\",\n  \"presupuesto\": {\n    \"importe\": \"150000.00\",\n    \"moneda\": \"ARS\"\n  },\n  \"fechasPosibles\": [\n    \"2026-12-01T09:00:00-03:00\",\n    \"2026-12-08T09:00:00-03:00\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code === 201) {\n  const r = pm.response.json();\n  pm.test(\"Versión 1 y PDF disponible\", function () { pm.expect(r.propuestaVersion).to.eql(1); pm.expect(r.pdfDisponible).to.eql(true); });\n  pm.environment.set(\"propuestaVersion\", r.propuestaVersion);\n}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 Listar propuestas del curso",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}/propuestas",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Contiene versión 1\", function () {\n  const items = pm.response.json().items;\n  pm.expect(items).to.be.an(\"array\").that.is.not.empty;\n  pm.expect(items[0].version).to.eql(1);\n  pm.expect(items[0].estado).to.eql(\"ENVIADA\");\n});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 Descargar PDF v1",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}/propuestas/1/pdf",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Content-Type application/pdf\", function () { pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/pdf\"); });",
+                  "pm.test(\"Archivo PDF válido\", function () { pm.expect(pm.response.text().startsWith(\"%PDF-\")).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 Descargar PDF versión inexistente (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}/propuestas/999/pdf",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", function () { pm.response.to.have.status(404); });",
+                  "pm.test(\"Código NO_ENCONTRADO\", function () { pm.expect(pm.response.json().codigo).to.eql(\"NO_ENCONTRADO\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - Revisar propuesta (v2 y control 409)",
+      "description": "Precondición: avanzar el proceso en Flowable simulando respuestaEmpresa=MODIFICACIONES y actualizar el estado de la propuesta v1 a MODIFICACIONES en la BD si aún no está implementada la etapa 10.",
+      "item": [
+        {
+          "name": "01 Asignadas (captura taskId revisar_propuesta)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas?bandeja=asignadas&page=0&size=20",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "if (pm.response.code === 200) {\n  const pagina = pm.response.json();\n  pm.environment.unset(\"taskId\");\n  const tarea = pagina.items.find(t => t.taskDefinitionKey === \"revisar_propuesta\" && (!pm.environment.get(\"cursoId\") || t.cursoId === pm.environment.get(\"cursoId\")));\n  pm.test(\"Existe tarea revisar_propuesta\", function () { pm.expect(tarea).to.not.be.undefined; });\n  if (tarea) { pm.environment.set(\"taskId\", tarea.taskId); console.log(\"Tarea revisión seleccionada:\", tarea.taskId); }\n}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 Detalle revisar_propuesta (propuestaVigente)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas/{{taskId}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Contexto incluye propuestaVigente\", function () {\n  const ctx = pm.response.json().contexto;\n  pm.expect(ctx).to.have.property(\"propuestaVigente\");\n  pm.expect(ctx).to.have.property(\"observacionesEmpresa\");\n});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 Revisión con versión desactualizada (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/propuesta",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"programa\": \"Programa ajustado\",\n  \"presupuesto\": {\n    \"importe\": \"125000.00\",\n    \"moneda\": \"ARS\"\n  },\n  \"fechasPosibles\": [\n    \"2026-12-10T09:00:00-03:00\"\n  ],\n  \"versionBase\": 999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", function () { pm.response.to.have.status(409); });",
+                  "pm.test(\"Código VERSION_DESACTUALIZADA\", function () { pm.expect(pm.response.json().codigo).to.eql(\"VERSION_DESACTUALIZADA\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 Revisión válida crea v2 (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/propuesta",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"programa\": \"Módulo 1: Contenedores (resumido).\\nMódulo 2: Kubernetes práctico.\",\n  \"presupuesto\": {\n    \"importe\": \"120000.00\",\n    \"moneda\": \"ARS\"\n  },\n  \"fechasPosibles\": [\n    \"2026-12-10T09:00:00-03:00\"\n  ],\n  \"versionBase\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code === 201) {\n  const r = pm.response.json();\n  pm.test(\"Versión 2 y PDF disponible\", function () { pm.expect(r.propuestaVersion).to.eql(2); pm.expect(r.pdfDisponible).to.eql(true); });\n  pm.environment.set(\"propuestaVersion\", r.propuestaVersion);\n}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05 Listar propuestas (v2 y v1)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}/propuestas",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Orden descendente v2 luego v1\", function () {\n  const items = pm.response.json().items;\n  pm.expect(items.length).to.be.at.least(2);\n  pm.expect(items[0].version).to.eql(2);\n  pm.expect(items[1].version).to.eql(1);\n});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06 Descargar PDF v2",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}/propuestas/2/pdf",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Content-Type application/pdf\", function () { pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/pdf\"); });",
+                  "pm.test(\"Archivo PDF válido\", function () { pm.expect(pm.response.text().startsWith(\"%PDF-\")).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "07 PDF v1 sigue intacto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}/propuestas/1/pdf",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Archivo PDF válido\", function () { pm.expect(pm.response.text().startsWith(\"%PDF-\")).to.eql(true); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 - Acceso sin sesión y aislamiento de empresa",
+      "description": "Cierra la sesión y verifica 401 sin autenticar y 403/404 con empresa demo.",
+      "item": [
+        {
+          "name": "01 Cerrar sesión",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/sesiones/actual",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 Listar propuestas sin sesión (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}/propuestas",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", function () { pm.response.to.have.status(401); });",
+                  "pm.test(\"Código NO_AUTENTICADO\", function () { pm.expect(pm.response.json().codigo).to.eql(\"NO_AUTENTICADO\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 Descargar PDF sin sesión (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}/propuestas/1/pdf",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", function () { pm.response.to.have.status(401); });",
+                  "pm.test(\"Código NO_AUTENTICADO\", function () { pm.expect(pm.response.json().codigo).to.eql(\"NO_AUTENTICADO\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 Login empresa demo (opcional)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/empresa",
+            "description": "Requiere CURSOS_DATOS_DEMO=true.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario\": \"{{empresaUsuario}}\",\n  \"clave\": \"{{empresaClave}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05 Empresa no puede registrar propuesta (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/cualquier-tarea/propuesta",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"programa\": \"Módulo 1\",\n  \"presupuesto\": {\n    \"importe\": \"1000.00\",\n    \"moneda\": \"ARS\"\n  },\n  \"fechasPosibles\": [\n    \"2026-12-01T09:00:00-03:00\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", function () { pm.response.to.have.status(403); });",
+                  "pm.test(\"Código SIN_PERMISO\", function () { pm.expect(pm.response.json().codigo).to.eql(\"SIN_PERMISO\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06 Empresa consulta curso ajeno o inexistente (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}/propuestas",
+            "description": "empresa-demo no es dueña del curso creado con identificador postman-etapa7, por lo que debe recibir 404.",
+            "body": null
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", function () { pm.response.to.have.status(404); });",
+                  "pm.test(\"Código NO_ENCONTRADO\", function () { pm.expect(pm.response.json().codigo).to.eql(\"NO_ENCONTRADO\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
