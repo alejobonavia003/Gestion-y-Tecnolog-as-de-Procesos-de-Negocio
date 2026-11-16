@@ -8,9 +8,11 @@ Proyecto académico para implementar la gestión de cursos de capacitación medi
 - Entorno Docker para la web, Flowable, PostgreSQL y pgAdmin.
 - Consigna y modelos BPMN en `contexto/`.
 
-La conexión del backend con Flowable y las funciones del proceso todavía están pendientes. Arrancar el backend no despliega los modelos BPMN.
+El backend se conecta por REST a Flowable y usa una base institucional separada en PostgreSQL. Arrancar el backend no despliega los modelos BPMN.
 
 ## Requisitos
+
+Para instalar esta versión en otra máquina, seguir [Instalación para el equipo](docs/INSTALACION_EQUIPO.md).
 
 - Docker con Docker Compose, para ejecutar todo el entorno.
 - JDK 21 y Maven, solo para ejecutar el backend fuera de Docker.
@@ -36,8 +38,9 @@ El [acuerdo de integración](docs/ACUERDO_DE_INTEGRACION.md) define contratos in
 Desde la raíz, iniciar todos los servicios (incluido el backend):
 
 ```bash
-docker compose up -d
-curl -i http://localhost:8081/api/estado
+cp env.example .env # Solo en la primera instalación; ajustar las credenciales
+docker compose up -d --build
+curl -i http://localhost:8081/api/v1/estado
 ```
 
 Compose construye la imagen del backend en el primer inicio; no hace falta
@@ -56,9 +59,14 @@ Para ver los logs del backend:
 docker compose logs -f backend
 ```
 
-El backend participa de la red `flowable-net` y se reinicia automáticamente
-con la misma política que Flowable. Actualmente funciona de forma independiente:
-todavía no consume Flowable ni PostgreSQL, por lo que no necesita esperar su arranque.
+El backend usa `postgres:5432` y `flowable:8080` dentro de la red de Docker.
+Compose espera a que PostgreSQL esté disponible y crea la base `institucion`
+si falta, conservando los datos existentes. La web reenvía `/api/` al servicio
+`backend:8081`. Flowable puede tardar en iniciar; comprobar la integración con:
+
+```bash
+curl -i http://localhost:8081/api/v1/diagnostico/flowable
+```
 
 ### Ejecución local sin Docker
 
@@ -79,7 +87,7 @@ http://localhost:8081
 Desde otra terminal:
 
 ```bash
-curl -i http://localhost:8081/api/estado
+curl -i http://localhost:8081/api/v1/estado
 ```
 
 Resultado esperado: HTTP 200 y un JSON equivalente a:
@@ -95,46 +103,41 @@ El orden de las propiedades puede variar.
 
 También se puede abrir en el navegador:
 
-http://localhost:8081/api/estado
+http://localhost:8081/api/v1/estado
 
-Esta prueba no necesita que Flowable o PostgreSQL estén ejecutándose.
+El backend necesita PostgreSQL y la configuración de `.env` también al ejecutarse
+fuera de Docker. Para probar la integración completa, Flowable debe estar disponible.
 
 Para detener el backend, presionar Ctrl+C en la terminal donde se inició.
 
 ## Ejecutar el entorno completo con Docker
 
-Desde la raíz del repositorio, revisar las variables requeridas por
-`docker-compose.yml`.
-
-Los comandos siguientes utilizan el archivo local `env`. El ejemplo
-`env.example` todavía no está disponible. El inventario de Git muestra
-`env` y `.env` rastreados, aunque estén enumerados en `.gitignore`;
-no se revisa ni publica su contenido en esta tarea. Consultar la sección J
-del [acuerdo de integración](docs/ACUERDO_DE_INTEGRACION.md) antes de
-acordar ejemplos de configuración o incorporar credenciales nuevas.
-
-Validar y levantar el entorno:
+Desde la raíz, copiar `env.example` a `.env` y ajustar sus valores.
+En una instalación existente, conservar el usuario y la contraseña con los que
+se inicializó el volumen PostgreSQL: cambiar `.env` no cambia esas credenciales.
+`FLOWABLE_REST_USUARIO` y `FLOWABLE_REST_CLAVE` deben corresponder a una cuenta
+con acceso a la API REST de Flowable.
 
 ```bash
-docker compose --env-file env config --quiet
-docker compose --env-file env up -d --build
-docker compose --env-file env ps
+cp env.example .env # Solo si todavía no existe .env
+# Editar .env antes de continuar
+docker compose config --quiet
+docker compose up -d --build
+docker compose ps -a
 ```
 
-Las variables y sus nombres deben coincidir con los definidos en
-`docker-compose.yml`.
+El servicio `institucion-db` termina con código 0 después de comprobar o crear
+la base institucional. Es normal que aparezca como `Exited (0)`.
 
 Con los puertos actuales, los accesos son:
 
 - Flowable: http://localhost:8080/flowable-ui/
-- Backend: http://localhost:8081/api/estado
+- Backend: http://localhost:8081/api/v1/estado
 - pgAdmin: http://localhost:5050
 - Web: http://localhost:5173
 
-También se puede iniciar todo con `docker compose up -d --build`, usando el
-archivo `.env` que Compose carga automáticamente. La web se compila dentro de
-Docker y se sirve con Nginx. Las peticiones `/api/` se reenvían al backend del
-equipo en el puerto 8081; el backend se inicia por separado con Maven.
+La web se compila dentro de Docker y se sirve con Nginx. No hace falta iniciar
+Maven fuera de Docker. Los cambios de código requieren reconstruir la imagen.
 Ver [web/README.md](web/README.md) para configurar otro destino de la API.
 
 Las credenciales corresponden a la configuración del entorno.
@@ -142,7 +145,7 @@ Las credenciales corresponden a la configuración del entorno.
 Para detener los contenedores conservando los volúmenes:
 
 ```bash
-docker compose --env-file env stop
+docker compose stop
 ```
 
 ## Clases de inicio
