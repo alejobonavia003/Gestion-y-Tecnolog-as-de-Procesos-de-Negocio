@@ -262,4 +262,18 @@ public class FlowableClient {
             throw ApiException.motorNoDisponible();
         }
     }
+
+    public JsonNode tareasDeInstancia(String processInstanceId) {
+        return llamar(() -> rest.get()
+                .uri("/runtime/tasks?processInstanceId={id}&size=100", processInstanceId)
+                .retrieve()
+                .body(JsonNode.class));
+    }
+
+    public JsonNode ejecucionesDeInstancia(String processInstanceId) {
+        return llamar(() -> rest.get()
+                .uri("/runtime/executions?processInstanceId={id}&size=100", processInstanceId)
+                .retrieve()
+                .body(JsonNode.class));
+    }
 }
