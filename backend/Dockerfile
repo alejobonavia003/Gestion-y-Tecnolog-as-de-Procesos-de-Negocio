@@ -7,6 +7,9 @@ RUN mvn -B clean verify
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 COPY --from=build /app/target/cursos-backend-0.0.1-SNAPSHOT.jar app.jar
+RUN mkdir -p /app/almacenamiento/propuestas \
+    && chown -R 10001:10001 /app/almacenamiento \
+    && chmod -R 750 /app/almacenamiento
 USER 10001:10001
 EXPOSE 8081
 ENTRYPOINT ["java", "-jar", "app.jar"]
