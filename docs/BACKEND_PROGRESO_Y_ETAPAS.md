@@ -1,8 +1,8 @@
 # Backend: qué está hecho y qué falta
 
-Proyecto **Organización de cursos de capacitación** (GyTPN, UNRC). Estado al **16/11/2026**.
+Proyecto **Organización de cursos de capacitación** (GyTPN, UNRC). Estado al **17/11/2026**.
 
-Este documento sirve para seguir el avance: qué quedó implementado y probado, y qué etapas faltan para completar todos los endpoints que usa la web (`docs/ENDPOINTS_WEB.md`).
+Este documento sirve para seguir el avance: qué quedó implementado y probado, y qué etapas faltan para completar todos los endpoints que usa la web (`docs/ENDPOINTS_WEB.md`) y los entregables de la consigna V3.
 
 ---
 
@@ -16,9 +16,12 @@ Este documento sirve para seguir el avance: qué quedó implementado y probado, 
 | Backend etapas 1 a 5 | ✅ Implementadas y probadas |
 | Backend etapa 6 | Implementada; validación integrada con motor/web pendiente |
 | Backend etapa 7 | Implementada; validación integrada con motor/web pendiente |
-| Backend etapas 8 a 11 | ⏳ Pendientes |
+| Backend etapa 8 | Implementada; validación integrada con motor/web pendiente |
+| Backend etapas 9 a 11 | ⏳ Pendientes |
 | Web (etapas 1 a 9) | ✅ Completa contra mocks; falta conectarla al backend real |
 | Extensiones del motor (listeners en Java) | ⏳ Pendiente |
+| App de Materiales (`app-materiales/`, API Java) | ⏳ Pendiente |
+| Consultas históricas (4.3) y Minería PM4Py (4.4) | ⏳ Pendiente |
 
 ### Endpoints
 
@@ -175,7 +178,7 @@ Implementada en `backend-alejo`: controlador, servicio, DTOs, cliente REST y pru
 
 ### Etapa 7 — Propuestas y PDF (#13, #14, #15)
 
-Implementada en `backend`: controlador (`PropuestaController`), servicio (`PropuestaService`), DTOs (`NuevaPropuestaRequest`, `PropuestaCreadaResponse`, `PropuestaItemResponse`), generación de PDF con OpenPDF (`2.0.3` en `pom.xml`) y pruebas unitarias (`PropuestaServiceTest`). La validación integrada con Flowable, PostgreSQL y web sigue pendiente; no se marcan como 🚀 hasta realizarla.
+Implementada en `backend`: controlador (`PropuestaController`), servicio (`PropuestaService`), DTOs (`NuevaPropuestaRequest`, `PropuestaCreadaResponse`, `PropuestaItemResponse`), generación de PDF con OpenPDF (`2.0.3` en `pom.xml`), pruebas unitarias (`PropuestaServiceTest`) y colección Postman (`docs/postman/`). La validación integrada con Flowable y web sigue pendiente; no se marcan como 🚀 hasta realizarla.
 **Objetivo:** el jefe administrativo elabora y revisa propuestas; se genera un PDF por cada versión.
 
 **A implementar:**
@@ -197,6 +200,8 @@ Implementada en `backend`: controlador (`PropuestaController`), servicio (`Propu
 ---
 
 ### Etapa 8 — Portal de empresa y habilitación de acceso (#6, #7, #8)
+
+Implementada en `backend`: controlador (`CursoController`), servicio (`CursoService`), DTOs (`CursoResumenResponse`, `CursoDetalleResponse`, `ActividadCursoResponse`, `ActividadesCursoResponse`), consultas en `CursoRepository` y `FlowableClient` (`tareasDeInstancia`, `ejecucionesDeInstancia`), pruebas unitarias (`CursoServiceTest`) y colección Postman (`Etapa_8.postman_collection.json`). Queda pendiente el disparo automático de habilitación de `CuentaEmpresa` al aceptar la propuesta (etapa 10) y la validación integrada con la web; no se marcan como 🚀 hasta realizarla.
 **Objetivo:** la empresa entra con su cuenta y ve sus cursos, el estado de cada uno y las actividades en curso.
 
 **A implementar:**
@@ -222,15 +227,17 @@ Implementada en `backend`: controlador (`PropuestaController`), servicio (`Propu
   - Completar la tarea con la variable `docenteId`.
   - El contexto del #10 incluye `docentes` (los tres, con `esJefe`).
 - `POST /tareas/{id}/finalizacion-dictado` (tarea `desarrollar_curso`, solo el asignado). Si la tarea no está activa → 409.
-- `GET /cursos/{id}/informe/pdf`. Si el informe tiene PDF, se sirve. El resumen va en el contexto de `enviar_informe` (`informe.resumen`, `pdfDisponible`).
+- `GET /cursos/{id}/informe/pdf`. Si el informe tiene PDF, se sirve. El resumen va en el contexto de `enviar_informe` (`informe.resumen`, `pdfDisponible`). *(En la V3 el PDF del informe ya no es obligatorio).*
 - Opcional, según el acuerdo: `POST /cursos/{id}/informe` (subir un PDF o generarlo desde el contenido).
 
-**Depende del modelo:** `desarrollar_curso` tiene que tener `flowable:assignee="${docenteId}"` (hoy está asignada al grupo).
+**Depende del modelo:**
+- `desarrollar_curso` tiene que tener `flowable:assignee="${docenteId}"` (hoy está asignada al grupo).
+- El timer previo *Fecha programada* tiene que usar una variable dinámica (ej. `fechaCurso`, definida al aceptar la propuesta en la etapa 10), sin fecha fija en el diseño (sección 3.5 de la V3).
 
 ---
 
 ### Etapa 10 — Simulador de comunicaciones de la empresa
-**Objetivo:** simular lo que la empresa haría por mail: aceptar, rechazar, pedir modificaciones, enviar la nómina y cancelar. Lo usa la GUI del simulador (4º integrante).
+**Objetivo:** simular lo que la empresa haría por mail: aceptar, rechazar, pedir modificaciones, enviar la nómina y cancelar. Lo usa el simulador (`simulador-rest/`, sección 4.2.2 de la V3: los grupos de hasta 3 integrantes pueden hacerlo por CLI sin GUI).
 
 | Endpoint | Qué hace |
 |---|---|
@@ -242,9 +249,9 @@ Implementada en `backend`: controlador (`PropuestaController`), servicio (`Propu
 
 | `tipo` | Datos | Variables que fija | Mensaje BPMN |
 |---|---|---|---|
-| `ACEPTACION` | `propuestaVersion`, `fechaCurso` | `respuestaEmpresa=ACEPTADA`, `fechaCurso` | definir con Alejo |
-| `RECHAZO` | `propuestaVersion` | `respuestaEmpresa=RECHAZADA` | definir con Alejo |
-| `MODIFICACION` | `propuestaVersion`, `observacionesEmpresa` | `respuestaEmpresa=MODIFICACIONES`, `observacionesEmpresa` | definir con Alejo |
+| `ACEPTACION` | `propuestaVersion`, `fechaCurso` | `respuestaEmpresa=ACEPTADA`, `fechaCurso` | `aceptacion` (verificar en BPMN) |
+| `RECHAZO` | `propuestaVersion` | `respuestaEmpresa=RECHAZADA` | `rechazo` (verificar en BPMN) |
+| `MODIFICACION` | `propuestaVersion`, `observacionesEmpresa` | `respuestaEmpresa=MODIFICACIONES`, `observacionesEmpresa` | `modificaciones` (ya verificado en BPMN) |
 | `NOMINA` | `participantes` | `participantes` | definir con Alejo |
 | `CANCELACION` | — | — (el motor fija `resultadoProceso=CANCELADO`) | **`cancelacionEmpresa`** (ya definido) |
 
@@ -273,7 +280,7 @@ Si no hay una ejecución suscrita, la acción no está habilitada en ese momento
 - **Servir la web:** copiar el `dist/` de la web a `static/` del backend, o seguir sirviéndola aparte con el proxy (en ese caso, revisar CORS).
 - **Backend en Docker:** descomentar el servicio del compose (el Dockerfile multi-stage ya existe) y usar `FLOWABLE_REST_URL=http://flowable:8080/...` y `postgres:5432` dentro de la red.
 - **Sacar** `DiagnosticoController` y `motor-flowable/prueba/`.
-- **Escenarios de punta a punta:** viable, no viable, rechazo, modificaciones, falta de respuesta, cancelación con compensaciones y curso completo con informe.
+- **Escenarios de punta a punta:** verificar los 11 escenarios de demostración de la sección 5 de la V3 (aceptación y finalización con liberación de recursos, modificaciones, rechazo, falta de respuesta, no viable por límite de 5 cursos, cancelación con compensaciones, falta de aulas disponibles, asignación/reclamo de tareas, solicitud web, portal de empresa, y app de materiales por API Java + simulador REST).
 
 ---
 
@@ -285,7 +292,7 @@ Si no hay una ejecución suscrita, la acción no está habilitada en ese momento
   - `EN_DESARROLLO`: cuando empieza el dictado.
   - ...y así con los demás.
 
-  Las transiciones que hace solo el motor (timers, fin del proceso) las informa un listener. **Acordar la tabla completa** con Alejo y Lauty antes de la etapa 8.
+  Las transiciones que hace solo el motor (timers, fin del proceso) las informa el `FinProcesoListener`. Terminar de cerrar la tabla completa de transiciones con el equipo antes de la etapa 10.
 - **Una sola variable de resultado:** `resultadoProceso` (`NO_VIABLE`, `CANCELADO`, `RECHAZADO`, `SIN_RESPUESTA`, `FINALIZADO`). El modelo todavía usa `resultado = 'cancelado'` en algún lugar.
 - **Instancias de prueba:** cuentan para `cantCursos`. Borrarlas después de probar (`DELETE runtime/process-instances/{id}`).
 - **La web nunca manda** `usuarioId`, `assignee` ni `empresaId`: el backend los toma de la sesión.
@@ -294,16 +301,16 @@ Si no hay una ejecución suscrita, la acción no está habilitada en ese momento
 
 ## 5. Pendientes del motor (`motor-flowable/`)
 
-**Extensiones (jar con `maven.compiler.release=11`, que se carga en el contenedor de Flowable UI):**
-- `AsignarListaListener`: Task Listener que asigna `confeccionar_lista` al administrativo con menos tareas.
-- `FinProcesoListener`: Execution Listener de fin; escribe el estado final en `institucion` por JDBC (`postgres:5432`).
-- Dockerfile de Flowable UI que agregue el jar. Hace falta la ruta de librerías de la imagen (está en el material de la cátedra).
+**Extensiones (jar con `maven.compiler.release=11`, que se carga en `/app/WEB-INF/lib/` del contenedor de Flowable UI):**
+- `AsignarListaListener`: Task Listener en el evento `create` de `confeccionar_lista`; consulta el grupo `Equipo-Administrativo`, cuenta solo tareas de usuario pendientes **asignadas** (sin contar candidatas sin reclamar) y asigna al que tenga menos.
+- `FinProcesoListener`: Execution Listener de fin; escribe el estado final en `institucion` por JDBC (`postgres:5432`) según `resultadoProceso`.
+- Dockerfile o script de copia del `.jar` a `flowable-persistente:/app/WEB-INF/lib/` y reinicio del contenedor.
 
 **Correcciones del modelo que quedan** (de `INICIO_Y_VIABILIDAD.md`, sección 7):
-- [ ] `desarrollar_curso` con `assignee="${docenteId}"`.
+- [ ] `desarrollar_curso` con `assignee="${docenteId}"` y timer previo *Fecha programada* leyendo variable dinámica.
 - [ ] `confeccionar_lista`: una sola tarea, no multi-instancia.
 - [ ] Aula física y aula virtual invertidas: la física es la automática (web service simulado) y la virtual es la del administrativo.
-- [ ] Error por falta de aulas (escenario 7).
+- [ ] Error por falta de aulas disponibles y generación de la excepción correspondiente (escenario 7).
 - [ ] "Habilitar acceso de la empresa": automática.
 - [ ] `archivar_expediente`: asignada al jefe administrativo.
 - [x] `messageRef` del inicio de la cancelación (`cancelacionEmpresa`).
@@ -320,3 +327,26 @@ Si no hay una ejecución suscrita, la acción no está habilitada en ese momento
 - [ ] PR de `luka/web-base` → `main`, y después merge de `main` en `backend`.
 - [ ] Pasar del mock al backend real endpoint por endpoint, a medida que cada etapa queda 🚀.
 - [ ] CSRF (etapa 11).
+
+---
+
+## 7. Pendientes de la consigna fuera del backend (V3)
+
+### 7.1 App de Materiales (`app-materiales/`, sección 4.2.1)
+- [ ] Aplicación de escritorio con interfaz gráfica en Java conectada **directamente a la base `flowable` de Postgres mediante la API Java de Flowable** (`TaskService`, `IdentityService`; sin pasar por el backend REST ni usar H2 en memoria).
+- [ ] Permitir identificarse a un administrativo, consultar tareas `preparar_materiales` asignadas o disponibles para su grupo, reclamar y completar la tarea.
+
+### 7.2 Consultas históricas sobre Flowable (sección 4.3)
+Pueden integrarse en `app-materiales/` o ejecutarse y mostrarse por consola:
+- [ ] **4.3.1 Resultados de las solicitudes:** tabla con cantidad y porcentaje sobre el total de instancias terminadas (`FINALIZADO`, `CANCELADO`, `RECHAZADO`, `NO_VIABLE`, `CERRADO_SIN_RESPUESTA`).
+- [ ] **4.3.2 Análisis de la preparación paralela:** duración promedio de las ramas de inscripciones, materiales y recursos (desde activación hasta finalización completa, excluyendo preparaciones canceladas).
+- [ ] **4.3.3 Distribución de tareas:** tabla con cantidad de tareas de usuario completadas por cada administrativo y docente (excluyendo pendientes, interrumpidas o canceladas).
+
+### 7.3 Introducción a la minería de procesos con PM4Py (sección 4.4)
+- [ ] Exportar CSV de actividades históricas de la etapa de negociación adaptando `exportar_history.py` al proceso implementado.
+- [ ] Ejecutar análisis con `analizar.py` / PM4Py para obtener representación gráfica e identificar los **3 recorridos más frecuentes** (cantidad y %).
+- [ ] Redactar conclusión breve comparando los resultados con el modelo BPMN (coincidencias, diferencias y limitaciones) y guardar CSV, código/instrucciones y captura.
+
+### 7.4 Entregables escritos y de demostración (sección 5)
+- [ ] Informe breve explicando variables del proceso, *listeners* y decisiones de implementación.
+- [ ] Instrucciones para configurar usuarios/grupos y ejecutar el motor y las 3 aplicaciones externas (`web`/`backend`, `app-materiales`, `simulador-rest`).

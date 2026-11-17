@@ -1,0 +1,438 @@
+{
+  "info": {
+    "name": "Cursos - Backend etapa 8",
+    "description": "Pruebas manuales de la etapa 8 (portal de empresa: listado, detalle, aislamiento 404 y actividades). Requiere CURSOS_DATOS_DEMO=true para loguear con empresa-demo. Leer README_Etapa_8.md antes de ejecutar.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (pm.request.url.toString().includes(\"{{cursoId}}\") && !pm.environment.get(\"cursoId\")) { throw new Error(\"Falta cursoId: ejecutá primero la carpeta 01.\"); }",
+          "if (pm.request.url.toString().includes(\"{{cursoIdAjeno}}\") && !pm.environment.get(\"cursoIdAjeno\")) { throw new Error(\"Falta cursoIdAjeno: ejecutá primero la carpeta 01.\"); }"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Preparación de cursos (propio y ajeno)",
+      "description": "Crea un curso asociado a empresa-demo (guarda cursoId) y otro de otra empresa (guarda cursoIdAjeno) para probar aislamiento 404.",
+      "item": [
+        {
+          "name": "01 Crear solicitud para empresa-demo (guarda cursoId)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKeyPropia}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/solicitudes",
+            "description": "Reutiliza la empresa con identificador empresa-demo creada por DatosDemo.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empresa\": {\n    \"nombre\": \"Empresa Demo\",\n    \"identificador\": \"empresa-demo\"\n  },\n  \"contacto\": {\n    \"nombre\": \"Contacto Demo\",\n    \"email\": \"demo@example.com\",\n    \"telefono\": \"3581112233\"\n  },\n  \"tematica\": \"Curso Etapa 8 - Empresa Demo\",\n  \"descripcion\": \"Curso de prueba para el portal de empresa.\",\n  \"cantidadEstimadaParticipantes\": 8,\n  \"fechasPreferidas\": \"Diciembre por la mañana\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code === 201) { const r = pm.response.json(); pm.environment.set(\"cursoId\", r.cursoId); pm.environment.set(\"processInstanceId\", r.processInstanceId); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 Crear solicitud de otra empresa (guarda cursoIdAjeno)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKeyAjena}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/solicitudes",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empresa\": {\n    \"nombre\": \"Otra Empresa SRL\",\n    \"identificador\": \"otra-empresa-etapa8\"\n  },\n  \"contacto\": {\n    \"nombre\": \"Contacto Ajeno\",\n    \"email\": \"ajeno@example.com\"\n  },\n  \"tematica\": \"Curso Ajeno Etapa 8\",\n  \"descripcion\": \"Curso que empresa-demo no debe poder ver.\",\n  \"cantidadEstimadaParticipantes\": 5,\n  \"fechasPreferidas\": \"Enero\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () { pm.response.to.have.status(201); });",
+                  "if (pm.response.code === 201) { pm.environment.set(\"cursoIdAjeno\", pm.response.json().cursoId); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - Portal de empresa (listado, detalle y 404)",
+      "description": "Inicia sesión como empresa-demo y verifica que solo ve sus cursos y recibe 404 para cursos ajenos.",
+      "item": [
+        {
+          "name": "01 Login empresa demo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/empresa",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario\": \"{{empresaUsuario}}\",\n  \"clave\": \"{{empresaClave}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 Listar mis cursos (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos?page=0&size=20",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Estructura paginada y sin cursos ajenos\", function () {",
+                  "  const r = pm.response.json();",
+                  "  pm.expect(r).to.have.keys(\"items\", \"total\", \"page\", \"size\");",
+                  "  pm.expect(r.items).to.be.an(\"array\").that.is.not.empty;",
+                  "  const ajeno = r.items.find(c => c.cursoId === pm.environment.get(\"cursoIdAjeno\"));",
+                  "  pm.expect(ajeno).to.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 Paginación inválida (400)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos?page=0&size=101",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });",
+                  "pm.test(\"Código VALIDACION\", function () { pm.expect(pm.response.json().codigo).to.eql(\"VALIDACION\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 Detalle de curso propio (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Detalle completo\", function () {",
+                  "  const r = pm.response.json();",
+                  "  pm.expect(r.cursoId).to.eql(pm.environment.get(\"cursoId\"));",
+                  "  pm.expect(r).to.have.all.keys(\"cursoId\", \"nombre\", \"estado\", \"estadoEtiqueta\", \"fechaCurso\", \"descripcion\", \"cantidadParticipantes\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05 Detalle de curso ajeno (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoIdAjeno}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", function () { pm.response.to.have.status(404); });",
+                  "pm.test(\"Código NO_ENCONTRADO\", function () { pm.expect(pm.response.json().codigo).to.eql(\"NO_ENCONTRADO\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "06 Actividades fuera de preparación (lista vacía)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}/actividades",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Lista vacía fuera de EN_PREPARACION\", function () {",
+                  "  const r = pm.response.json();",
+                  "  pm.expect(r.items).to.be.an(\"array\").that.is.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "07 Actividades de curso ajeno (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoIdAjeno}}/actividades",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", function () { pm.response.to.have.status(404); });",
+                  "pm.test(\"Código NO_ENCONTRADO\", function () { pm.expect(pm.response.json().codigo).to.eql(\"NO_ENCONTRADO\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Actividades en preparación",
+      "description": "Precondición: avanzar el curso en Flowable hasta el subproceso preparar_curso (aceptación) y actualizar curso.estado = 'EN_PREPARACION' en PostgreSQL.",
+      "item": [
+        {
+          "name": "01 Actividades en EN_PREPARACION (ramas paralelas)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}/actividades",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Estado EN_PREPARACION con actividades\", function () {",
+                  "  const r = pm.response.json();",
+                  "  pm.expect(r.estado).to.eql(\"EN_PREPARACION\");",
+                  "  pm.expect(r.items).to.be.an(\"array\").that.is.not.empty;",
+                  "  r.items.forEach(a => pm.expect(a).to.have.all.keys(\"activityId\", \"nombre\", \"tipo\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - Permisos de personal y sin sesión",
+      "description": "Verifica que personal no puede usar GET /cursos (es solo empresa) pero sí GET /cursos/{id}, y que sin sesión devuelve 401.",
+      "item": [
+        {
+          "name": "01 Login jefe administrativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"{{jefeAdministrativo}}\",\n  \"clave\": \"{{clavePersonal}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 Personal no puede listar /cursos (403)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", function () { pm.response.to.have.status(403); });",
+                  "pm.test(\"Código SIN_PERMISO\", function () { pm.expect(pm.response.json().codigo).to.eql(\"SIN_PERMISO\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 Personal sí puede ver detalle de cualquier curso (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoIdAjeno}}",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 Cerrar sesión",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/sesiones/actual",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 204\", function () { pm.response.to.have.status(204); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05 Sin sesión en /cursos (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos",
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", function () { pm.response.to.have.status(401); });",
+                  "pm.test(\"Código NO_AUTENTICADO\", function () { pm.expect(pm.response.json().codigo).to.eql(\"NO_AUTENTICADO\"); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
