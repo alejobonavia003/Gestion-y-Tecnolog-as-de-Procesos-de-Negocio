@@ -1,167 +1,182 @@
 # Gestión y Tecnologías de Procesos de Negocio
 
-Proyecto académico para implementar la gestión de cursos de capacitación mediante Flowable.
+Proyecto académico (GyTPN, UNRC): proceso de **organización de cursos de capacitación**
+para empresas, ejecutado en **Flowable 6.8** con un backend propio, una web y aplicaciones
+auxiliares.
 
-## Estado actual
+## Estado actual (17/11/2026)
 
-- Backend Spring Boot con endpoint de estado.
-- Entorno Docker para la web, Flowable, PostgreSQL y pgAdmin.
-- Consigna y modelos BPMN en `contexto/`.
+| Parte | Estado |
+|---|---|
+| Infraestructura Docker (Flowable UI, PostgreSQL, pgAdmin, web) | ✅ Funcionando |
+| Usuarios y grupos de Flowable (`motor-flowable/idm/crear-usuarios.sh`) | ✅ |
+| Modelo del proceso + regla DMN de viabilidad | ✅ Se publica (con tareas automáticas marcadoras) |
+| Backend etapas 1 a 5 (base, datos, cliente Flowable, sesiones, solicitudes) | ✅ Implementadas y probadas |
+| Backend etapas 6 a 8 (tareas, propuestas y PDF, portal de empresa) | 🔧 Implementadas; falta validarlas desde la web |
+| Backend etapa 9 (docente, dictado, informe) | ✅ Completa: #17, #18 y #19 probados con Postman contra Flowable real |
+| Backend etapas 10 y 11 (simulador, integración final) | ⏳ Pendientes |
+| Web (React + Vite) | ✅ Completa contra mocks; falta conectarla al backend real |
+| App de materiales, simulador REST, listeners del motor | ⏳ Pendientes |
 
-El backend se conecta por REST a Flowable y usa una base institucional separada en PostgreSQL. Arrancar el backend no despliega los modelos BPMN.
-
-## Requisitos
-
-Para instalar esta versión en otra máquina, seguir [Instalación para el equipo](docs/INSTALACION_EQUIPO.md).
-
-- Docker con Docker Compose, para ejecutar todo el entorno.
-- JDK 21 y Maven, solo para ejecutar el backend fuera de Docker.
-- Git.
+El detalle de qué está hecho y qué falta está en
+[docs/BACKEND_PROGRESO_Y_ETAPAS.md](docs/BACKEND_PROGRESO_Y_ETAPAS.md).
 
 ## Estructura y responsabilidades
 
-| Ruta real | Objetivo | Responsable |
+| Ruta | Objetivo | Responsable |
 |---|---|---|
-| [motor-flowable/](motor-flowable/) | BPMN ejecutable, DMN, identidades, listeners, mensajes, temporizadores y compensación. | Alejo |
-| [backend/](backend/) | Backend y BD institucional, empresas, cursos, vínculo con instancias, acceso empresarial y PDFs. Equivale a `backend-institucion/`; conserva su nombre. | Lauty |
-| [web/](web/) | Sitio público y funciones de empresas/personal. | Luka |
-| [app-materiales/](app-materiales/) | Aplicación gráfica intranet mediante API Java de Flowable. | Luka |
-| [simulador-rest/](simulador-rest/) | CLI de comunicaciones REST; permitida para el equipo de tres. | Luka |
-| [docs/](docs/) | Acuerdos y documentación compartida. | Los tres |
-| [contexto/](contexto/) | Consigna y modelos de referencia existentes. | Referencia común |
-| [docker-compose.yml](docker-compose.yml) | Infraestructura existente; cambios coordinados. | Los tres |
+| [motor-flowable/](motor-flowable/) | BPMN ejecutable, DMN, usuarios y grupos, listeners, mensajes, timers y compensación. | Alejo |
+| [backend/](backend/) | API REST (Spring Boot) y base institucional: empresas, cursos, propuestas, PDFs, vínculo con las instancias de Flowable. | Lauty |
+| [web/](web/) | Sitio público, portal de empresas y bandeja del personal. | Luka |
+| [app-materiales/](app-materiales/) | App de escritorio para "Preparar materiales" con la API Java de Flowable. | Luka |
+| [simulador-rest/](simulador-rest/) | CLI que simula las comunicaciones de la empresa. | Luka |
+| [docs/](docs/) | Acuerdos, contratos, progreso y colecciones de Postman. | Todos |
+| [contexto/](contexto/) | Consigna y modelos de referencia. | Referencia común |
 
-El [acuerdo de integración](docs/ACUERDO_DE_INTEGRACION.md) define contratos iniciales, identificadores y decisiones pendientes. Las carpetas nuevas contienen documentación preparatoria; no implican funcionalidades implementadas ni motores adicionales.
+## Requisitos
 
-## Probar el backend
+- Docker con Docker Compose.
+- JDK 21 y Maven (para correr el backend en desarrollo).
+- Git. Node.js 20.19+ solo si se trabaja en la web fuera de Docker.
+- Postman de escritorio (para probar el backend).
 
-Desde la raíz, iniciar todos los servicios (incluido el backend):
+## Primera instalación en una máquina
 
-```bash
-cp env.example .env # Solo en la primera instalación; ajustar las credenciales
-docker compose up -d --build
-curl -i http://localhost:8081/api/v1/estado
-```
+Hacer esto **una vez** por máquina (o cuando se borre el volumen de Postgres).
+Todos los comandos se corren desde la raíz del repo. La guía detallada de Docker está en
+[docs/INSTALACION_EQUIPO.md](docs/INSTALACION_EQUIPO.md).
 
-Compose construye la imagen del backend en el primer inicio; no hace falta
-tener Java ni Maven instalados en la máquina. **No tiene hot reload:** los
-cambios en el código no se aplican automáticamente al contenedor. Para
-actualizar el backend después de modificarlo, ejecutar desde la raíz:
+### 1. Archivo `.env`
 
-```bash
-docker compose up -d --build backend
-```
-
-Este comando reconstruye la imagen y recrea el contenedor con los cambios.
-Para ver los logs del backend:
+Crear el `.env` en la raíz a partir de la plantilla (no se sube a git):
 
 ```bash
-docker compose logs -f backend
+cp env.example .env
 ```
 
-El backend usa `postgres:5432` y `flowable:8080` dentro de la red de Docker.
-Compose espera a que PostgreSQL esté disponible y crea la base `institucion`
-si falta, conservando los datos existentes. La web reenvía `/api/` al servicio
-`backend:8081`. Flowable puede tardar en iniciar; comprobar la integración con:
+Editarlo antes de levantar nada. En una instalación existente **no** sobrescribirlo:
+conservar el usuario y la clave de Postgres con los que se creó el volumen.
+
+| Variable | Valor |
+|---|---|
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Credenciales de Postgres (`flowable` en una instalación nueva). |
+| `INSTITUCION_DB_NAME` | `institucion`. |
+| `FLOWABLE_REST_USUARIO`, `FLOWABLE_REST_CLAVE` | Cuenta con acceso a la API REST de Flowable (por defecto `admin` / `test`). |
+| `FLOWABLE_PROCESO_CLAVE` | `process`. |
+| `CURSOS_DATOS_DEMO` | `true` para tener la empresa demo (la usan las pruebas de Postman). |
+
+Formato: **sin espacios alrededor del `=`** y comentarios en líneas aparte. El
+backend y `crear-usuarios.sh` lo leen como archivo de bash; una línea como
+`EMAIL= admin@example.com` rompe la carga. `CURSOS_DATOS_DEMO=true` crea la empresa
+de prueba `empresa-demo` / `1234`.
+
+### 2. Levantar la infraestructura
+
+Hay dos formas, según lo que se vaya a hacer:
+
+**Todo en Docker** (para probar o para la demo; no hace falta Java ni Maven):
 
 ```bash
-curl -i http://localhost:8081/api/v1/diagnostico/flowable
-```
-
-### Ejecución local sin Docker
-
-Clonar el repositorio usando su URL de GitHub y entrar en la carpeta descargada.
-
-Desde la raíz:
-
-```bash
-cd backend
-mvn clean verify
-mvn spring-boot:run
-```
-
-Dejar esa terminal abierta. El backend escucha en:
-
-http://localhost:8081
-
-Desde otra terminal:
-
-```bash
-curl -i http://localhost:8081/api/v1/estado
-```
-
-Resultado esperado: HTTP 200 y un JSON equivalente a:
-
-```json
-{
-  "aplicacion": "cursos-backend",
-  "estado": "funcionando"
-}
-```
-
-El orden de las propiedades puede variar.
-
-También se puede abrir en el navegador:
-
-http://localhost:8081/api/v1/estado
-
-El backend necesita PostgreSQL y la configuración de `.env` también al ejecutarse
-fuera de Docker. Para probar la integración completa, Flowable debe estar disponible.
-
-Para detener el backend, presionar Ctrl+C en la terminal donde se inició.
-
-## Ejecutar el entorno completo con Docker
-
-Desde la raíz, copiar `env.example` a `.env` y ajustar sus valores.
-En una instalación existente, conservar el usuario y la contraseña con los que
-se inicializó el volumen PostgreSQL: cambiar `.env` no cambia esas credenciales.
-`FLOWABLE_REST_USUARIO` y `FLOWABLE_REST_CLAVE` deben corresponder a una cuenta
-con acceso a la API REST de Flowable.
-
-```bash
-cp env.example .env # Solo si todavía no existe .env
-# Editar .env antes de continuar
 docker compose config --quiet
 docker compose up -d --build
 docker compose ps -a
 ```
 
-El servicio `institucion-db` termina con código 0 después de comprobar o crear
-la base institucional. Es normal que aparezca como `Exited (0)`.
-
-Con los puertos actuales, los accesos son:
-
-- Flowable: http://localhost:8080/flowable-ui/
-- Backend: http://localhost:8081/api/v1/estado
-- pgAdmin: http://localhost:5050
-- Web: http://localhost:5173
-
-La web se compila dentro de Docker y se sirve con Nginx. No hace falta iniciar
-Maven fuera de Docker. Los cambios de código requieren reconstruir la imagen.
-Ver [web/README.md](web/README.md) para configurar otro destino de la API.
-
-Las credenciales corresponden a la configuración del entorno.
-
-Para detener los contenedores conservando los volúmenes:
+**Desarrollo del backend** (el backend corre con Maven, paso 6, y se ven los cambios al
+instante): levantar todo menos el servicio `backend`, que si no ocupa el puerto 8081.
 
 ```bash
-docker compose stop
+docker compose up -d postgres institucion-db flowable pgadmin
 ```
 
-## Clases de inicio
+Flowable tarda alrededor de un minuto en arrancar:
+`docker logs -f flowable-persistente` hasta ver `Started FlowableUiApplication`.
+Si Docker pide `sudo`, agregar el usuario al grupo `docker`.
 
-- `ar.edu.cursos.CursosApplication`: inicia el backend Spring Boot.
-- `unrc.Main`: prueba independiente que crea un motor Flowable con H2
-  en memoria, cuenta las definiciones desplegadas y cierra el motor.
+### 3. Base `institucion`
 
-La prueba `unrc.Main` no se conecta al Flowable de Docker y sus datos
-no se conservan al terminar el programa.
+La crea sola el servicio `institucion-db` si falta. Es normal que aparezca como
+`Exited (0)`: corre una vez y termina. Las tablas las crea Hibernate al arrancar el backend.
 
-## Próximos pasos
+Si el backend dice `database "institucion" does not exist` (por ejemplo, porque no se
+levantó `institucion-db`), crearla a mano con el `POSTGRES_USER` y `POSTGRES_DB` del `.env`:
 
-- Conectar el backend con la API REST de Flowable.
-- Configurar usuarios, grupos y permisos.
-- Completar y desplegar el BPMN ejecutable.
-- Implementar la regla de viabilidad y los listeners.
-- Crear la base institucional de empresas y cursos.
-- Desarrollar las interfaces requeridas por la consigna.
+```bash
+docker exec -it flowable-postgres psql -U flowable -d flowable -c "CREATE DATABASE institucion;"
+```
+
+### 4. Usuarios y grupos de Flowable
+
+```bash
+bash motor-flowable/idm/crear-usuarios.sh
+```
+
+Crea `Equipo-Administrativo`, `Equipo-Docente` y los usuarios `Jefe-Administrativo`,
+`empleado-administrativo`, `Jefe-Docente`, `docente-1` y `docente-2` (clave `1234`).
+Correrlo con `bash` (en fish o si el archivo no tiene permiso de ejecución,
+`./crear-usuarios.sh` falla).
+
+### 5. Importar y publicar el proceso
+
+Ver [motor-flowable/modelos/README.md](motor-flowable/modelos/README.md). Resumen:
+Flowable UI → Modeler → Apps → Import App → `Organizacion de cursos.zip` →
+**verificar que la tabla `reglaViabilidad` use la variable `cantCursos`** → Publish.
+
+### 6. Backend
+
+Si se levantó todo con Docker, el backend ya está corriendo (logs: `docker compose logs -f backend`;
+después de cambiar código: `docker compose up -d --build backend`). En desarrollo:
+
+```bash
+cd backend
+mvn spring-boot:run
+```
+
+Tiene que aparecer `Tomcat started on port 8081`. Comprobar:
+
+```bash
+curl -i http://localhost:8081/api/v1/estado
+curl -i http://localhost:8081/api/v1/diagnostico/flowable
+```
+
+Más detalle en [docs/BACKEND.md](docs/BACKEND.md).
+
+### 7. Postman
+
+Importar la colección y el entorno de [docs/postman/etapa 9/](docs/postman/etapa%209/)
+y seleccionar el entorno **Cursos - Local**. Ver su README.
+
+## Accesos
+
+| Servicio | URL |
+|---|---|
+| Flowable UI (Modeler, Task, Admin) | http://localhost:8080/flowable-ui/ |
+| API REST de Flowable | http://localhost:8080/flowable-ui/process-api |
+| Backend | http://localhost:8081/api/v1/estado |
+| pgAdmin | http://localhost:5050 |
+| Web (Docker) | http://localhost:5173 |
+
+pgAdmin: al registrar el servidor usar host `postgres` y puerto `5432` (pgAdmin corre
+en Docker). Desde un cliente instalado en la PC: `localhost`, puerto `5433`.
+
+## Problemas frecuentes
+
+| Síntoma | Causa y solución |
+|---|---|
+| `password authentication failed for user "${POSTGRES_USER}"` | El backend no encontró el `.env`: tiene que estar en la raíz y `mvn` se corre desde `backend/`. |
+| `database "institucion" does not exist` | No corrió `institucion-db`: ver el paso 3. |
+| Postman: `ECONNREFUSED 127.0.0.1:8081` | El backend no está corriendo o no arrancó (consola de Maven o `docker compose logs backend`). |
+| `Port 8081 was already in use` al correr Maven | Está corriendo el contenedor del backend: `docker compose stop backend`. |
+| Postman: `ECONNREFUSED 127.0.0.1:8080` | Flowable no está levantado o sigue arrancando. |
+| 503 `MOTOR_NO_DISPONIBLE` | Mirar la línea `Flowable respondió ...` en el log del backend: app sin publicar (`No process definition found`), DMN viejo (`otrasInstanciasActivas`) o clave de Flowable incorrecta (401). |
+| Variables en rojo en Postman | No está seleccionado el entorno **Cursos - Local**. |
+
+Para detener los contenedores conservando los datos: `docker compose stop`.
+
+## Documentación
+
+- [docs/BACKEND_PROGRESO_Y_ETAPAS.md](docs/BACKEND_PROGRESO_Y_ETAPAS.md): avance y etapas pendientes.
+- [docs/ENDPOINTS_WEB.md](docs/ENDPOINTS_WEB.md): contrato de los endpoints que usa la web.
+- [docs/ACUERDO_DE_INTEGRACION.md](docs/ACUERDO_DE_INTEGRACION.md): identificadores, variables, estados y permisos.
+- [docs/INSTALACION_EQUIPO.md](docs/INSTALACION_EQUIPO.md): instalación con Docker paso a paso.
+- [docs/README.md](docs/README.md): índice completo.
