@@ -48,9 +48,9 @@ services:
     container_name: flowable-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:?Configurar POSTGRES_DB en .env}
+      POSTGRES_USER: ${POSTGRES_USER:?Configurar POSTGRES_USER en .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Configurar POSTGRES_PASSWORD en .env}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -81,6 +81,7 @@ services:
       - flowable-net
 
   # Crea solo la base que falta; conserva los datos de los volúmenes existentes.
+  # También funciona con volúmenes existentes: no elimina ni reinicializa datos.
   institucion-db:
     image: postgres:15
     restart: "no"

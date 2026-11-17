@@ -276,4 +276,60 @@ public class FlowableClient {
                 .retrieve()
                 .body(JsonNode.class));
     }
+
+    public Optional<String> buscarEjecucionPorMensaje(String processInstanceId, String messageName) {
+        JsonNode respuesta = llamar(() -> rest.get()
+                .uri("/runtime/executions?processInstanceId={pid}&messageEventSubscriptionName={msg}",
+                        processInstanceId, messageName)
+                .retrieve()
+                .body(JsonNode.class));
+        JsonNode data = respuesta.path("data");
+        return data.isArray() && !data.isEmpty()
+                ? Optional.of(data.get(0).path("id").asText())
+                : Optional.empty();
+    }
+
+    public void enviarMensajeAEjecucion(String executionId, String messageName, Map<String, Object> variables) {
+        Map<String, Object> cuerpo = new LinkedHashMap<>();
+        cuerpo.put("action", "messageEventReceived");
+        cuerpo.put("messageName", messageName);
+        cuerpo.put("variables", aVariablesRest(variables));
+
+        llamar(() -> rest.put()
+                .uri("/runtime/executions/{id}", executionId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(cuerpo)
+                .retrieve()
+                .toBodilessEntity());
+    }
+
+    public void senalarEjecucion(String executionId, Map<String, Object> variables) {
+        Map<String, Object> cuerpo = new LinkedHashMap<>();
+        cuerpo.put("action", "signal");
+        cuerpo.put("variables", aVariablesRest(variables));
+
+        llamar(() -> rest.put()
+                .uri("/runtime/executions/{id}", executionId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(cuerpo)
+                .retrieve()
+                .toBodilessEntity());
+    }
+
+
+    /**
+     * Valor de una variable del proceso leído del historial: sirve con la instancia
+     * activa o ya terminada. Vacío si la variable no existe.
+     */
+    public Optional<String> variableHistorica(String processInstanceId, String nombre) {
+        JsonNode respuesta = llamar(() -> rest.get()
+                .uri("/history/historic-variable-instances?processInstanceId={p}&variableName={n}",
+                        processInstanceId, nombre)
+                .retrieve()
+                .body(JsonNode.class));
+        JsonNode data = respuesta == null ? null : respuesta.path("data");
+        if (data == null || !data.isArray() || data.isEmpty()) return Optional.empty();
+        JsonNode valor = data.get(0).path("variable").path("value");
+        return valor.isMissingNode() || valor.isNull() ? Optional.empty() : Optional.of(valor.asText());
+    }
 }

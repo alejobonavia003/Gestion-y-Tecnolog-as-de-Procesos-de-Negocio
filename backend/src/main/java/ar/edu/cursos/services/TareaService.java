@@ -2,6 +2,8 @@ package ar.edu.cursos.services;
 
 import static ar.edu.cursos.services.TareasProceso.*;
 import java.util.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -17,9 +19,35 @@ public class TareaService {
     private final FlowableClient motor;
     private final CursoRepository cursos;
     private final PropuestaRepository propuestas;
+    private final String grupoDocentes;
+    private final String jefeDocente;
 
-    public TareaService(FlowableClient motor, CursoRepository cursos, PropuestaRepository propuestas) {
+    @Autowired
+    public TareaService(FlowableClient motor, CursoRepository cursos, PropuestaRepository propuestas,
+            @Value("${cursos.grupo.docentes}") String grupoDocentes,
+            @Value("${cursos.usuario.jefe-docente}") String jefeDocente) {
         this.motor = motor; this.cursos = cursos; this.propuestas = propuestas;
+        this.grupoDocentes = grupoDocentes; this.jefeDocente = jefeDocente;
+    }
+
+    /** Para los tests: usa los nombres por defecto del grupo y del jefe docente. */
+    public TareaService(FlowableClient motor, CursoRepository cursos, PropuestaRepository propuestas) {
+        this(motor, cursos, propuestas, "Equipo-Docente", "Jefe-Docente");
+    }
+
+    /** Los docentes que se pueden elegir en definir_docente (el jefe incluido). */
+    public List<Map<String, Object>> listarDocentes() {
+        List<Map<String, Object>> docentes = new ArrayList<>();
+        for (String id : motor.miembrosDe(grupoDocentes)) {
+            String nombre = motor.buscarUsuario(id)
+                    .map(u -> (u.path("firstName").asText("") + " " + u.path("lastName").asText("")).trim())
+                    .filter(n -> !n.isBlank())
+                    .orElse(id);
+            Map<String, Object> docente = new LinkedHashMap<>();
+            docente.put("usuarioId", id); docente.put("nombre", nombre); docente.put("esJefe", id.equals(jefeDocente));
+            docentes.add(docente);
+        }
+        return docentes;
     }
 
     public Map<String, Object> listar(SesionUsuario usuario, String bandeja, int page, int size) {
@@ -66,15 +94,23 @@ public class TareaService {
             Object respuesta = variables.get("respuestaEmpresa");
             contexto.put("motivoArchivo", respuesta instanceof JsonNode n && "RECHAZADA".equals(n.asText()) ? "RECHAZADA" : "SIN_RESPUESTA");
         }
-        if (Set.of(ENVIAR_INFORME, ARCHIVAR_EXPEDIENTE, "desarrollar_curso", "definir_docente").contains(key)) {
+        if (DEFINIR_DOCENTE.equals(key)) contexto.put("docentes", listarDocentes());
+        if (Set.of(ENVIAR_INFORME, ARCHIVAR_EXPEDIENTE, DESARROLLAR_CURSO, DEFINIR_DOCENTE).contains(key)) {
             Map<String, Object> datos = new LinkedHashMap<>();
             datos.put("descripcion", curso.getDescripcion()); datos.put("cantidadParticipantes", curso.getCantidadParticipantes());
             datos.put("fechaCurso", curso.getFechaCurso()); contexto.put("curso", datos);
             if (Set.of(ENVIAR_INFORME, ARCHIVAR_EXPEDIENTE).contains(key)) {
                 Map<String, Object> informe = new LinkedHashMap<>();
-                informe.put("resumen", curso.getInformeResumen()); informe.put("pdfDisponible", false); contexto.put("informe", informe);
+                // informeResumen lo carga el jefe docente en el formulario de elaborar_informe (Flowable UI).
+                Object variable = variables.get("informeResumen");
+                String resumen = variable instanceof JsonNode n && !n.isNull() && !n.asText().isBlank()
+                        ? n.asText() : curso.getInformeResumen();
+                informe.put("resumen", resumen);
+                informe.put("pdfDisponible", resumen != null && !resumen.isBlank());
+                contexto.put("informe", informe);
             }
         }
+
         return new TareaDetalle(resumen(tarea, curso), contexto);
     }
 

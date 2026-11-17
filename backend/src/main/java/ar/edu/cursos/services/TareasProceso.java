@@ -9,4 +9,7 @@ public final class TareasProceso {
     public static final String ARCHIVAR_SOLICITUD = "archivar_solicitud";
     public static final String ENVIAR_INFORME = "enviar_informe";
     public static final String ARCHIVAR_EXPEDIENTE = "archivar_expediente";
+    public static final String DEFINIR_DOCENTE = "definir_docente";
+    public static final String DESARROLLAR_CURSO = "desarrollar_curso";
+    public static final String ELABORAR_INFORME = "elaborar_informe";
 }
