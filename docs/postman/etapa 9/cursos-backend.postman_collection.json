@@ -1,0 +1,2226 @@
+{
+  "info": {
+    "_postman_id": "6c3f1a2e-9b7d-4c1e-8f2a-5d4e3b2a1c90",
+    "name": "Cursos GyTPN - Backend",
+    "description": "Colección del backend del proyecto Organización de cursos (GyTPN, UNRC).\n\n- Usar con el entorno **Cursos - Local**.\n- La sesión viaja en la cookie `JSESSIONID`: Postman la guarda sola después de un login y la manda en los siguientes pedidos. Para cambiar de usuario, ejecutar otro login.\n- Las variables `cursoId`, `processInstanceId` y `taskId` se completan solas con los scripts de los requests.\n- Ver `postman/README.md`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "cursoId",
+      "value": ""
+    },
+    {
+      "key": "processInstanceId",
+      "value": ""
+    },
+    {
+      "key": "taskId",
+      "value": ""
+    },
+    {
+      "key": "taskIdFlowable",
+      "value": ""
+    },
+    {
+      "key": "executionId",
+      "value": ""
+    },
+    {
+      "key": "fechaCurso",
+      "value": ""
+    },
+    {
+      "key": "idemKey",
+      "value": ""
+    },
+    {
+      "key": "usuarioActual",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "0. Utilidades",
+      "item": [
+        {
+          "name": "Estado del backend",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/estado"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Diagnóstico Flowable (temporal)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/diagnostico/flowable",
+            "description": "Cantidad de instancias activas del proceso. Se borra en la etapa 11 junto con DiagnosticoController."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1. Sesiones (etapa 4)",
+      "item": [
+        {
+          "name": "Login personal: Jefe-Administrativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"Jefe-Administrativo\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const s = pm.response.json();",
+                  "pm.test(\"Sesión de personal\", () => pm.expect(s.tipo).to.eql(\"PERSONAL\"));",
+                  "pm.collectionVariables.set(\"usuarioActual\", s.usuarioId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login personal: empleado-administrativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"empleado-administrativo\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const s = pm.response.json();",
+                  "pm.test(\"Sesión de personal\", () => pm.expect(s.tipo).to.eql(\"PERSONAL\"));",
+                  "pm.collectionVariables.set(\"usuarioActual\", s.usuarioId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login personal: Jefe-Docente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"Jefe-Docente\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const s = pm.response.json();",
+                  "pm.test(\"Sesión de personal\", () => pm.expect(s.tipo).to.eql(\"PERSONAL\"));",
+                  "pm.collectionVariables.set(\"usuarioActual\", s.usuarioId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login personal: docente-1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"docente-1\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const s = pm.response.json();",
+                  "pm.test(\"Sesión de personal\", () => pm.expect(s.tipo).to.eql(\"PERSONAL\"));",
+                  "pm.collectionVariables.set(\"usuarioActual\", s.usuarioId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login personal: docente-2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"docente-2\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const s = pm.response.json();",
+                  "pm.test(\"Sesión de personal\", () => pm.expect(s.tipo).to.eql(\"PERSONAL\"));",
+                  "pm.collectionVariables.set(\"usuarioActual\", s.usuarioId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login empresa: empresa-demo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/empresa",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario\": \"empresa-demo\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Sesión de empresa\", () => pm.expect(pm.response.json().tipo).to.eql(\"EMPRESA\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login con clave incorrecta → 401",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"Jefe-Administrativo\",\n  \"clave\": \"mal\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sesión actual",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/sesiones/actual"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cerrar sesión",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/sesiones/actual"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sesión actual sin login → 401",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/sesiones/actual",
+            "description": "Ejecutar después de 'Cerrar sesión'."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Solicitudes (etapa 5)",
+      "item": [
+        {
+          "name": "Crear solicitud (clave nueva)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idemKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/solicitudes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empresa\": {\n    \"nombre\": \"Metalúrgica Río Cuarto SA\",\n    \"identificador\": \"30-71234567-8\"\n  },\n  \"contacto\": {\n    \"nombre\": \"Ana Pérez\",\n    \"email\": \"ana.perez@example.com\",\n    \"telefono\": \"358 4123456\"\n  },\n  \"tematica\": \"Seguridad e higiene en planta\",\n  \"descripcion\": \"Capacitación para operarios nuevos sobre uso de EPP y procedimientos de emergencia.\",\n  \"cantidadEstimadaParticipantes\": 15,\n  \"fechasPreferidas\": \"Martes y jueves por la tarde, desde marzo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Genera una Idempotency-Key nueva en cada ejecución y guarda cursoId y processInstanceId."
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"idemKey\", pm.variables.replaceIn(\"{{$guid}}\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 201\", () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"Devuelve cursoId y processInstanceId\", () => { pm.expect(r.cursoId).to.be.a(\"string\"); pm.expect(r.processInstanceId).to.be.a(\"string\"); });",
+                  "pm.collectionVariables.set(\"cursoId\", r.cursoId);",
+                  "pm.collectionVariables.set(\"processInstanceId\", r.processInstanceId);",
+                  "console.log(\"Curso\", r.cursoId, \"instancia\", r.processInstanceId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reintento con la misma clave → mismo curso",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idemKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/solicitudes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empresa\": {\n    \"nombre\": \"Metalúrgica Río Cuarto SA\",\n    \"identificador\": \"30-71234567-8\"\n  },\n  \"contacto\": {\n    \"nombre\": \"Ana Pérez\",\n    \"email\": \"ana.perez@example.com\",\n    \"telefono\": \"358 4123456\"\n  },\n  \"tematica\": \"Seguridad e higiene en planta\",\n  \"descripcion\": \"Capacitación para operarios nuevos sobre uso de EPP y procedimientos de emergencia.\",\n  \"cantidadEstimadaParticipantes\": 15,\n  \"fechasPreferidas\": \"Martes y jueves por la tarde, desde marzo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 201\", () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"Mismo curso\", () => pm.expect(r.cursoId).to.eql(pm.collectionVariables.get(\"cursoId\")));",
+                  "pm.test(\"Misma instancia\", () => pm.expect(r.processInstanceId).to.eql(pm.collectionVariables.get(\"processInstanceId\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Misma clave con otros datos → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idemKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/solicitudes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empresa\": {\n    \"nombre\": \"Metalúrgica Río Cuarto SA\",\n    \"identificador\": \"30-71234567-8\"\n  },\n  \"contacto\": {\n    \"nombre\": \"Ana Pérez\",\n    \"email\": \"ana.perez@example.com\",\n    \"telefono\": \"358 4123456\"\n  },\n  \"tematica\": \"Otra temática distinta\",\n  \"descripcion\": \"Capacitación para operarios nuevos sobre uso de EPP y procedimientos de emergencia.\",\n  \"cantidadEstimadaParticipantes\": 15,\n  \"fechasPreferidas\": \"Martes y jueves por la tarde, desde marzo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 409\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Datos inválidos → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{$guid}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/solicitudes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empresa\": {\n    \"nombre\": \"Metalúrgica Río Cuarto SA\",\n    \"identificador\": \"30-71234567-8\"\n  },\n  \"contacto\": {\n    \"nombre\": \"Ana Pérez\",\n    \"email\": \"ana.perez@example.com\",\n    \"telefono\": \"358 4123456\"\n  },\n  \"tematica\": \"Seguridad e higiene en planta\",\n  \"descripcion\": \"corta\",\n  \"cantidadEstimadaParticipantes\": 0,\n  \"fechasPreferidas\": \"Martes y jueves por la tarde, desde marzo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Tareas (etapa 6) - escenario",
+      "description": "Escenario completo de la etapa 6. Ejecutar con Run folder, en orden. Los pasos [Flowable] hacen avanzar el proceso salteando lo que todavía no está implementado (propuesta, mensajes de la empresa).",
+      "item": [
+        {
+          "name": "Login Jefe-Administrativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"Jefe-Administrativo\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear solicitud",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idemKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/solicitudes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empresa\": {\n    \"nombre\": \"Metalúrgica Río Cuarto SA\",\n    \"identificador\": \"30-71234567-8\"\n  },\n  \"contacto\": {\n    \"nombre\": \"Ana Pérez\",\n    \"email\": \"ana.perez@example.com\",\n    \"telefono\": \"358 4123456\"\n  },\n  \"tematica\": \"Seguridad e higiene en planta\",\n  \"descripcion\": \"Capacitación para operarios nuevos sobre uso de EPP y procedimientos de emergencia.\",\n  \"cantidadEstimadaParticipantes\": 15,\n  \"fechasPreferidas\": \"Martes y jueves por la tarde, desde marzo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"idemKey\", pm.variables.replaceIn(\"{{$guid}}\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 201\", () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"Devuelve cursoId y processInstanceId\", () => { pm.expect(r.cursoId).to.be.a(\"string\"); pm.expect(r.processInstanceId).to.be.a(\"string\"); });",
+                  "pm.collectionVariables.set(\"cursoId\", r.cursoId);",
+                  "pm.collectionVariables.set(\"processInstanceId\", r.processInstanceId);",
+                  "console.log(\"Curso\", r.cursoId, \"instancia\", r.processInstanceId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bandeja asignadas del jefe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas?bandeja=asignadas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "const t = (r.items || []).find(x => x.taskDefinitionKey === \"registrar_elaborar_propuesta\" && x.cursoId === pm.collectionVariables.get(\"cursoId\"));",
+                  "pm.test(\"Aparece registrar_elaborar_propuesta del curso actual\", () => pm.expect(t, \"no está en la bandeja\").to.exist);",
+                  "if (t) pm.collectionVariables.set(\"taskId\", t.taskId);",
+                  "pm.test(\"Asignada: no es reclamable\", () => pm.expect(t && t.reclamable).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle de la tarea",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas/{{taskId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"Trae el curso en el contexto\", () => pm.expect(r.contexto.curso.cursoId).to.eql(pm.collectionVariables.get(\"cursoId\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Completar propuesta por /completado → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/completado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"datos\": {}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 409\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Buscar registrar_elaborar_propuesta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/tasks?processInstanceId={{processInstanceId}}&taskDefinitionKey=registrar_elaborar_propuesta",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.test(\"Existe registrar_elaborar_propuesta\", () => pm.expect(d.length).to.be.above(0));",
+                  "if (d.length) pm.collectionVariables.set(\"taskIdFlowable\", d[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Forzar completar registrar_elaborar_propuesta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{flowableUrl}}/runtime/tasks/{{taskIdFlowable}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"complete\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Buscar espera del mensaje aceptacion",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/executions?processInstanceId={{processInstanceId}}&messageEventSubscriptionName=aceptacion",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.test(\"El proceso espera la respuesta de la empresa\", () => pm.expect(d.length).to.be.above(0));",
+                  "if (d.length) pm.collectionVariables.set(\"executionId\", d[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Entregar mensaje aceptacion",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{flowableUrl}}/runtime/executions/{{executionId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"messageEventReceived\",\n  \"messageName\": \"aceptacion\",\n  \"variables\": [\n    {\n      \"name\": \"respuestaEmpresa\",\n      \"type\": \"string\",\n      \"value\": \"ACEPTADA\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Mensaje entregado', () => pm.expect(pm.response.code).to.be.oneOf([200, 204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Buscar habilitar_acceso_empresa",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/tasks?processInstanceId={{processInstanceId}}&taskDefinitionKey=habilitar_acceso_empresa",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.test(\"Existe habilitar_acceso_empresa\", () => pm.expect(d.length).to.be.above(0));",
+                  "if (d.length) pm.collectionVariables.set(\"taskIdFlowable\", d[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Forzar completar habilitar_acceso_empresa",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{flowableUrl}}/runtime/tasks/{{taskIdFlowable}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"complete\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login empleado-administrativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"empleado-administrativo\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Disponibles: evaluar_recursos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas?bandeja=disponibles&taskDefinitionKey=evaluar_recursos"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "const t = (r.items || []).find(x => x.taskDefinitionKey === \"evaluar_recursos\" && x.cursoId === pm.collectionVariables.get(\"cursoId\"));",
+                  "pm.test(\"Aparece evaluar_recursos del curso actual\", () => pm.expect(t, \"no está en la bandeja\").to.exist);",
+                  "if (t) pm.collectionVariables.set(\"taskId\", t.taskId);",
+                  "pm.test(\"Libre: es reclamable\", () => pm.expect(t && t.reclamable).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle como candidato",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas/{{taskId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Completar sin reclamar → 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/completado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"datos\": {\n    \"requiereAula\": true\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reclamar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/reclamo",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Ya no es reclamable\", () => pm.expect(pm.response.json().reclamable).to.eql(false));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reclamar otra vez → 409 YA_RECLAMADA",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/reclamo",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Código YA_RECLAMADA\", () => pm.expect(pm.response.json().codigo).to.eql(\"YA_RECLAMADA\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login docente-1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"docente-1\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Docente ve tarea ajena → 403",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas/{{taskId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Docente completa tarea ajena → 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/completado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"datos\": {\n    \"requiereAula\": true\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login empleado-administrativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"empleado-administrativo\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bandeja asignadas: aparece evaluar_recursos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas?bandeja=asignadas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "const t = (r.items || []).find(x => x.taskDefinitionKey === \"evaluar_recursos\" && x.cursoId === pm.collectionVariables.get(\"cursoId\"));",
+                  "pm.test(\"Aparece evaluar_recursos del curso actual\", () => pm.expect(t, \"no está en la bandeja\").to.exist);",
+                  "if (t) pm.collectionVariables.set(\"taskId\", t.taskId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Completar con todo en false → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/completado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"datos\": {\n    \"requiereAula\": false,\n    \"requierePlataforma\": false,\n    \"requiereEquipamiento\": false\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Completar con un dato que no corresponde → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/completado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"datos\": {\n    \"requiereAula\": true,\n    \"participantes\": [\n      \"X\"\n    ]\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Completar evaluar_recursos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/completado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"datos\": {\n    \"requiereAula\": true,\n    \"requierePlataforma\": false,\n    \"requiereEquipamiento\": true\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Completada\", () => pm.expect(pm.response.json().completada).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ya completada → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas/{{taskId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Borrar la instancia de prueba",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Etapa 9 - paso a paso",
+      "description": "Ejecutar en orden (o Run folder). Los pasos [Flowable] son atajos para llegar a las tareas de la etapa 9 sin recorrer todo el proceso.",
+      "item": [
+        {
+          "name": "Login Jefe-Administrativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"Jefe-Administrativo\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear solicitud",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idemKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/solicitudes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empresa\": {\n    \"nombre\": \"Metalúrgica Río Cuarto SA\",\n    \"identificador\": \"30-71234567-8\"\n  },\n  \"contacto\": {\n    \"nombre\": \"Ana Pérez\",\n    \"email\": \"ana.perez@example.com\",\n    \"telefono\": \"358 4123456\"\n  },\n  \"tematica\": \"Seguridad e higiene en planta\",\n  \"descripcion\": \"Capacitación para operarios nuevos sobre uso de EPP y procedimientos de emergencia.\",\n  \"cantidadEstimadaParticipantes\": 15,\n  \"fechasPreferidas\": \"Martes y jueves por la tarde, desde marzo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"idemKey\", pm.variables.replaceIn(\"{{$guid}}\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 201\", () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"Devuelve cursoId y processInstanceId\", () => { pm.expect(r.cursoId).to.be.a(\"string\"); pm.expect(r.processInstanceId).to.be.a(\"string\"); });",
+                  "pm.collectionVariables.set(\"cursoId\", r.cursoId);",
+                  "pm.collectionVariables.set(\"processInstanceId\", r.processInstanceId);",
+                  "console.log(\"Curso\", r.cursoId, \"instancia\", r.processInstanceId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Fijar fechaCurso (hace 1 minuto)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}/variables",
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"name\": \"fechaCurso\",\n    \"type\": \"string\",\n    \"value\": \"{{fechaCurso}}\"\n  }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Fecha ya pasada: el timer \"Fecha programa\" se dispara enseguida.",
+                  "pm.collectionVariables.set(\"fechaCurso\", new Date(Date.now() - 60000).toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Variable guardada', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Saltar de registrar_elaborar_propuesta a definir_docente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}/change-state",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cancelActivityIds\": [\n    \"registrar_elaborar_propuesta\"\n  ],\n  \"startActivityIds\": [\n    \"definir_docente\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Atajo de prueba: mueve la instancia directo a otra actividad, salteando las del medio.",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Instancia movida', () => pm.expect(pm.response.code).to.be.oneOf([200, 204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login Jefe-Docente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"Jefe-Docente\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bandeja asignadas: definir_docente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas?bandeja=asignadas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "const curso = pm.collectionVariables.get(\"cursoId\");",
+                  "const t = (r.items || []).find(x => x.cursoId === curso && x.taskDefinitionKey === \"definir_docente\");",
+                  "pm.test(\"Aparece definir_docente del curso actual\", () => pm.expect(t, \"no está en la bandeja\").to.exist);",
+                  "if (t) { pm.collectionVariables.set(\"taskId\", t.taskId); console.log(\"Tarea:\", t.taskDefinitionKey, t.taskId); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle: trae los docentes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas/{{taskId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().contexto.docentes || [];",
+                  "pm.test(\"Vienen los docentes\", () => pm.expect(d.length).to.be.at.least(3));",
+                  "pm.test(\"Jefe-Docente marcado como jefe\", () => pm.expect(d.find(x => x.usuarioId === \"Jefe-Docente\").esJefe).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Definir docente que no es docente → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/docente",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"docenteId\": \"empleado-administrativo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Definir docente: docente-1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/docente",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"docenteId\": \"docente-1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Definir docente otra vez → 404/409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/docente",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"docenteId\": \"docente-1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('La tarea ya no está', () => pm.expect(pm.response.code).to.be.oneOf([404, 409]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login docente-1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"docente-1\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bandeja asignadas: desarrollar_curso",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas?bandeja=asignadas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "const curso = pm.collectionVariables.get(\"cursoId\");",
+                  "const t = (r.items || []).find(x => x.cursoId === curso && x.taskDefinitionKey === \"desarrollar_curso\");",
+                  "pm.test(\"Aparece desarrollar_curso del curso actual\", () => pm.expect(t, \"no está en la bandeja\").to.exist);",
+                  "if (t) { pm.collectionVariables.set(\"taskId\", t.taskId); console.log(\"Tarea:\", t.taskDefinitionKey, t.taskId); }"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Espera 20 s a que el motor dispare el timer \"Fecha programa\".",
+                  "setTimeout(() => {}, 20000);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Borrar la instancia de prueba",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "9. Flowable directo (debug)",
+      "auth": {
+        "type": "basic",
+        "basic": [
+          {
+            "key": "username",
+            "value": "{{flowableUser}}",
+            "type": "string"
+          },
+          {
+            "key": "password",
+            "value": "{{flowablePass}}",
+            "type": "string"
+          }
+        ]
+      },
+      "description": "Pega directo a la API REST de Flowable con el usuario técnico. Sirve para verificar lo que hace el backend y para limpiar instancias de prueba (cuentan para cantCursos).",
+      "item": [
+        {
+          "name": "Instancias activas del proceso",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances?processDefinitionKey={{procesoClave}}&size=50"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tareas de la instancia actual",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/tasks?processInstanceId={{processInstanceId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "// Acepta {items:[...]}, {data:[...]} (Flowable) o un array directo",
+                  "const lista = Array.isArray(r) ? r : (r.items || r.data || []);",
+                  "if (lista.length > 0) {",
+                  "  pm.collectionVariables.set(\"taskId\", lista[0].id || lista[0].taskId);",
+                  "  console.log(\"taskId =\", pm.collectionVariables.get(\"taskId\"));",
+                  "} else { console.log(\"No hay tareas en esta bandeja\"); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tareas de un usuario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/tasks?assignee={{usuarioActual}}&processDefinitionKey={{procesoClave}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Identity links de la tarea",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/tasks/{{taskId}}/identitylinks"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Variables de la instancia",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}/variables"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Historial de actividades de la instancia",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/history/historic-activity-instances?processInstanceId={{processInstanceId}}&size=100"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Usuarios de Equipo-Docente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/identity/users?memberOfGroup=Equipo-Docente"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Fijar fechaCurso (hace 1 minuto)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}/variables",
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"name\": \"fechaCurso\",\n    \"type\": \"string\",\n    \"value\": \"{{fechaCurso}}\"\n  }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Fecha ya pasada: el timer \"Fecha programa\" se dispara enseguida.",
+                  "pm.collectionVariables.set(\"fechaCurso\", new Date(Date.now() - 60000).toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Variable guardada', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Saltar de registrar_elaborar_propuesta a definir_docente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}/change-state",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cancelActivityIds\": [\n    \"registrar_elaborar_propuesta\"\n  ],\n  \"startActivityIds\": [\n    \"definir_docente\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Atajo de prueba: mueve la instancia directo a otra actividad, salteando las del medio.",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Instancia movida', () => pm.expect(pm.response.code).to.be.oneOf([200, 204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Borrar instancia actual",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

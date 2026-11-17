@@ -1,6 +1,6 @@
 # Backend: qué está hecho y qué falta
 
-Proyecto **Organización de cursos de capacitación** (GyTPN, UNRC). Estado al **17/11/2026**.
+Proyecto **Organización de cursos de capacitación** (GyTPN, UNRC). Estado al **17/11/2026**, rama **`backend-lauty`** (todavía sin el merge de `main`).
 
 Este documento sirve para seguir el avance: qué quedó implementado y probado, y qué etapas faltan para completar todos los endpoints que usa la web (`docs/ENDPOINTS_WEB.md`) y los entregables de la consigna V3.
 
@@ -10,20 +10,28 @@ Este documento sirve para seguir el avance: qué quedó implementado y probado, 
 
 | Parte | Estado |
 |---|---|
-| Infraestructura (Docker, Postgres, `.env`, `.gitignore`) | ✅ Funcionando en las máquinas de Luka y Lauty |
+| Infraestructura (Docker, Postgres, `.env`, `.gitignore`) | ✅ Funcionando en las máquinas de Luka y Lauty (reinstalada desde cero en la PC nueva de Luka el 17/11) |
 | Usuarios y grupos en Flowable (`motor-flowable/idm`) | ✅ Script idempotente |
-| Modelo del proceso publicado en Flowable | ✅ Se despliega (con marcadores en tareas automáticas) |
+| Modelo del proceso publicado en Flowable | ✅ Se despliega (con marcadores en tareas automáticas). ⚠️ El `.zip` del repo está desactualizado (ver 2.2) |
 | Backend etapas 1 a 5 | ✅ Implementadas y probadas |
 | Backend etapa 6 | Implementada; validación integrada con motor/web pendiente |
 | Backend etapa 7 | Implementada; validación integrada con motor/web pendiente |
 | Backend etapa 8 | Implementada; validación integrada con motor/web pendiente |
-| Backend etapas 9 a 11 | ⏳ Pendientes |
+| Backend etapa 9 | 🔄 En curso: paso 1 (definir docente, #17) implementado y probado con Postman contra Flowable real |
+| Backend etapas 10 y 11 | ⏳ Pendientes |
 | Web (etapas 1 a 9) | ✅ Completa contra mocks; falta conectarla al backend real |
 | Extensiones del motor (listeners en Java) | ⏳ Pendiente |
 | App de Materiales (`app-materiales/`, API Java) | ⏳ Pendiente |
 | Consultas históricas (4.3) y Minería PM4Py (4.4) | ⏳ Pendiente |
 
 ### Endpoints
+
+| Estado | Significado |
+|---|---|
+| 🚀 | Implementado y probado desde la web |
+| ✅ | Implementado y probado con Postman contra Flowable y Postgres reales |
+| 🔧 | Implementado con pruebas unitarias; falta la validación integrada |
+| ⏳ | Pendiente |
 
 | # | Endpoint | Etapa | Estado backend |
 |---|---|---|---|
@@ -32,17 +40,17 @@ Este documento sirve para seguir el avance: qué quedó implementado y probado, 
 | 3 | `POST /sesiones/empresa` | 4 | 🚀 |
 | 4 | `GET /sesiones/actual` | 4 | 🚀 |
 | 5 | `DELETE /sesiones/actual` | 4 | 🚀 |
-| 9 | `GET /tareas?bandeja=...` | 6 | ⏳ |
-| 10 | `GET /tareas/{taskId}` | 6 | ⏳ |
-| 11 | `POST /tareas/{taskId}/reclamo` | 6 | ⏳ |
-| 12 | `POST /tareas/{taskId}/completado` | 6 | ⏳ |
-| 13 | `POST /tareas/{taskId}/propuesta` | 7 | ⏳ |
-| 14 | `GET /cursos/{cursoId}/propuestas` | 7 | ⏳ |
-| 15 | `GET /cursos/{cursoId}/propuestas/{version}/pdf` | 7 | ⏳ |
-| 6 | `GET /cursos` | 8 | ⏳ |
-| 7 | `GET /cursos/{cursoId}` | 8 | ⏳ |
-| 8 | `GET /cursos/{cursoId}/actividades` | 8 | ⏳ |
-| 17 | `POST /tareas/{taskId}/docente` | 9 | ⏳ |
+| 9 | `GET /tareas?bandeja=...` | 6 | 🔧 |
+| 10 | `GET /tareas/{taskId}` | 6 | 🔧 |
+| 11 | `POST /tareas/{taskId}/reclamo` | 6 | 🔧 |
+| 12 | `POST /tareas/{taskId}/completado` | 6 | 🔧 |
+| 13 | `POST /tareas/{taskId}/propuesta` | 7 | 🔧 |
+| 14 | `GET /cursos/{cursoId}/propuestas` | 7 | 🔧 |
+| 15 | `GET /cursos/{cursoId}/propuestas/{version}/pdf` | 7 | 🔧 |
+| 6 | `GET /cursos` | 8 | 🔧 |
+| 7 | `GET /cursos/{cursoId}` | 8 | 🔧 |
+| 8 | `GET /cursos/{cursoId}/actividades` | 8 | 🔧 |
+| 17 | `POST /tareas/{taskId}/docente` | 9 | ✅ |
 | 18 | `POST /tareas/{taskId}/finalizacion-dictado` | 9 | ⏳ |
 | 19 | `GET /cursos/{cursoId}/informe/pdf` | 9 | ⏳ |
 | — | `POST /cursos/{cursoId}/informe` (del acuerdo; opcional para la web) | 9 | ⏳ |
@@ -58,25 +66,34 @@ Este documento sirve para seguir el avance: qué quedó implementado y probado, 
 ### 2.1 Infraestructura
 - **Docker Compose:** Flowable UI 6.8 (`:8080`), Postgres (publicado en **`127.0.0.1:5433`** para todo el equipo) y pgAdmin.
 - **Base `institucion`** dentro del mismo Postgres (dueño `flowable`). Hibernate crea las tablas (`ddl-auto=update`).
-- **El servicio `backend` del compose está comentado** hasta la etapa 11. Mientras tanto, el backend corre con `mvn spring-boot:run` en el puerto **8081**, que es el que usa el proxy de la web.
-- **`.env`** en la raíz (no se sube): credenciales de Postgres, pgAdmin, la cuenta REST de Flowable y `CURSOS_DATOS_DEMO=true`. La plantilla es `env.example`.
+- **El servicio `backend` del compose existe pero no recibe las variables de Postgres ni de Flowable** en esta rama (la configuración completa llega con el merge de `main`). No levantarlo: ocupa el 8081. El backend corre con `mvn spring-boot:run` en el puerto **8081**, que es el que usa el proxy de la web. Levantar solo `docker compose up -d postgres flowable pgadmin`.
+- **La base `institucion` se crea a mano** en esta rama: `docker exec -it flowable-postgres psql -U <POSTGRES_USER> -d <POSTGRES_DB> -c "CREATE DATABASE institucion;"`. En `main` la crea el servicio `institucion-db`.
+- **`.env`** en la raíz (no se sube): credenciales de Postgres, la cuenta REST de Flowable y `CURSOS_DATOS_DEMO=true`. **Sin espacios alrededor del `=`**: lo leen bash (`crear-usuarios.sh`) y Spring. La plantilla `env.example` llega con `main`; mientras tanto, las variables mínimas están en el README principal.
 - **`.gitignore` raíz:** `target/`, `node_modules/`, `dist/`, `.env*` (salvo los ejemplos), `application-local.*`, `backend/almacenamiento/`, `backend/archivos/`.
 
 ### 2.2 `motor-flowable/`
 | Carpeta | Contenido |
 |---|---|
-| `idm/crear-usuarios.sh` | Crea los grupos `Equipo-Administrativo` y `Equipo-Docente` y los usuarios `Jefe-Administrativo`, `empleado-administrativo`, `Jefe-Docente`, `docente-1` y `docente-2` (clave `1234` por defecto). Es idempotente. |
+| `idm/crear-usuarios.sh` | Crea los grupos `Equipo-Administrativo` y `Equipo-Docente` y los usuarios `Jefe-Administrativo`, `empleado-administrativo`, `Jefe-Docente`, `docente-1` y `docente-2` (clave `1234` por defecto). Es idempotente. Correrlo con `bash motor-flowable/idm/crear-usuarios.sh` (no tiene permiso de ejecución en git). |
 | `modelos/` | App exportada del Modeler (`.zip`), BPMN y DMN, con un README para importarla y publicarla. |
-| `prueba/` | Proceso mínimo de prueba. Se puede borrar cuando el modelo real esté estable. |
+| `extensiones/` | Lugar previsto para el `.jar` de listeners (vacío). |
 
-**Correcciones al modelo hechas hoy** (hay que dejarlas commiteadas en `modelos/`):
+**Correcciones al modelo del 11/11** (⚠️ el `Organizacion de cursos.zip` del repo **no las tiene**: sigue con el DMN viejo `otrasInstanciasActivas`. Al importarlo hay que corregir la variable a `cantCursos` antes de publicar y después volver a exportarlo):
 - Las 6 script tasks tienen scripts Groovy marcadores: `notificar_decision` además fija `resultadoProceso=NO_VIABLE`.
 - "Reservar aula Virtual" y "Liberar aula virtual" usan una expresión que fija `aulaVirtualReservada`. Es provisorio.
 - El inicio del subproceso de cancelación tiene `messageRef="cancelacionEmpresa"`.
 - La tabla `reglaViabilidad` usa la entrada **`cantCursos`** (antes era `otrasInstanciasActivas`) y la salida `resultadoViabilidad`: `< 5` da `true` y `>= 5` da `false`.
 - El id del proceso es **`process`**, que es el valor de `FLOWABLE_PROCESO_CLAVE` en el backend.
 
-### 2.3 Backend (Spring Boot 3.5, Java 21, rama `backend`)
+**Cambios del modelo para la etapa 9 (17/11):**
+- `desarrollar_curso`: assignee **`${docenteId}`** (Assignments → *Fixed values*), sin grupo candidato. ✅ Publicado y probado en el Flowable de Luka; falta exportarlo al `.zip`.
+- Timer *Fecha programa* (`fecha_programa`): ya usa `timeDate = ${fechaCurso}` (ISO 8601). Con una fecha pasada se dispara enseguida.
+- `elaborar_informe`: assignee `Jefe-Docente` + formulario por referencia con el campo `informeResumen`. ⏳ Para el paso 3.
+- `enviar_informe`: pasar de script a tarea de usuario de `Jefe-Administrativo`. ⏳ A confirmar con Alejo (paso 3).
+
+Las instrucciones para asignar a una variable y crear formularios por referencia están en `motor-flowable/modelos/README.md`.
+
+### 2.3 Backend (Spring Boot 3.5, Java 21, rama `backend-lauty`)
 El backend habla con Flowable **solo por REST**: no incluye el motor como dependencia ni escribe en las tablas `ACT_*`.
 
 | Etapa | Qué incluye |
@@ -86,6 +103,10 @@ El backend habla con Flowable **solo por REST**: no incluye el motor como depend
 | **3. Errores y cliente de Flowable** | Formato `{codigo, mensaje}` con `ApiException` y `ManejadorErrores`. `FlowableClient` con `RestClient`, timeouts de 3 y 15 s y traducción de errores: sin conexión, 401/403 o 5xx → 503 `MOTOR_NO_DISPONIBLE`, y se loguea `Flowable respondió ...`. `GET /api/v1/diagnostico/flowable` (temporal). |
 | **4. Sesiones** | Login del personal validando contra la identidad de Flowable, filtrado por los dos grupos (si no pertenece → 403). Login de empresa con BCrypt. Sesión con cookie `JSESSIONID` HttpOnly. `GET` y `DELETE /sesiones/actual`. `DatosDemo` crea `empresa-demo` / `1234`. |
 | **5. Solicitudes** | `POST /solicitudes` con `Idempotency-Key` y hash SHA-256 del cuerpo. Guarda la empresa (la reutiliza por identificador) y el curso como `SOLICITADO`. Cuenta las instancias activas → `cantCursos`. Inicia el proceso con `businessKey=curso:<uuid>` y las variables. Pasa a `EN_ACUERDO`, o a `NO_VIABLE` si la instancia terminó enseguida. Si el motor falla, el reintento con la misma clave retoma el mismo curso. |
+| **6. Tareas** | `TareaController` / `TareaService`: bandejas, detalle con contexto, reclamo y completado de tareas simples. IDs en `TareasProceso`. Ver `ETAPA_6_IMPLEMENTADA.md`. |
+| **7. Propuestas y PDF** | `PropuestaController` / `PropuestaService`: versiones, PDF con OpenPDF en `backend/almacenamiento/propuestas/`, historial y descarga. |
+| **8. Portal de empresa** | `CursoController` / `CursoService`: cursos de la empresa de la sesión, detalle y actividades en preparación. |
+| **9. Dictado (paso 1)** | `DictadoController` / `DictadoService`: `POST /tareas/{id}/docente`. `TareaService.listarDocentes()` y `docentes` en el contexto de `definir_docente`. `DictadoServiceTest` (4 pruebas). |
 
 **Probado en la etapa 5:**
 - Creación.
@@ -105,6 +126,12 @@ El backend habla con Flowable **solo por REST**: no incluye el motor como depend
 | Login 404 `NO_ENCONTRADO` | La URL de identidad tiene que terminar en `/identity`. |
 | No conecta a Postgres | El contenedor no estaba levantado, o hay un Postgres nativo en 5432. Usamos **5433**. |
 | 8081 ocupado | Un contenedor viejo del backend. Bajarlo; no cambiar el puerto. |
+| `password authentication failed for user "${POSTGRES_USER}"` | El backend no leyó el `.env`: tiene que estar en la raíz y `mvn` se corre desde `backend/`. |
+| `database "institucion" does not exist` | Base nueva de Postgres: crear `institucion` a mano (ver 2.1). |
+| 503 con `No process definition found for key 'process'` | La app no está publicada en ese Flowable (por ejemplo, en una instalación nueva). |
+| 503 con `Unknown property ... otrasInstanciasActivas` | Se publicó el `.zip` con el DMN viejo: cambiar la variable a `cantCursos` y volver a publicar. |
+| `crear-usuarios.sh`: `no es un archivo ejecutable` / `orden no encontrada` | Correrlo con `bash ...`; si menciona una línea del `.env`, esa línea tiene espacios alrededor del `=`. |
+| Postman `ECONNREFUSED` en 8081 u 8080 | El backend o Flowable no están corriendo (o siguen arrancando). |
 
 ### 2.4 Web (React + Vite + TypeScript, rama `luka/web-base`)
 - Etapas 1 a 9 completas **contra mocks (MSW)**: formulario público, login de personal y de empresa, bandeja de tareas, todos los formularios de tareas, portal de empresa con estado y actividades, y PDFs.
@@ -116,10 +143,10 @@ El backend habla con Flowable **solo por REST**: no incluye el motor como depend
 ## 3. Etapas que faltan
 
 Cada etapa se cierra igual:
-1. Probar con `curl` (y desde la web si ya está conectada).
+1. Probar con Postman (colección `docs/postman/etapa 9/`, una carpeta por etapa) y desde la web si ya está conectada.
 2. Commitear.
 3. Marcar los endpoints como 🚀 en `ENDPOINTS_WEB.md`.
-4. Actualizar `ARQUITECTURA.md`.
+4. Actualizar `BACKEND.md` y este documento.
 
 ### Antes de la etapa 6: IDs de las tareas
 La web todavía usa los IDs del modelo viejo. El backend y la web tienen que usar los del modelo actual. **Verificarlos con Alejo contra el BPMN publicado:**
@@ -221,18 +248,37 @@ Implementada en `backend`: controlador (`CursoController`), servicio (`CursoServ
 ### Etapa 9 — Docente, dictado e informe (#17, #18, #19)
 **Objetivo:** el jefe docente elige al docente, el docente marca el dictado como terminado y el informe se puede ver.
 
-**A implementar:**
-- `POST /tareas/{id}/docente` (tarea `definir_docente`):
-  - Validar que `docenteId` sea miembro de `Equipo-Docente` (`GET identity/users?memberOfGroup=...`).
-  - Completar la tarea con la variable `docenteId`.
-  - El contexto del #10 incluye `docentes` (los tres, con `esJefe`).
-- `POST /tareas/{id}/finalizacion-dictado` (tarea `desarrollar_curso`, solo el asignado). Si la tarea no está activa → 409.
-- `GET /cursos/{id}/informe/pdf`. Si el informe tiene PDF, se sirve. El resumen va en el contexto de `enviar_informe` (`informe.resumen`, `pdfDisponible`). *(En la V3 el PDF del informe ya no es obligatorio).*
-- Opcional, según el acuerdo: `POST /cursos/{id}/informe` (subir un PDF o generarlo desde el contenido).
+Se implementa por pasos. Para probar sin recorrer todo el proceso se usan dos atajos de Flowable (carpeta `9. Flowable directo` de Postman): fijar `fechaCurso` en una fecha pasada y mover la instancia con `POST runtime/process-instances/{id}/change-state`.
 
-**Depende del modelo:**
-- `desarrollar_curso` tiene que tener `flowable:assignee="${docenteId}"` (hoy está asignada al grupo).
-- El timer previo *Fecha programada* tiene que usar una variable dinámica (ej. `fechaCurso`, definida al aceptar la propuesta en la etapa 10), sin fecha fija en el diseño (sección 3.5 de la V3).
+| Paso | Qué incluye | Estado |
+|---|---|---|
+| 0 | Cambios del modelo (ver 2.2) | 🔄 `desarrollar_curso` listo; informe pendiente |
+| 1 | #17 `POST /tareas/{id}/docente` + `docentes` en el contexto | ✅ Probado con Postman (17/11) |
+| 2 | #18 `POST /tareas/{id}/finalizacion-dictado` | ⏳ |
+| 3 | Informe: `informeResumen` en el contexto de `enviar_informe` + #19 `GET /cursos/{id}/informe/pdf` | ⏳ |
+| 4 | Escenario completo en Postman y docs | ⏳ |
+
+**Paso 1 — Definir docente (hecho):**
+- `POST /tareas/{id}/docente` con `{"docenteId": "docente-1"}`, solo el asignado de `definir_docente` (403 si no), solo esa tarea (409 si es otra).
+- Valida que `docenteId` sea miembro de `Equipo-Docente` (`TareaService.listarDocentes()`, que usa `FlowableClient.miembrosDe` y `buscarUsuario`) → 400 si no.
+- Completa la tarea con la variable `docenteId` y pasa el curso a `CONFIRMADO_PENDIENTE_INICIO`.
+- El contexto de `definir_docente` trae `docentes: [{usuarioId, nombre, esJefe}]`.
+- `TareaService` tiene un constructor nuevo que recibe `cursos.grupo.docentes` y `cursos.usuario.jefe-docente`; el de 3 parámetros se conserva para los tests.
+- Probado (carpeta `4. Etapa 9 - paso a paso`): 400 con un no docente, 200 con `docente-1`, 404/409 al repetir, y `desarrollar_curso` aparece asignada a `docente-1` después del timer.
+
+**Paso 2 — Finalización del dictado (pendiente):**
+- `POST /tareas/{id}/finalizacion-dictado` con `{}`: solo `desarrollar_curso` y solo el asignado (403). Si la tarea no está activa → 409.
+- Completa la tarea y pasa el curso a `EN_ELABORACION_INFORME`.
+- `EN_DESARROLLO` lo marca el motor cuando vence el timer (listener, etapa 11).
+
+**Paso 3 — Informe (pendiente):**
+- El jefe docente completa `elaborar_informe` desde Flowable UI con el formulario por referencia (campo `informeResumen`). La web la muestra solo como etiqueta.
+- El backend lee `informeResumen` y lo pone en el contexto de `enviar_informe` / `archivar_expediente` (`informe.resumen`, `pdfDisponible`).
+- `GET /cursos/{id}/informe/pdf`: PDF generado al vuelo con OpenPDF desde el resumen. Lo ven el jefe administrativo, el jefe docente y la empresa dueña; si no hay informe o el curso es ajeno → 404. *(En la V3 el PDF del informe ya no es obligatorio).*
+- Opcional, según el acuerdo: `POST /cursos/{id}/informe`.
+
+**Depende del modelo:** `desarrollar_curso` con `${docenteId}` (hecho), timer con `${fechaCurso}` (hecho), formulario de `elaborar_informe` y `enviar_informe` como tarea de usuario (pendientes).
+`fechaCurso` la fija la comunicación `ACEPTACION` de la etapa 10; el diseño no tiene fechas fijas (sección 3.5 de la V3). Hasta entonces se fija a mano con Postman.
 
 ---
 
@@ -307,7 +353,10 @@ Si no hay una ejecución suscrita, la acción no está habilitada en ese momento
 - Dockerfile o script de copia del `.jar` a `flowable-persistente:/app/WEB-INF/lib/` y reinicio del contenedor.
 
 **Correcciones del modelo que quedan** (de `INICIO_Y_VIABILIDAD.md`, sección 7):
-- [ ] `desarrollar_curso` con `assignee="${docenteId}"` y timer previo *Fecha programada* leyendo variable dinámica.
+- [x] `desarrollar_curso` con `assignee="${docenteId}"` y timer previo *Fecha programada* leyendo `${fechaCurso}` (publicado en el Flowable de Luka; falta exportar el `.zip`).
+- [ ] Volver a exportar `Organizacion de cursos.zip` con el DMN `cantCursos` y los cambios de la etapa 9.
+- [ ] `elaborar_informe`: assignee `Jefe-Docente` + formulario por referencia con `informeResumen`.
+- [ ] `enviar_informe`: tarea de usuario de `Jefe-Administrativo` (hoy es script).
 - [ ] `confeccionar_lista`: una sola tarea, no multi-instancia.
 - [ ] Aula física y aula virtual invertidas: la física es la automática (web service simulado) y la virtual es la del administrativo.
 - [ ] Error por falta de aulas disponibles y generación de la excepción correspondiente (escenario 7).
@@ -326,6 +375,7 @@ Si no hay una ejecución suscrita, la acción no está habilitada en ese momento
 - [ ] Actualizar los IDs de las tareas (tabla de la sección 3) y los usuarios y grupos (`Jefe-Administrativo`, `Equipo-Administrativo`, etc.) en los mocks.
 - [ ] PR de `luka/web-base` → `main`, y después merge de `main` en `backend`.
 - [ ] Pasar del mock al backend real endpoint por endpoint, a medida que cada etapa queda 🚀.
+- [ ] Formulario de Definir docente: tomar la lista de `contexto.docentes` (`usuarioId`, `nombre`, `esJefe`) que ya devuelve el backend.
 - [ ] CSRF (etapa 11).
 
 ---
