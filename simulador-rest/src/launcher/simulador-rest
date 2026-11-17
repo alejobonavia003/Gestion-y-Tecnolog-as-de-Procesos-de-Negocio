@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+APP_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+CLASSPATH=$(cat "$APP_DIR/classpath.txt")
+JAVA=java
+if [ -n "${JAVA_HOME:-}" ]; then
+  JAVA="$JAVA_HOME/bin/java"
+fi
+cd "$APP_DIR/../.."
+exec "$JAVA" -cp "$APP_DIR/classes:$CLASSPATH" ar.edu.cursos.simulador.Main "$@"
