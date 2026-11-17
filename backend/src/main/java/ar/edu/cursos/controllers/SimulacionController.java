@@ -3,10 +3,13 @@ package ar.edu.cursos.controllers;
 import ar.edu.cursos.dto.ComunicacionRequest;
 import ar.edu.cursos.dto.ComunicacionResponse;
 import ar.edu.cursos.dto.SolicitudSimulacionResponse;
-import ar.edu.cursos.services.SesionService;
 import ar.edu.cursos.services.SimulacionService;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,35 +25,35 @@ import java.util.UUID;
 public class SimulacionController {
 
     private final SimulacionService simulacionService;
-    private final SesionService sesionService;
 
-    public SimulacionController(SimulacionService simulacionService, SesionService sesionService) {
+    public SimulacionController(SimulacionService simulacionService) {
         this.simulacionService = simulacionService;
-        this.sesionService = sesionService;
     }
 
     @GetMapping
-    public Map<String, Object> listar(HttpServletRequest request) {
-        sesionService.requerirPersonal(request);
+    public Map<String, Object> listar() {
         return simulacionService.listarSolicitudes();
     }
 
     @GetMapping("/{cursoId}/comunicaciones")
-    public SolicitudSimulacionResponse obtenerComunicaciones(
-            @PathVariable UUID cursoId,
-            HttpServletRequest request
-    ) {
-        sesionService.requerirPersonal(request);
+    public SolicitudSimulacionResponse obtenerComunicaciones(@PathVariable UUID cursoId) {
         return simulacionService.obtenerComunicacionesHabilitadas(cursoId);
+    }
+
+    @GetMapping("/{cursoId}/propuesta-pdf")
+    public ResponseEntity<byte[]> descargarPdfPropuesta(@PathVariable UUID cursoId) {
+        byte[] pdf = simulacionService.obtenerPdfPropuestaVigente(cursoId);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDisposition(ContentDisposition.inline().filename("propuesta-empresa.pdf").build());
+        return new ResponseEntity<>(pdf, headers, HttpStatus.OK);
     }
 
     @PostMapping("/{cursoId}/comunicaciones")
     public ComunicacionResponse enviarComunicacion(
             @PathVariable UUID cursoId,
-            @Valid @RequestBody ComunicacionRequest body,
-            HttpServletRequest request
+            @Valid @RequestBody ComunicacionRequest body
     ) {
-        sesionService.requerirPersonal(request);
         return simulacionService.aplicarComunicacion(cursoId, body);
     }
 }

@@ -313,6 +313,11 @@ public class SimulacionService {
         Integer versionVigente = propOpt.map(Propuesta::getVersion).orElse(null);
         List< java.time.OffsetDateTime > fechas = propOpt.map(Propuesta::getFechasPosibles).orElse(List.of());
 
+        String programa = propOpt.map(Propuesta::getPrograma).orElse(null);
+        String presupuesto = propOpt
+                .map(p -> p.getPresupuestoMoneda() + " " + p.getPresupuestoImporte().toPlainString())
+                .orElse(null);
+
         List<String> acciones = new ArrayList<>();
         String pid = curso.getProcessInstanceId();
         if (pid != null) {
@@ -340,6 +345,8 @@ public class SimulacionService {
                 curso.getEmpresa() != null ? curso.getEmpresa().getNombre() : "-",
                 curso.getEstado().name(),
                 versionVigente,
+                programa,
+                presupuesto,
                 fechas,
                 acciones
         );
@@ -352,6 +359,20 @@ public class SimulacionService {
             return HexFormat.of().formatHex(digest);
         } catch (JsonProcessingException | NoSuchAlgorithmException e) {
             throw new IllegalStateException("No se pudo calcular el hash de la comunicación", e);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] obtenerPdfPropuestaVigente(UUID cursoId) {
+        Propuesta vigente = propuestas.findFirstByCursoIdOrderByVersionDesc(cursoId)
+                .orElseThrow(() -> ApiException.noEncontrado("El curso todavía no tiene una propuesta emitida."));
+        if (vigente.getPdfRuta() == null || vigente.getPdfRuta().isBlank()) {
+            throw ApiException.noEncontrado("La propuesta no tiene PDF asociado.");
+        }
+        try {
+            return java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(vigente.getPdfRuta()));
+        } catch (java.io.IOException e) {
+            throw ApiException.noEncontrado("No se pudo leer el PDF de la propuesta.");
         }
     }
 }

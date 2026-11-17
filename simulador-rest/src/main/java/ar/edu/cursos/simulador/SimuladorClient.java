@@ -4,12 +4,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
-import java.net.CookieManager;
-import java.net.CookiePolicy;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -20,37 +20,14 @@ import java.util.UUID;
 public final class SimuladorClient {
 
     private final String baseUrl;
-    private final CookieManager cookies;
     private final HttpClient http;
     private final ObjectMapper json = new ObjectMapper();
 
     public SimuladorClient(Configuracion config) {
         this.baseUrl = config.baseUrl();
-        this.cookies = new CookieManager(null, CookiePolicy.ACCEPT_ALL);
         this.http = HttpClient.newBuilder()
-                .cookieHandler(cookies)
                 .connectTimeout(Duration.ofSeconds(5))
                 .build();
-    }
-
-    public String ingresar(String usuarioId, char[] clave) {
-        Map<String, String> payload = Map.of(
-                "usuarioId", usuarioId,
-                "clave", new String(clave)
-        );
-        JsonNode resp = enviar("POST", "/sesiones/personal", payload);
-        String nombre = resp.path("nombre").asText("");
-        String id = resp.path("usuarioId").asText(usuarioId);
-        return nombre.isBlank() ? id : nombre + " (" + id + ")";
-    }
-
-    public void salir() {
-        try {
-            enviar("DELETE", "/sesiones/actual", null);
-        } catch (Exception ignored) {
-        } finally {
-            cookies.getCookieStore().removeAll();
-        }
     }
 
     public List<SolicitudSimulacion> listarSolicitudes() {
@@ -65,6 +42,28 @@ public final class SimuladorClient {
     public SolicitudSimulacion consultarComunicaciones(String cursoId) {
         JsonNode resp = enviar("GET", "/simulacion/solicitudes/" + cursoId + "/comunicaciones", null);
         return parsearSolicitud(resp);
+    }
+
+    public Path descargarPdfPropuesta(String cursoId, int version) {
+        try {
+            HttpRequest req = HttpRequest.newBuilder()
+                    .uri(URI.create(baseUrl + "/simulacion/solicitudes/" + cursoId + "/propuesta-pdf"))
+                    .timeout(Duration.ofSeconds(15))
+                    .GET()
+                    .build();
+            HttpResponse<byte[]> resp = http.send(req, HttpResponse.BodyHandlers.ofByteArray());
+            if (resp.statusCode() != 200) {
+                throw new ErrorAplicacion("No se encontró el PDF de la propuesta (HTTP " + resp.statusCode() + ").");
+            }
+            Path archivo = Files.createTempFile("propuesta-" + cursoId + "-v" + version + "-", ".pdf");
+            Files.write(archivo, resp.body());
+            return archivo;
+        } catch (IOException e) {
+            throw new ErrorAplicacion("No se pudo descargar el PDF de la propuesta: " + e.getMessage());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ErrorAplicacion("Descarga interrumpida.");
+        }
     }
 
     public String enviarComunicacion(
@@ -98,15 +97,17 @@ public final class SimuladorClient {
         JsonNode resp = enviar("POST", "/simulacion/solicitudes/" + cursoId + "/comunicaciones", body);
         String cuenta = resp.path("cuentaEmpresaUsuario").asText("");
         if (!cuenta.isBlank() && !resp.path("cuentaEmpresaUsuario").isNull()) {
-            return "Comunicación " + tipo + " aplicada. Cuenta empresa habilitada: " + cuenta + " (clave demo: 1234).";
+            return "Comunicación " + tipo + " enviada. Cuenta de portal habilitada para la empresa: usuario '" + cuenta + "' (clave demo: 1234).";
         }
-        return "Comunicación " + tipo + " aplicada correctamente.";
+        return "Comunicación " + tipo + " enviada correctamente.";
     }
 
     private SolicitudSimulacion parsearSolicitud(JsonNode n) {
         Integer version = n.path("propuestaVersionVigente").isNumber()
                 ? n.get("propuestaVersionVigente").asInt()
                 : null;
+        String programa = n.path("programaPropuesto").isNull() ? "" : n.path("programaPropuesto").asText("");
+        String presupuesto = n.path("presupuestoPropuesto").isNull() ? "" : n.path("presupuestoPropuesto").asText("");
         List<String> fechas = new ArrayList<>();
         for (JsonNode f : n.path("fechasPosibles")) {
             fechas.add(f.asText());
@@ -121,6 +122,8 @@ public final class SimuladorClient {
                 n.path("empresaNombre").asText(""),
                 n.path("estado").asText(""),
                 version,
+                programa,
+                presupuesto,
                 fechas,
                 acciones
         );
