@@ -277,10 +277,6 @@ public class FlowableClient {
                 .body(JsonNode.class));
     }
 
-<<<<<<< HEAD
-=======
-
->>>>>>> app-materiales
     public Optional<String> buscarEjecucionPorMensaje(String processInstanceId, String messageName) {
         JsonNode respuesta = llamar(() -> rest.get()
                 .uri("/runtime/executions?processInstanceId={pid}&messageEventSubscriptionName={msg}",
@@ -319,7 +315,6 @@ public class FlowableClient {
                 .retrieve()
                 .toBodilessEntity());
     }
-<<<<<<< HEAD
 
 
     /**
@@ -337,6 +332,4 @@ public class FlowableClient {
         JsonNode valor = data.get(0).path("variable").path("value");
         return valor.isMissingNode() || valor.isNull() ? Optional.empty() : Optional.of(valor.asText());
     }
-=======
->>>>>>> app-materiales
 }
