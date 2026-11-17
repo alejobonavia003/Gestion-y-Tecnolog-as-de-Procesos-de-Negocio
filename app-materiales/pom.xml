@@ -14,6 +14,31 @@
   </dependencies>
   <build><finalName>app-materiales</finalName><plugins>
     <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><version>3.14.1</version></plugin>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId><artifactId>maven-dependency-plugin</artifactId><version>3.8.1</version>
+      <executions><execution><id>classpath-lanzador</id><phase>compile</phase><goals><goal>build-classpath</goal></goals>
+        <configuration><includeScope>runtime</includeScope><outputFile>${project.build.directory}/classpath.txt</outputFile></configuration>
+      </execution></executions>
+    </plugin>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId><artifactId>maven-antrun-plugin</artifactId><version>3.2.0</version>
+      <executions><execution><id>crear-lanzador</id><phase>compile</phase><goals><goal>run</goal></goals>
+        <configuration><target>
+          <copy file="${project.basedir}/src/launcher/app-materiales" tofile="${project.build.directory}/app-materiales" overwrite="true"/>
+          <chmod file="${project.build.directory}/app-materiales" perm="755" osfamily="unix"/>
+          <echo file="${project.build.directory}/Materiales.desktop" encoding="UTF-8">[Desktop Entry]
+Type=Application
+Name=Preparación de materiales
+Comment=Aplicación de gestión de materiales de cursos
+Exec=&quot;${project.build.directory}/app-materiales&quot;
+Icon=applications-office
+Terminal=false
+Categories=Office;
+</echo>
+          <chmod file="${project.build.directory}/Materiales.desktop" perm="755" osfamily="unix"/>
+        </target></configuration>
+      </execution></executions>
+    </plugin>
     <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><version>3.5.6</version></plugin>
     <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-shade-plugin</artifactId><version>3.6.0</version><executions><execution><phase>package</phase><goals><goal>shade</goal></goals><configuration>
       <createDependencyReducedPom>false</createDependencyReducedPom>

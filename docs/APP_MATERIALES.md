@@ -14,11 +14,20 @@ Desde la raíz del repositorio:
 
 ```bash
 docker compose up -d
-mvn -f app-materiales/pom.xml clean verify
-java -jar app-materiales/target/app-materiales.jar
+mvn -f app-materiales/pom.xml compile
+./app-materiales/target/app-materiales
 ```
 
-El compilado es un único JAR con sus dependencias: `app-materiales/target/app-materiales.jar`.
+En Linux, `compile` genera el ejecutable `app-materiales/target/app-materiales`
+y el acceso directo `app-materiales/target/Materiales.desktop`, que podés abrir con
+doble clic. Si tu administrador de archivos lo pide, habilitá «Permitir ejecutar».
+Necesitan Java 21 y las dependencias locales de Maven. El lanzador ubica el `.env`
+desde la raíz del repositorio, independientemente de dónde lo abras. Si movés el
+repositorio, recompilá para actualizar la ruta del acceso directo.
+
+Para generar además un único JAR con sus dependencias
+(`app-materiales/target/app-materiales.jar`), ejecutá
+`mvn -f app-materiales/pom.xml clean verify`.
 `clean verify` corre **6 pruebas rápidas**, sin conectarse a Docker. Hay otras
 **2 pruebas de integración opcionales**, explicadas más abajo; aparecen omitidas
 si no se habilitan. No hace falta correr una batería grande para usar esta app.
