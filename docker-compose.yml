@@ -111,6 +111,7 @@ services:
       - flowable-net
 
 volumes:
+  backend_archivos:
   postgres_data:
   pgadmin_data:
 
