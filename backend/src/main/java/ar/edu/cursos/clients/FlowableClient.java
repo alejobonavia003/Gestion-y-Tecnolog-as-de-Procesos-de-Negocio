@@ -276,4 +276,43 @@ public class FlowableClient {
                 .retrieve()
                 .body(JsonNode.class));
     }
+
+    public Optional<String> buscarEjecucionPorMensaje(String processInstanceId, String messageName) {
+        JsonNode respuesta = llamar(() -> rest.get()
+                .uri("/runtime/executions?processInstanceId={pid}&messageEventSubscriptionName={msg}",
+                        processInstanceId, messageName)
+                .retrieve()
+                .body(JsonNode.class));
+        JsonNode data = respuesta.path("data");
+        return data.isArray() && !data.isEmpty()
+                ? Optional.of(data.get(0).path("id").asText())
+                : Optional.empty();
+    }
+
+    public void enviarMensajeAEjecucion(String executionId, String messageName, Map<String, Object> variables) {
+        Map<String, Object> cuerpo = new LinkedHashMap<>();
+        cuerpo.put("action", "messageEventReceived");
+        cuerpo.put("messageName", messageName);
+        cuerpo.put("variables", aVariablesRest(variables));
+
+        llamar(() -> rest.put()
+                .uri("/runtime/executions/{id}", executionId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(cuerpo)
+                .retrieve()
+                .toBodilessEntity());
+    }
+
+    public void senalarEjecucion(String executionId, Map<String, Object> variables) {
+        Map<String, Object> cuerpo = new LinkedHashMap<>();
+        cuerpo.put("action", "signal");
+        cuerpo.put("variables", aVariablesRest(variables));
+
+        llamar(() -> rest.put()
+                .uri("/runtime/executions/{id}", executionId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(cuerpo)
+                .retrieve()
+                .toBodilessEntity());
+    }
 }
