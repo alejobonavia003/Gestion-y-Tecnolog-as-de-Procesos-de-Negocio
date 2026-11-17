@@ -27,6 +27,9 @@ services:
       FLOWABLE_REST_CLAVE: ${FLOWABLE_REST_CLAVE:?Configurar FLOWABLE_REST_CLAVE en .env}
       FLOWABLE_PROCESO_CLAVE: ${FLOWABLE_PROCESO_CLAVE:-process}
       CURSOS_DATOS_DEMO: ${CURSOS_DATOS_DEMO:-false}
+      CURSOS_PROPUESTAS_DIR: /app/almacenamiento/propuestas
+    volumes:
+      - backend_archivos:/app/almacenamiento
     depends_on:
       postgres:
         condition: service_healthy
@@ -77,6 +80,7 @@ services:
     networks:
       - flowable-net
 
+  # Crea solo la base que falta; conserva los datos de los volúmenes existentes.
   # También funciona con volúmenes existentes: no elimina ni reinicializa datos.
   institucion-db:
     image: postgres:15
@@ -111,6 +115,7 @@ services:
       - flowable-net
 
 volumes:
+  backend_archivos:
   postgres_data:
   pgadmin_data:
 

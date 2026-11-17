@@ -1,6 +1,7 @@
 #!/bin/sh
 set -eu
 
+# Escapar el nombre como identificador SQL y crear solo si no existe.
 # %I y %L escapan el identificador y el literal; \gexec ejecuta solo si falta.
 psql -v ON_ERROR_STOP=1 -v nombre="$INSTITUCION_DB_NAME" <<'SQL'
 SELECT format('CREATE DATABASE %I', :'nombre')
