@@ -56,6 +56,34 @@ public class DictadoService {
     }
 
     // --- Utilidades compartidas con el paso 2 --------------------------------
+    // --- #18 POST /tareas/{taskId}/finalizacion-dictado ----------------------
+
+    @Transactional
+    public void finalizarDictado(String taskId, SesionUsuario sesion) {
+        JsonNode tarea;
+        try {
+            tarea = motor.tarea(taskId);
+        } catch (ApiException e) {
+            // La tarea ya se completó o el timer "Fecha programa" todavía no venció.
+            if ("NO_ENCONTRADO".equals(e.getCodigo())) {
+                throw ApiException.conflicto("ESTADO_INCOMPATIBLE", "El curso no está en desarrollo.");
+            }
+            throw e;
+        }
+        if (!DESARROLLAR_CURSO.equals(tarea.path("taskDefinitionKey").asText())) {
+            throw ApiException.conflicto("ESTADO_INCOMPATIBLE", "Esta operación no corresponde a esta tarea.");
+        }
+        exigirAsignado(tarea, sesion);
+        Curso curso = curso(tarea);
+
+        // Sin variables: el proceso sigue a "Elaborar informe".
+        motor.completar(taskId, Map.of());
+
+        curso.setEstado(EstadoCurso.EN_ELABORACION_INFORME);
+        cursos.save(curso);
+    }
+
+    // --- Utilidades -----------------------------------------------------------
 
     /** Trae la tarea y verifica que sea del tipo esperado (si no, 409). */
     private JsonNode tareaDelTipo(String taskId, String tipo) {

@@ -79,4 +79,41 @@ class DictadoServiceTest {
 
         assertEquals("ESTADO_INCOMPATIBLE", codigo(() -> servicio.definirDocente("t1", jefeDocente, "docente-1")));
     }
+
+
+    // --- Paso 2: finalización del dictado ------------------------------------
+
+    SesionUsuario docente1 = SesionUsuario.personal("docente-1", "Docente 1", List.of("Equipo-Docente"), false);
+
+    @Test
+    void finalizarDictado_completaYPasaAElaboracionDeInforme() throws Exception {
+        when(motor.tarea("t1")).thenReturn(tarea("desarrollar_curso", "docente-1"));
+
+        servicio.finalizarDictado("t1", docente1);
+
+        verify(motor).completar("t1", Map.of());
+        verify(curso).setEstado(EstadoCurso.EN_ELABORACION_INFORME);
+    }
+
+    @Test
+    void finalizarDictado_otroDocente_da403() throws Exception {
+        when(motor.tarea("t1")).thenReturn(tarea("desarrollar_curso", "docente-2"));
+
+        assertEquals("SIN_PERMISO", codigo(() -> servicio.finalizarDictado("t1", docente1)));
+        verify(motor, never()).completar(anyString(), anyMap());
+    }
+
+    @Test
+    void finalizarDictado_tareaInexistente_da409() {
+        when(motor.tarea("t1")).thenThrow(ApiException.noEncontrado("No existe"));
+
+        assertEquals("ESTADO_INCOMPATIBLE", codigo(() -> servicio.finalizarDictado("t1", docente1)));
+    }
+
+    @Test
+    void finalizarDictado_otraTarea_da409() throws Exception {
+        when(motor.tarea("t1")).thenReturn(tarea("definir_docente", "docente-1"));
+
+        assertEquals("ESTADO_INCOMPATIBLE", codigo(() -> servicio.finalizarDictado("t1", docente1)));
+    }
 }

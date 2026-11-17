@@ -34,4 +34,11 @@ public class DictadoController {
         dictado.definirDocente(taskId, sesiones.requerirPersonal(request), cuerpo.docenteId().trim());
         return Map.of("completada", true);
     }
+
+    /** El cuerpo es {} o vacío: el docente sale de la sesión. */
+    @PostMapping("/{taskId}/finalizacion-dictado")
+    public Map<String, Boolean> finalizarDictado(@PathVariable String taskId, HttpServletRequest request) {
+        dictado.finalizarDictado(taskId, sesiones.requerirPersonal(request));
+        return Map.of("completada", true);
+    }
 }
