@@ -101,7 +101,13 @@ public class TareaService {
             datos.put("fechaCurso", curso.getFechaCurso()); contexto.put("curso", datos);
             if (Set.of(ENVIAR_INFORME, ARCHIVAR_EXPEDIENTE).contains(key)) {
                 Map<String, Object> informe = new LinkedHashMap<>();
-                informe.put("resumen", curso.getInformeResumen()); informe.put("pdfDisponible", false); contexto.put("informe", informe);
+                // informeResumen lo carga el jefe docente en el formulario de elaborar_informe (Flowable UI).
+                Object variable = variables.get("informeResumen");
+                String resumen = variable instanceof JsonNode n && !n.isNull() && !n.asText().isBlank()
+                        ? n.asText() : curso.getInformeResumen();
+                informe.put("resumen", resumen);
+                informe.put("pdfDisponible", resumen != null && !resumen.isBlank());
+                contexto.put("informe", informe);
             }
         }
 

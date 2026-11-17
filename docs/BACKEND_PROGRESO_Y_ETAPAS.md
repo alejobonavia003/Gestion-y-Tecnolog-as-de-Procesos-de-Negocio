@@ -17,7 +17,7 @@ Este documento sirve para seguir el avance: qué quedó implementado y probado, 
 | Backend etapa 6 | Implementada; validación integrada con motor/web pendiente |
 | Backend etapa 7 | Implementada; validación integrada con motor/web pendiente |
 | Backend etapa 8 | Implementada; validación integrada con motor/web pendiente |
-| Backend etapa 9 | 🔄 En curso: paso 1 (definir docente, #17) implementado y probado con Postman contra Flowable real |
+| Backend etapa 9 | ✅ Completa: #17, #18 y #19 probados con Postman contra Flowable real |
 | Backend etapas 10 y 11 | ⏳ Pendientes |
 | Web (etapas 1 a 9) | ✅ Completa contra mocks; falta conectarla al backend real |
 | Extensiones del motor (listeners en Java) | ⏳ Pendiente |
@@ -32,6 +32,7 @@ Este documento sirve para seguir el avance: qué quedó implementado y probado, 
 | ✅ | Implementado y probado con Postman contra Flowable y Postgres reales |
 | 🔧 | Implementado con pruebas unitarias; falta la validación integrada |
 | ⏳ | Pendiente |
+| ➖ | Descartado |
 
 | # | Endpoint | Etapa | Estado backend |
 |---|---|---|---|
@@ -51,9 +52,9 @@ Este documento sirve para seguir el avance: qué quedó implementado y probado, 
 | 7 | `GET /cursos/{cursoId}` | 8 | 🔧 |
 | 8 | `GET /cursos/{cursoId}/actividades` | 8 | 🔧 |
 | 17 | `POST /tareas/{taskId}/docente` | 9 | ✅ |
-| 18 | `POST /tareas/{taskId}/finalizacion-dictado` | 9 | ⏳ |
-| 19 | `GET /cursos/{cursoId}/informe/pdf` | 9 | ⏳ |
-| — | `POST /cursos/{cursoId}/informe` (del acuerdo; opcional para la web) | 9 | ⏳ |
+| 18 | `POST /tareas/{taskId}/finalizacion-dictado` | 9 | ✅ |
+| 19 | `GET /cursos/{cursoId}/informe/pdf` | 9 | ✅ |
+| — | ~~`POST /cursos/{cursoId}/informe`~~ (del acuerdo; opcional) | 9 | ➖ Descartado (el informe se carga en Flowable UI) |
 | — | `GET /simulacion/solicitudes` | 10 | ⏳ |
 | — | `GET /simulacion/solicitudes/{cursoId}/comunicaciones` | 10 | ⏳ |
 | — | `POST /simulacion/solicitudes/{cursoId}/comunicaciones` | 10 | ⏳ |
@@ -88,8 +89,8 @@ Este documento sirve para seguir el avance: qué quedó implementado y probado, 
 **Cambios del modelo para la etapa 9 (17/11):**
 - `desarrollar_curso`: assignee **`${docenteId}`** (Assignments → *Fixed values*), sin grupo candidato. ✅ Publicado y probado en el Flowable de Luka; falta exportarlo al `.zip`.
 - Timer *Fecha programa* (`fecha_programa`): ya usa `timeDate = ${fechaCurso}` (ISO 8601). Con una fecha pasada se dispara enseguida.
-- `elaborar_informe`: assignee `Jefe-Docente` + formulario por referencia con el campo `informeResumen`. ⏳ Para el paso 3.
-- `enviar_informe`: pasar de script a tarea de usuario de `Jefe-Administrativo`. ⏳ A confirmar con Alejo (paso 3).
+- `elaborar_informe`: assignee `Jefe-Docente` + formulario por referencia *Informe de resultados* con el campo `informeResumen`. ✅ Publicado en el Flowable de Luka; falta exportarlo al `.zip`.
+- `enviar_informe`: hoy es script. Decidir con Alejo si pasa a tarea de usuario de `Jefe-Administrativo`; el backend funciona con las dos opciones.
 
 Las instrucciones para asignar a una variable y crear formularios por referencia están en `motor-flowable/modelos/README.md`.
 
@@ -106,7 +107,7 @@ El backend habla con Flowable **solo por REST**: no incluye el motor como depend
 | **6. Tareas** | `TareaController` / `TareaService`: bandejas, detalle con contexto, reclamo y completado de tareas simples. IDs en `TareasProceso`. Ver `ETAPA_6_IMPLEMENTADA.md`. |
 | **7. Propuestas y PDF** | `PropuestaController` / `PropuestaService`: versiones, PDF con OpenPDF en `backend/almacenamiento/propuestas/`, historial y descarga. |
 | **8. Portal de empresa** | `CursoController` / `CursoService`: cursos de la empresa de la sesión, detalle y actividades en preparación. |
-| **9. Dictado (paso 1)** | `DictadoController` / `DictadoService`: `POST /tareas/{id}/docente`. `TareaService.listarDocentes()` y `docentes` en el contexto de `definir_docente`. `DictadoServiceTest` (4 pruebas). |
+| **9. Docente, dictado e informe** | `DictadoController` / `DictadoService` (#17 y #18), `InformeController` / `InformeService` (#19, PDF al vuelo), `TareaService.listarDocentes()` e informe en el contexto, `FlowableClient.variableHistorica`. 14 pruebas en `DictadoServiceTest` e `InformeServiceTest`. |
 
 **Probado en la etapa 5:**
 - Creación.
@@ -246,39 +247,59 @@ Implementada en `backend`: controlador (`CursoController`), servicio (`CursoServ
 ---
 
 ### Etapa 9 — Docente, dictado e informe (#17, #18, #19)
-**Objetivo:** el jefe docente elige al docente, el docente marca el dictado como terminado y el informe se puede ver.
 
-Se implementa por pasos. Para probar sin recorrer todo el proceso se usan dos atajos de Flowable (carpeta `9. Flowable directo` de Postman): fijar `fechaCurso` en una fecha pasada y mover la instancia con `POST runtime/process-instances/{id}/change-state`.
+✅ **Completa** (17/11/2026, rama `backend-lauty`). Probada de punta a punta con Postman contra Flowable y Postgres reales (carpeta `4. Etapa 9 - paso a paso` de `docs/postman/etapa 9/`, 30 requests en verde) y con 14 pruebas unitarias (`DictadoServiceTest` y `InformeServiceTest`).
+
+**Objetivo:** el jefe docente elige al docente, el docente marca el dictado como terminado, el jefe docente carga el informe y el informe se puede ver en PDF.
 
 | Paso | Qué incluye | Estado |
 |---|---|---|
-| 0 | Cambios del modelo (ver 2.2) | 🔄 `desarrollar_curso` listo; informe pendiente |
-| 1 | #17 `POST /tareas/{id}/docente` + `docentes` en el contexto | ✅ Probado con Postman (17/11) |
-| 2 | #18 `POST /tareas/{id}/finalizacion-dictado` | ⏳ |
-| 3 | Informe: `informeResumen` en el contexto de `enviar_informe` + #19 `GET /cursos/{id}/informe/pdf` | ⏳ |
-| 4 | Escenario completo en Postman y docs | ⏳ |
+| 0 | Cambios del modelo: `desarrollar_curso` con `${docenteId}`, `elaborar_informe` con `Jefe-Docente` + formulario | ✅ |
+| 1 | #17 `POST /tareas/{id}/docente` + `docentes` en el contexto | ✅ |
+| 2 | #18 `POST /tareas/{id}/finalizacion-dictado` | ✅ |
+| 3 | Informe en el contexto de cierre + #19 `GET /cursos/{id}/informe/pdf` | ✅ |
+| 4 | Escenario completo en Postman y docs | ✅ |
 
-**Paso 1 — Definir docente (hecho):**
-- `POST /tareas/{id}/docente` con `{"docenteId": "docente-1"}`, solo el asignado de `definir_docente` (403 si no), solo esa tarea (409 si es otra).
-- Valida que `docenteId` sea miembro de `Equipo-Docente` (`TareaService.listarDocentes()`, que usa `FlowableClient.miembrosDe` y `buscarUsuario`) → 400 si no.
-- Completa la tarea con la variable `docenteId` y pasa el curso a `CONFIRMADO_PENDIENTE_INICIO`.
+**Flujo implementado:**
+```
+definir_docente (Jefe-Docente)  →  POST /tareas/{id}/docente {docenteId}
+        │                            → variable docenteId, curso CONFIRMADO_PENDIENTE_INICIO
+timer "Fecha programa" (${fechaCurso})
+        │
+desarrollar_curso (${docenteId}) →  POST /tareas/{id}/finalizacion-dictado
+        │                            → curso EN_ELABORACION_INFORME
+elaborar_informe (Jefe-Docente)  →  Flowable UI, formulario "Informe de resultados"
+        │                            → variable informeResumen
+enviar_informe / archivar_expediente → contexto.informe {resumen, pdfDisponible}
+                                       GET /cursos/{id}/informe/pdf
+```
+
+**#17 — Definir docente:**
+- Solo el asignado de `definir_docente` (403), solo esa tarea (409).
+- `docenteId` tiene que ser miembro de `Equipo-Docente` (`TareaService.listarDocentes()`, con `FlowableClient.miembrosDe` y `buscarUsuario`) → 400 si no.
+- Completa con la variable `docenteId` y pasa el curso a `CONFIRMADO_PENDIENTE_INICIO`.
 - El contexto de `definir_docente` trae `docentes: [{usuarioId, nombre, esJefe}]`.
-- `TareaService` tiene un constructor nuevo que recibe `cursos.grupo.docentes` y `cursos.usuario.jefe-docente`; el de 3 parámetros se conserva para los tests.
-- Probado (carpeta `4. Etapa 9 - paso a paso`): 400 con un no docente, 200 con `docente-1`, 404/409 al repetir, y `desarrollar_curso` aparece asignada a `docente-1` después del timer.
 
-**Paso 2 — Finalización del dictado (pendiente):**
-- `POST /tareas/{id}/finalizacion-dictado` con `{}`: solo `desarrollar_curso` y solo el asignado (403). Si la tarea no está activa → 409.
-- Completa la tarea y pasa el curso a `EN_ELABORACION_INFORME`.
-- `EN_DESARROLLO` lo marca el motor cuando vence el timer (listener, etapa 11).
+**#18 — Finalización del dictado:**
+- Body `{}`. Solo `desarrollar_curso` y solo el docente asignado (403).
+- Si la tarea ya no existe (completada o el timer todavía no venció) → 409 `ESTADO_INCOMPATIBLE` ("El curso no está en desarrollo"). Otra tarea → 409.
+- Completa sin variables y pasa el curso a `EN_ELABORACION_INFORME`.
 
-**Paso 3 — Informe (pendiente):**
-- El jefe docente completa `elaborar_informe` desde Flowable UI con el formulario por referencia (campo `informeResumen`). La web la muestra solo como etiqueta.
-- El backend lee `informeResumen` y lo pone en el contexto de `enviar_informe` / `archivar_expediente` (`informe.resumen`, `pdfDisponible`).
-- `GET /cursos/{id}/informe/pdf`: PDF generado al vuelo con OpenPDF desde el resumen. Lo ven el jefe administrativo, el jefe docente y la empresa dueña; si no hay informe o el curso es ajeno → 404. *(En la V3 el PDF del informe ya no es obligatorio).*
-- Opcional, según el acuerdo: `POST /cursos/{id}/informe`.
+**Informe y #19:**
+- El jefe docente completa `elaborar_informe` en Flowable UI (la web la muestra como etiqueta). El campo `informeResumen` del formulario queda como variable del proceso.
+- `GET /tareas/{id}` de `enviar_informe` / `archivar_expediente` trae `informe: {resumen, pdfDisponible}` (variable del proceso; si no está, la columna `curso.informe_resumen`).
+- `GET /cursos/{id}/informe/pdf`: PDF generado al vuelo con OpenPDF (temática, empresa, docente, fecha, participantes y resumen). No se guarda ningún archivo. Lee `informeResumen` del **historial** de Flowable (`FlowableClient.variableHistorica`), así que funciona aunque el proceso haya terminado, y la primera vez lo copia a `curso.informe_resumen`.
+- Permisos: `Jefe-Administrativo` y `Jefe-Docente` ven cualquier informe; la empresa solo los de sus cursos (404 si es ajeno); otro personal → 403; sin informe → 404.
+- `POST /cursos/{id}/informe` del acuerdo: ➖ **no se implementa**. El informe se carga desde el formulario de Flowable UI, la web no lo usa y en la V3 el PDF no es obligatorio.
 
-**Depende del modelo:** `desarrollar_curso` con `${docenteId}` (hecho), timer con `${fechaCurso}` (hecho), formulario de `elaborar_informe` y `enviar_informe` como tarea de usuario (pendientes).
-`fechaCurso` la fija la comunicación `ACEPTACION` de la etapa 10; el diseño no tiene fechas fijas (sección 3.5 de la V3). Hasta entonces se fija a mano con Postman.
+**Clases nuevas o modificadas:** `DictadoController`, `DictadoService`, `DefinirDocenteRequest`, `InformeController`, `InformeService`, `TareaService` (constructor con grupo y jefe docente, `listarDocentes()`, informe en el contexto), `TareasProceso` (`DEFINIR_DOCENTE`, `DESARROLLAR_CURSO`, `ELABORAR_INFORME`), `FlowableClient.variableHistorica`.
+
+**Cómo se prueba sin recorrer todo el proceso:** atajos de Flowable en Postman: fijar `fechaCurso` en una fecha pasada (el timer se dispara enseguida), mover la instancia con `POST runtime/process-instances/{id}/change-state` y completar `elaborar_informe` por REST con la variable `informeResumen`.
+
+**Queda para otras etapas:**
+- `fechaCurso` la fija la comunicación `ACEPTACION` (etapa 10); el diseño no tiene fechas fijas (sección 3.5 de la V3). Hasta entonces se fija a mano.
+- `EN_DESARROLLO` (cuando vence el timer) y `EN_CIERRE` / estado final los marca el motor con listeners (etapa 11).
+- `enviar_informe`: decidir con Alejo si queda script o pasa a tarea de usuario de `Jefe-Administrativo`. El backend funciona con las dos opciones.
 
 ---
 
@@ -355,8 +376,8 @@ Si no hay una ejecución suscrita, la acción no está habilitada en ese momento
 **Correcciones del modelo que quedan** (de `INICIO_Y_VIABILIDAD.md`, sección 7):
 - [x] `desarrollar_curso` con `assignee="${docenteId}"` y timer previo *Fecha programada* leyendo `${fechaCurso}` (publicado en el Flowable de Luka; falta exportar el `.zip`).
 - [ ] Volver a exportar `Organizacion de cursos.zip` con el DMN `cantCursos` y los cambios de la etapa 9.
-- [ ] `elaborar_informe`: assignee `Jefe-Docente` + formulario por referencia con `informeResumen`.
-- [ ] `enviar_informe`: tarea de usuario de `Jefe-Administrativo` (hoy es script).
+- [x] `elaborar_informe`: assignee `Jefe-Docente` + formulario por referencia con `informeResumen` (falta exportar el `.zip`).
+- [ ] `enviar_informe`: decidir si queda script o pasa a tarea de usuario de `Jefe-Administrativo`.
 - [ ] `confeccionar_lista`: una sola tarea, no multi-instancia.
 - [ ] Aula física y aula virtual invertidas: la física es la automática (web service simulado) y la virtual es la del administrativo.
 - [ ] Error por falta de aulas disponibles y generación de la excepción correspondiente (escenario 7).
@@ -375,7 +396,7 @@ Si no hay una ejecución suscrita, la acción no está habilitada en ese momento
 - [ ] Actualizar los IDs de las tareas (tabla de la sección 3) y los usuarios y grupos (`Jefe-Administrativo`, `Equipo-Administrativo`, etc.) en los mocks.
 - [ ] PR de `luka/web-base` → `main`, y después merge de `main` en `backend`.
 - [ ] Pasar del mock al backend real endpoint por endpoint, a medida que cada etapa queda 🚀.
-- [ ] Formulario de Definir docente: tomar la lista de `contexto.docentes` (`usuarioId`, `nombre`, `esJefe`) que ya devuelve el backend.
+- [ ] Etapa 9 en la web: Definir docente con `contexto.docentes` (`usuarioId`, `nombre`, `esJefe`), Desarrollar curso con `POST .../finalizacion-dictado`, y Enviar informe con `contexto.informe` y el botón del PDF (`/cursos/{id}/informe/pdf`) cuando `pdfDisponible` es `true`.
 - [ ] CSRF (etapa 11).
 
 ---

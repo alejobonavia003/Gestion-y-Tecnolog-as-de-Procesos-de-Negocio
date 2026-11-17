@@ -1,6 +1,6 @@
 # Backend
 
-El módulo `backend/` usa Java 21, Maven y Spring Boot 3.5.16. Habla con Flowable solo por su API REST y guarda los datos institucionales (empresas, cursos, propuestas) en la base `institucion` de PostgreSQL. Implementa las etapas 1 a 8 y la etapa 9 está en curso (ver [BACKEND_PROGRESO_Y_ETAPAS.md](BACKEND_PROGRESO_Y_ETAPAS.md)).
+El módulo `backend/` usa Java 21, Maven y Spring Boot 3.5.16. Habla con Flowable solo por su API REST y guarda los datos institucionales (empresas, cursos, propuestas) en la base `institucion` de PostgreSQL. Implementa las etapas 1 a 9 (ver [BACKEND_PROGRESO_Y_ETAPAS.md](BACKEND_PROGRESO_Y_ETAPAS.md)).
 
 ## Estructura
 
@@ -105,23 +105,29 @@ Antes de desplegar, ver `motor-flowable/modelos/README.md`. Falta validar desde 
 - `GET /api/v1/cursos/{cursoId}/actividades`: ramas activas durante la preparación
   (tareas y esperas de mensaje), con nombres legibles para la empresa.
 
-## Etapa 9: docente, dictado e informe (en curso)
+## Etapa 9: docente, dictado e informe
 
-Implementado (paso 1):
-
-- `POST /api/v1/tareas/{taskId}/docente` con `{"docenteId": "docente-1"}`. Solo el
+- `POST /api/v1/tareas/{taskId}/docente` con `{"docenteId": "docente-1"}`: solo el
   asignado de `definir_docente` (`Jefe-Docente`). Valida que `docenteId` sea miembro
-  de `Equipo-Docente` (400 si no), completa la tarea con la variable `docenteId` y
-  pasa el curso a `CONFIRMADO_PENDIENTE_INICIO`. Otra tarea → 409; otro usuario → 403.
-- El contexto de `definir_docente` en `GET /tareas/{taskId}` trae
-  `docentes: [{usuarioId, nombre, esJefe}]` (los del grupo, el jefe incluido).
+  de `Equipo-Docente` (400), completa con la variable `docenteId` y pasa el curso a
+  `CONFIRMADO_PENDIENTE_INICIO`. Otra tarea → 409; otro usuario → 403.
+- `POST /api/v1/tareas/{taskId}/finalizacion-dictado` con `{}`: solo el docente
+  asignado de `desarrollar_curso` (403). Si la tarea ya no está activa → 409. Pasa el
+  curso a `EN_ELABORACION_INFORME`.
+- `GET /api/v1/cursos/{cursoId}/informe/pdf`: PDF generado al vuelo con el resumen que
+  el jefe docente cargó en el formulario de `elaborar_informe` (variable
+  `informeResumen`, leída del historial de Flowable y copiada a `curso.informe_resumen`).
+  Lo ven los dos jefes y la empresa dueña (404 si es ajeno); otro personal → 403; sin
+  informe → 404.
+- Contexto en `GET /tareas/{taskId}`: `docentes: [{usuarioId, nombre, esJefe}]` en
+  `definir_docente` e `informe: {resumen, pdfDisponible}` en `enviar_informe` y
+  `archivar_expediente`.
 - Clases: `DictadoController`, `DictadoService`, `DefinirDocenteRequest`,
-  `TareaService.listarDocentes()` y pruebas en `DictadoServiceTest`.
+  `InformeController`, `InformeService`, `TareaService.listarDocentes()` y
+  `FlowableClient.variableHistorica`. Pruebas: `DictadoServiceTest`, `InformeServiceTest`.
 
-Requiere en el modelo `desarrollar_curso` con assignee `${docenteId}`: así la tarea
-le llega directo al docente elegido después del timer *Fecha programa* (`${fechaCurso}`).
-
-Pendiente: `POST /tareas/{taskId}/finalizacion-dictado` (paso 2) y el informe con
-`GET /cursos/{cursoId}/informe/pdf` (paso 3).
+Requiere en el modelo: `desarrollar_curso` con assignee `${docenteId}`, el timer
+*Fecha programa* con `${fechaCurso}` y `elaborar_informe` asignada a `Jefe-Docente`
+con el formulario *Informe de resultados* (campo `informeResumen`).
 
 Contrato remoto consultado: [API REST oficial de Flowable](https://www.flowable.com/open-source/docs/bpmn/ch14-REST).

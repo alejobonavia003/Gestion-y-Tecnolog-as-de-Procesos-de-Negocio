@@ -1424,6 +1424,516 @@
           ]
         },
         {
+          "name": "Login docente-2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"docente-2\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Docente ajeno finaliza → 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/finalizacion-dictado",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login docente-1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"docente-1\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Finalizar dictado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/finalizacion-dictado",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Completada\", () => pm.expect(pm.response.json().completada).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Finalizar otra vez → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/finalizacion-dictado",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"ESTADO_INCOMPATIBLE\", () => pm.expect(pm.response.json().codigo).to.eql(\"ESTADO_INCOMPATIBLE\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Curso en EN_ELABORACION_INFORME",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Estado EN_ELABORACION_INFORME\", () => pm.expect(pm.response.json().estado).to.eql(\"EN_ELABORACION_INFORME\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Buscar elaborar_informe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/tasks?processInstanceId={{processInstanceId}}&taskDefinitionKey=elaborar_informe",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.test(\"Existe elaborar_informe\", () => pm.expect(d.length).to.be.above(0));",
+                  "if (d.length) pm.collectionVariables.set(\"taskIdFlowable\", d[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login Jefe-Administrativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"Jefe-Administrativo\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Informe PDF todavía sin informe → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}/informe/pdf"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Completar elaborar_informe con informeResumen",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{flowableUrl}}/runtime/tasks/{{taskIdFlowable}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"complete\",\n  \"variables\": [\n    {\n      \"name\": \"informeResumen\",\n      \"type\": \"string\",\n      \"value\": \"El curso se dictó completo. Asistieron 14 de 15 participantes y todos aprobaron la evaluación final.\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Simula al jefe docente completando el formulario de elaborar_informe en Flowable UI.",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Buscar la tarea de cierre",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/tasks?processInstanceId={{processInstanceId}}",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "const t = d.find(x => [\"enviar_informe\", \"archivar_expediente\"].includes(x.taskDefinitionKey));",
+                  "pm.test(\"Hay enviar_informe o archivar_expediente\", () => pm.expect(t).to.exist);",
+                  "if (t) { pm.collectionVariables.set(\"taskId\", t.id); console.log(\"Tarea de cierre:\", t.taskDefinitionKey); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle de cierre: trae el informe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas/{{taskId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const i = pm.response.json().contexto.informe;",
+                  "pm.test(\"Trae el resumen\", () => pm.expect(i.resumen).to.include(\"dictó completo\"));",
+                  "pm.test(\"pdfDisponible = true\", () => pm.expect(i.pdfDisponible).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Informe PDF (jefe administrativo)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}/informe/pdf"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Es un PDF\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/pdf\"));",
+                  "pm.test(\"Empieza con %PDF\", () => pm.expect(pm.response.text().startsWith(\"%PDF\")).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login docente-1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"docente-1\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Informe PDF como docente → 403",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}/informe/pdf"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login empresa-demo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/empresa",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario\": \"empresa-demo\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Informe PDF de curso ajeno → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}/informe/pdf"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "[Flowable] Borrar la instancia de prueba",
           "request": {
             "method": "DELETE",
@@ -1461,7 +1971,7 @@
     },
     {
       "name": "4. Etapa 9 - paso a paso",
-      "description": "Ejecutar en orden (o Run folder). Los pasos [Flowable] son atajos para llegar a las tareas de la etapa 9 sin recorrer todo el proceso.",
+      "description": "Pasos 1, 2 y 3 de la etapa 9. Ejecutar en orden (o Run folder). Los pasos [Flowable] son atajos para llegar a las tareas de la etapa 9 sin recorrer todo el proceso.",
       "item": [
         {
           "name": "Login Jefe-Administrativo",
@@ -1894,6 +2404,516 @@
                 "exec": [
                   "// Espera 20 s a que el motor dispare el timer \"Fecha programa\".",
                   "setTimeout(() => {}, 20000);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login docente-2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"docente-2\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Docente ajeno finaliza → 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/finalizacion-dictado",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login docente-1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"docente-1\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Finalizar dictado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/finalizacion-dictado",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Completada\", () => pm.expect(pm.response.json().completada).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Finalizar otra vez → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/finalizacion-dictado",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"ESTADO_INCOMPATIBLE\", () => pm.expect(pm.response.json().codigo).to.eql(\"ESTADO_INCOMPATIBLE\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Curso en EN_ELABORACION_INFORME",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Estado EN_ELABORACION_INFORME\", () => pm.expect(pm.response.json().estado).to.eql(\"EN_ELABORACION_INFORME\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Buscar elaborar_informe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/tasks?processInstanceId={{processInstanceId}}&taskDefinitionKey=elaborar_informe",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.test(\"Existe elaborar_informe\", () => pm.expect(d.length).to.be.above(0));",
+                  "if (d.length) pm.collectionVariables.set(\"taskIdFlowable\", d[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login Jefe-Administrativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"Jefe-Administrativo\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Informe PDF todavía sin informe → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}/informe/pdf"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Completar elaborar_informe con informeResumen",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{flowableUrl}}/runtime/tasks/{{taskIdFlowable}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"complete\",\n  \"variables\": [\n    {\n      \"name\": \"informeResumen\",\n      \"type\": \"string\",\n      \"value\": \"El curso se dictó completo. Asistieron 14 de 15 participantes y todos aprobaron la evaluación final.\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Simula al jefe docente completando el formulario de elaborar_informe en Flowable UI.",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Buscar la tarea de cierre",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/tasks?processInstanceId={{processInstanceId}}",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "const t = d.find(x => [\"enviar_informe\", \"archivar_expediente\"].includes(x.taskDefinitionKey));",
+                  "pm.test(\"Hay enviar_informe o archivar_expediente\", () => pm.expect(t).to.exist);",
+                  "if (t) { pm.collectionVariables.set(\"taskId\", t.id); console.log(\"Tarea de cierre:\", t.taskDefinitionKey); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Detalle de cierre: trae el informe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas/{{taskId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "const i = pm.response.json().contexto.informe;",
+                  "pm.test(\"Trae el resumen\", () => pm.expect(i.resumen).to.include(\"dictó completo\"));",
+                  "pm.test(\"pdfDisponible = true\", () => pm.expect(i.pdfDisponible).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Informe PDF (jefe administrativo)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}/informe/pdf"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Es un PDF\", () => pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/pdf\"));",
+                  "pm.test(\"Empieza con %PDF\", () => pm.expect(pm.response.text().startsWith(\"%PDF\")).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login docente-1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"docente-1\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Informe PDF como docente → 403",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}/informe/pdf"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login empresa-demo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/empresa",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario\": \"empresa-demo\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Informe PDF de curso ajeno → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}/informe/pdf"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Responde 404\", () => pm.response.to.have.status(404));"
                 ]
               }
             }

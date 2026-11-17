@@ -42,8 +42,8 @@ Si al crear una solicitud el backend responde 503, el log del backend dice el mo
 | `definir_docente` | assignee `Jefe-Docente` | 9 |
 | Timer *Fecha programa* (`fecha_programa`) | `timeDate = ${fechaCurso}` (fecha ISO 8601) | 9 |
 | `desarrollar_curso` | assignee **`${docenteId}`**, sin grupo candidato | 9 |
-| `elaborar_informe` | assignee `Jefe-Docente` + formulario por referencia con el campo `informeResumen` | 9 (paso 3) |
-| `enviar_informe` | tarea de usuario de `Jefe-Administrativo` (hoy es script) | 9 (paso 3) |
+| `elaborar_informe` | assignee `Jefe-Docente` + formulario por referencia *Informe de resultados* con el campo **`informeResumen`** (el id exacto: es el nombre de la variable que lee el backend) | 9 |
+| `enviar_informe` | hoy es script; a decidir si pasa a tarea de usuario de `Jefe-Administrativo` (el backend funciona con las dos opciones) | 9 |
 
 ### Cómo asignar a una variable (`${docenteId}`)
 
@@ -72,6 +72,6 @@ single user**.
 Las instancias que ya estaban en curso conservan la definición con la que arrancaron;
 para probar un cambio, crear una instancia nueva.
 
-**Estado del `.zip` en esta rama:** todavía es el export del 11/11, con el DMN viejo
-(`otrasInstanciasActivas`) y sin los cambios de la etapa 9. Hay que reemplazarlo por un
-export actualizado.
+**Estado del `.zip` en esta rama:** si todavía es el export del 11/11, tiene el DMN viejo
+(`otrasInstanciasActivas`) y no tiene los cambios de la etapa 9 (`${docenteId}`, formulario
+del informe). Reemplazarlo por un export actualizado.

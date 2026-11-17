@@ -315,4 +315,21 @@ public class FlowableClient {
                 .retrieve()
                 .toBodilessEntity());
     }
+
+
+    /**
+     * Valor de una variable del proceso leído del historial: sirve con la instancia
+     * activa o ya terminada. Vacío si la variable no existe.
+     */
+    public Optional<String> variableHistorica(String processInstanceId, String nombre) {
+        JsonNode respuesta = llamar(() -> rest.get()
+                .uri("/history/historic-variable-instances?processInstanceId={p}&variableName={n}",
+                        processInstanceId, nombre)
+                .retrieve()
+                .body(JsonNode.class));
+        JsonNode data = respuesta == null ? null : respuesta.path("data");
+        if (data == null || !data.isArray() || data.isEmpty()) return Optional.empty();
+        JsonNode valor = data.get(0).path("variable").path("value");
+        return valor.isMissingNode() || valor.isNull() ? Optional.empty() : Optional.of(valor.asText());
+    }
 }

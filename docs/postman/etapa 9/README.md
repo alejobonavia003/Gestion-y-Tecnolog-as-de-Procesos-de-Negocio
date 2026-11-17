@@ -34,34 +34,58 @@
 | 1. Sesiones (etapa 4) | Login de los cinco usuarios del personal y de `empresa-demo`. |
 | 2. Solicitudes (etapa 5) | Crear, reintento idempotente, 409 y 400. Se puede correr con **Run folder**. |
 | 3. Tareas (etapa 6) - escenario | Escenario hecho para otra versión de la etapa 6: algunos tests pueden fallar con la implementación actual. Para la etapa 6 usar `docs/postman/etapa 6/`. |
-| **4. Etapa 9 - paso a paso** | Escenario completo del paso 1 (definir docente). Se corre con **Run folder**. |
+| **4. Etapa 9 - paso a paso** | Escenario completo de la etapa 9 (#17, #18 y #19). Se corre con **Run folder**. |
 | 9. Flowable directo (debug) | Instancias, tareas, variables, historial, usuarios del grupo docente, fijar `fechaCurso`, saltar de actividad y borrar la instancia. |
 
-## Etapa 9 — definir docente (#17)
+## Etapa 9 completa (#17, #18 y #19)
 
-Requisitos: backend en 8081, Flowable con la app publicada y **`desarrollar_curso` con
-assignee `${docenteId}`** (ver `motor-flowable/modelos/README.md`), usuarios creados.
+Requisitos: backend en 8081, Flowable con la app publicada (`desarrollar_curso` con
+assignee `${docenteId}`, ver `motor-flowable/modelos/README.md`), usuarios creados y
+**`CURSOS_DATOS_DEMO=true`** en el `.env` (el último paso usa `empresa-demo`).
 
-Clic derecho en **4. Etapa 9 - paso a paso** → **Run folder**:
+Clic derecho en **4. Etapa 9 - paso a paso** → **Run folder**. En la pantalla del Runner,
+elegir el entorno **Cursos - Local** antes de **Run** (si queda en *none*, falla con
+"Request could not be sent").
 
-| Request | Espera |
+| Paso | Request | Espera |
+|---|---|---|
+| Preparación | Login Jefe-Administrativo → Crear solicitud | 200 → 201 |
+| | [Flowable] Fijar fechaCurso (hace 1 minuto) | 200/201: el timer *Fecha programa* se dispara enseguida |
+| | [Flowable] Saltar de registrar_elaborar_propuesta a definir_docente | 200 (atajo con `change-state`) |
+| **#17** | Login Jefe-Docente → Bandeja asignadas: definir_docente | Guarda `taskId` |
+| | Detalle: trae los docentes | `contexto.docentes` con 3, `Jefe-Docente` con `esJefe: true` |
+| | Definir docente que no es docente | 400 |
+| | Definir docente: docente-1 | 200 |
+| | Definir docente otra vez | 404 o 409 |
+| **#18** | Login docente-1 → Bandeja asignadas: desarrollar_curso | Espera 20 s al timer y la encuentra |
+| | Login docente-2 → Docente ajeno finaliza | 403 |
+| | Login docente-1 → Finalizar dictado | 200 |
+| | Finalizar otra vez | 409 `ESTADO_INCOMPATIBLE` |
+| | Curso en EN_ELABORACION_INFORME | `estado: EN_ELABORACION_INFORME` |
+| | [Flowable] Buscar elaborar_informe | La tarea existe |
+| **#19** | Login Jefe-Administrativo → Informe PDF todavía sin informe | 404 |
+| | [Flowable] Completar elaborar_informe con informeResumen | 200 (simula el formulario de Flowable UI) |
+| | [Flowable] Buscar la tarea de cierre | `enviar_informe` o `archivar_expediente` |
+| | Detalle de cierre: trae el informe | `contexto.informe.resumen` y `pdfDisponible: true` |
+| | Informe PDF (jefe administrativo) | 200 `application/pdf` (se ve en *Body*) |
+| | Login docente-1 → Informe PDF como docente | 403 |
+| | Login empresa-demo → Informe PDF de curso ajeno | 404 |
+| Limpieza | [Flowable] Borrar la instancia de prueba | 204 |
+
+Resultado al 17/11/2026: **30 de 30 en verde** contra Flowable y Postgres reales.
+
+**Si algo falla:**
+
+| Falla | Causa |
 |---|---|
-| Login Jefe-Administrativo → Crear solicitud | 200 → 201 |
-| [Flowable] Fijar fechaCurso (hace 1 minuto) | 200/201. Fecha ya pasada para que el timer *Fecha programa* se dispare enseguida. |
-| [Flowable] Saltar de registrar_elaborar_propuesta a definir_docente | 200. Atajo con `change-state` para no recorrer todo el proceso. |
-| Login Jefe-Docente → Bandeja asignadas: definir_docente | Guarda `taskId` |
-| Detalle: trae los docentes | `contexto.docentes` con 3 docentes, `Jefe-Docente` con `esJefe: true` |
-| Definir docente que no es docente | 400 |
-| Definir docente: docente-1 | 200 `{"completada": true}` |
-| Definir docente otra vez | 404 o 409 (la tarea ya no existe) |
-| Login docente-1 → Bandeja asignadas: desarrollar_curso | Espera 20 s al timer y encuentra la tarea asignada a `docente-1` |
-| [Flowable] Borrar la instancia de prueba | 204 |
+| `desarrollar_curso` no aparece | La app publicada no tiene `${docenteId}` en esa tarea, o el timer falló (`docker logs --tail 50 flowable-persistente`). |
+| `pdfDisponible: false` | El campo del formulario no se llama exactamente `informeResumen`. |
+| Login empresa-demo da 401 | Falta `CURSOS_DATOS_DEMO=true` en el `.env` (y reiniciar el backend). El request siguiente da 403 porque sigue la sesión de `docente-1`. |
 
-Resultado al 17/11/2026: **todos los pasos en verde** contra Flowable y Postgres reales.
-
-Si falla `desarrollar_curso`: revisar con `9. Flowable directo → Tareas de la instancia
-actual` a quién quedó asignada. Si figura el grupo, la app publicada no tiene el
-`${docenteId}`. Si no existe la tarea, mirar `docker logs --tail 50 flowable-persistente`.
+**Probar el informe desde Flowable UI:** correr la carpeta hasta *[Flowable] Buscar
+elaborar_informe*, entrar a Flowable UI como `Jefe-Docente` / `1234` → Task app →
+*Elaborar informe* → completar el formulario → **Complete**, y después pedir el PDF en
+Postman como `Jefe-Administrativo`.
 
 ## Buenas prácticas
 

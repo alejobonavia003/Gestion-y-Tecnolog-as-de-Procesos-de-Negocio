@@ -271,3 +271,21 @@ Se conserva 🧪 en la tabla hasta comprobarlos desde la web. Devuelven los IDs
 actuales del BPMN (tabla en `BACKEND_PROGRESO_Y_ETAPAS.md`), sin traducirlos a los
 IDs viejos de los mocks. `archivar_expediente` también admite completado con datos
 vacíos. La adaptación de los formularios web a esos IDs queda pendiente.
+
+## Implementación etapa 9 (backend-lauty)
+
+Los endpoints #17, #18 y #19 están implementados en `/api/v1` y probados con Postman
+contra Flowable real (`docs/postman/etapa 9/`). Se conserva 🧪 en la tabla hasta
+probarlos desde la web.
+
+- #17: `contexto.docentes` usa `usuarioId` (no `id`). Con un docente que no es del
+  grupo responde 400; si la tarea no es `definir_docente`, 409.
+- #18: si la tarea ya no existe (completada o el curso todavía no empezó) responde
+  409 `ESTADO_INCOMPATIBLE`.
+- #19: el PDF se genera desde `contexto.informe.resumen`. Si no hay informe, 404.
+  Lo ven los dos jefes y la empresa dueña; otro personal recibe 403.
+- `elaborar_informe` se completa en Flowable UI (formulario *Informe de resultados*):
+  la web la muestra solo como etiqueta. `POST /cursos/{id}/informe` no se implementa.
+- Los IDs de tarea que devuelve el backend son los del BPMN actual (`definir_docente`,
+  `desarrollar_curso`, `enviar_informe`, `archivar_expediente`), no los de los mocks.
+

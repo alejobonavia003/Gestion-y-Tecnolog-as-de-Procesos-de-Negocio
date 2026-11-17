@@ -13,7 +13,7 @@ auxiliares.
 | Modelo del proceso + regla DMN de viabilidad | ✅ Se publica (con tareas automáticas marcadoras) |
 | Backend etapas 1 a 5 (base, datos, cliente Flowable, sesiones, solicitudes) | ✅ Implementadas y probadas |
 | Backend etapas 6 a 8 (tareas, propuestas y PDF, portal de empresa) | 🔧 Implementadas; falta validarlas desde la web |
-| Backend etapa 9 (docente, dictado, informe) | 🔄 En curso: **definir docente (#17)** implementado y probado con Postman |
+| Backend etapa 9 (docente, dictado, informe) | ✅ Completa: #17, #18 y #19 probados con Postman contra Flowable real |
 | Backend etapas 10 y 11 (simulador, integración final) | ⏳ Pendientes |
 | Web (React + Vite) | ✅ Completa contra mocks; falta conectarla al backend real |
 | App de materiales, simulador REST, listeners del motor | ⏳ Pendientes |
