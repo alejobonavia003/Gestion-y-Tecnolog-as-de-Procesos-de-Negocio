@@ -251,8 +251,6 @@ println('[Liberar aula] aula ' + execution.getVariable('aulaAsignada') + ' liber
       <sequenceFlow id="sid-86852A56-83DF-4376-804F-851357E84A2C" sourceRef="parallelo_preparar_curso" targetRef="recibir_nomina"></sequenceFlow>
       <sequenceFlow id="sid-150A0F53-F1C5-48DA-8DD1-F2345FBA7F36" sourceRef="parallelo_preparar_curso" targetRef="evaluar_recursos"></sequenceFlow>
       <sequenceFlow id="sid-74109E1B-A2A4-4017-8562-86A8480C6FA3" sourceRef="evaluar_recursos" targetRef="gw_recursos"></sequenceFlow>
-      <sequenceFlow id="sid-E6A2C96D-D54D-41DA-8D19-A59E73EF3707" sourceRef="sid-16D99AD4-12C2-44F8-9B09-9AC4526792A2" targetRef="liberar_aula"></sequenceFlow>
-      <sequenceFlow id="sid-055E8B42-1AA2-45BE-AC8D-96EFDBFEFD9C" sourceRef="sid-93AE2488-5B12-413D-A40B-EB5A6E37CA86" targetRef="liberar_equipamiento"></sequenceFlow>
       <sequenceFlow id="sid-96A3E8F1-7F97-4103-B7C1-C6C566337D9C" sourceRef="reservar_aula_fisica" targetRef="gw_recursos_listos"></sequenceFlow>
       <sequenceFlow id="sid-C6BA6549-0679-45A1-BD75-42C655953876" sourceRef="reservar_aula_virtual" targetRef="gw_recursos_listos"></sequenceFlow>
       <sequenceFlow id="sid-36F07336-C2E4-4222-B950-C5557F4C58DC" sourceRef="contratar_equipamiento" targetRef="gw_recursos_listos"></sequenceFlow>
@@ -260,7 +258,6 @@ println('[Liberar aula] aula ' + execution.getVariable('aulaAsignada') + ' liber
       <sequenceFlow id="sid-2EBCF241-DBF7-49A7-B474-64DD6A0D1968" sourceRef="confeccionar_lista" targetRef="fin_parallelo_preparar_curso"></sequenceFlow>
       <sequenceFlow id="sid-1A3A4F99-0ECD-4E95-A9A9-616949220266" sourceRef="gw_recursos_listos" targetRef="fin_parallelo_preparar_curso"></sequenceFlow>
       <sequenceFlow id="sid-B9AF208A-964B-4D25-871F-7DEC093BB86F" sourceRef="fin_parallelo_preparar_curso" targetRef="fin_preparar"></sequenceFlow>
-      <sequenceFlow id="sid-864C5446-EE70-40FD-BE76-EF116C9A93EF" sourceRef="sid-65E0C277-61D9-4DB6-B385-C21B9CF8F392" targetRef="liberar_aula_virtual"></sequenceFlow>
       <sequenceFlow id="sid-EA076A2B-406A-41E9-BA23-254FEB1D3A7B" sourceRef="preparar_materiales" targetRef="fin_parallelo_preparar_curso"></sequenceFlow>
       <sequenceFlow id="sid-C798F081-2C67-49FF-8AAD-74CADD69D311" sourceRef="parallelo_preparar_curso" targetRef="preparar_materiales"></sequenceFlow>
       <sequenceFlow id="sid-177C8CCD-0416-496A-958F-40551C68E1B3" sourceRef="gw_recursos" targetRef="reservar_aula_fisica">
@@ -274,6 +271,9 @@ println('[Liberar aula] aula ' + execution.getVariable('aulaAsignada') + ' liber
       </sequenceFlow>
       <sequenceFlow id="sid-EBE8C5A8-F679-48CF-B291-E8E3DD07BBC0" sourceRef="sid-A20C6124-E589-4783-BDD0-C4A2480CCEC6" targetRef="sid-527368E1-A987-4368-9479-9A332C817811"></sequenceFlow>
       <sequenceFlow id="sid-650A2837-516B-4AE7-BB8B-CE3B98A412B6" sourceRef="sid-527368E1-A987-4368-9479-9A332C817811" targetRef="sid-7B6E6AAF-38AA-471A-BB74-B654B7DE6BF1"></sequenceFlow>
+      <sequenceFlow id="sid-1BCB8BD0-78F5-4477-B5B1-9EBC2DFA0922" sourceRef="sid-16D99AD4-12C2-44F8-9B09-9AC4526792A2" targetRef="liberar_aula"></sequenceFlow>
+      <sequenceFlow id="sid-263CEB68-CF22-4D33-AD6D-46D5AFCBF358" sourceRef="sid-65E0C277-61D9-4DB6-B385-C21B9CF8F392" targetRef="liberar_aula_virtual"></sequenceFlow>
+      <sequenceFlow id="sid-10959710-7CD6-49B1-99C8-2FB83876C095" sourceRef="sid-93AE2488-5B12-413D-A40B-EB5A6E37CA86" targetRef="liberar_equipamiento"></sequenceFlow>
     </subProcess>
     <boundaryEvent id="sid-82F1FB52-7BB9-463C-B469-F0D722ACF8D7" attachedToRef="preparar_curso">
       <errorEventDefinition errorRef="CANCELADO_EMPRESA" flowable:errorVariableLocalScope="true" flowable:errorVariableTransient="true"></errorEventDefinition>
@@ -539,7 +539,7 @@ println('[Liberar aula] aula ' + execution.getVariable('aulaAsignada') + ' liber
         <omgdc:Bounds height="28.0" width="28.0" x="1800.42072725028" y="838.0843188395665"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="liberar_aula_virtual" id="BPMNShape_liberar_aula_virtual">
-        <omgdc:Bounds height="80.0" width="100.0" x="1710.0" y="690.0"></omgdc:Bounds>
+        <omgdc:Bounds height="80.0" width="100.0" x="1725.0" y="705.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="sid-82F1FB52-7BB9-463C-B469-F0D722ACF8D7" id="BPMNShape_sid-82F1FB52-7BB9-463C-B469-F0D722ACF8D7">
         <omgdc:Bounds height="30.0" width="30.000000000000114" x="1223.263418199776" y="1149.5226493570628"></omgdc:Bounds>
@@ -569,7 +569,7 @@ println('[Liberar aula] aula ' + execution.getVariable('aulaAsignada') + ' liber
         <omgdc:Bounds height="80.0" width="100.0" x="273.07603436480076" y="87.90059106560045"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="sid-1700F600-53F2-44A9-A0D1-593D9A05C0CC" id="BPMNShape_sid-1700F600-53F2-44A9-A0D1-593D9A05C0CC">
-        <omgdc:Bounds height="30.0" width="30.000000000000114" x="1137.263418199776" y="1136.5226493570628"></omgdc:Bounds>
+        <omgdc:Bounds height="30.0" width="29.999999999999886" x="1137.263418199776" y="1136.5226493570628"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="habilitar_acceso_empresa" id="BPMNShape_habilitar_acceso_empresa">
         <omgdc:Bounds height="74.48301983375762" width="97.15730367529761" x="943.2951923286686" y="385.13508450921324"></omgdc:Bounds>
@@ -603,10 +603,6 @@ println('[Liberar aula] aula ' + execution.getVariable('aulaAsignada') + ' liber
         <omgdi:waypoint x="1523.0" y="672.0"></omgdi:waypoint>
         <omgdi:waypoint x="1577.3034520071958" y="672.0143244904405"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge bpmnElement="sid-E6A2C96D-D54D-41DA-8D19-A59E73EF3707" id="BPMNEdge_sid-E6A2C96D-D54D-41DA-8D19-A59E73EF3707" flowable:sourceDockerX="15.0" flowable:sourceDockerY="15.0" flowable:targetDockerX="33.0" flowable:targetDockerY="27.00000000000003">
-        <omgdi:waypoint x="1594.6412819191369" y="867.4421243330453"></omgdi:waypoint>
-        <omgdi:waypoint x="1620.0" y="880.2854302738596"></omgdi:waypoint>
-      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="sid-8E68C7AA-18AA-4EE3-BD78-39F310780779" id="BPMNEdge_sid-8E68C7AA-18AA-4EE3-BD78-39F310780779" flowable:sourceDockerX="15.5" flowable:sourceDockerY="15.5" flowable:targetDockerX="20.0" flowable:targetDockerY="20.0">
         <omgdi:waypoint x="877.2044318764798" y="243.05301341522036"></omgdi:waypoint>
         <omgdi:waypoint x="971.8738441663173" y="243.05301341522036"></omgdi:waypoint>
@@ -620,10 +616,6 @@ println('[Liberar aula] aula ' + execution.getVariable('aulaAsignada') + ' liber
         <omgdi:waypoint x="955.0" y="151.0"></omgdi:waypoint>
         <omgdi:waypoint x="955.0" y="145.0"></omgdi:waypoint>
         <omgdi:waypoint x="1034.9999999999902" y="145.0"></omgdi:waypoint>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge bpmnElement="sid-864C5446-EE70-40FD-BE76-EF116C9A93EF" id="BPMNEdge_sid-864C5446-EE70-40FD-BE76-EF116C9A93EF" flowable:sourceDockerX="15.0" flowable:sourceDockerY="15.0" flowable:targetDockerX="50.0" flowable:targetDockerY="40.0">
-        <omgdi:waypoint x="1692.827603590804" y="713.5786341026262"></omgdi:waypoint>
-        <omgdi:waypoint x="1710.0" y="717.776419750698"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="sid-EA076A2B-406A-41E9-BA23-254FEB1D3A7B" id="BPMNEdge_sid-EA076A2B-406A-41E9-BA23-254FEB1D3A7B" flowable:sourceDockerX="50.0" flowable:sourceDockerY="40.0" flowable:targetDockerX="20.0" flowable:targetDockerY="20.0">
         <omgdi:waypoint x="1458.0121413793634" y="607.7281030944022"></omgdi:waypoint>
@@ -693,6 +685,10 @@ println('[Liberar aula] aula ' + execution.getVariable('aulaAsignada') + ' liber
         <omgdi:waypoint x="1689.6530578532147" y="1164.1605237371239"></omgdi:waypoint>
         <omgdi:waypoint x="1689.6530578532147" y="1215.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="sid-1BCB8BD0-78F5-4477-B5B1-9EBC2DFA0922" id="BPMNEdge_sid-1BCB8BD0-78F5-4477-B5B1-9EBC2DFA0922" flowable:sourceDockerX="15.0" flowable:sourceDockerY="15.0" flowable:targetDockerX="33.0" flowable:targetDockerY="27.00000000000003">
+        <omgdi:waypoint x="1594.6412819191369" y="867.4421243330453"></omgdi:waypoint>
+        <omgdi:waypoint x="1620.0" y="880.2854302738596"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="sid-33ACA4F8-E8B4-4F7E-8CF0-FA5357A8CDF2" id="BPMNEdge_sid-33ACA4F8-E8B4-4F7E-8CF0-FA5357A8CDF2" flowable:sourceDockerX="50.00000000000006" flowable:sourceDockerY="40.0" flowable:targetDockerX="49.99999999999994" flowable:targetDockerY="40.0">
         <omgdi:waypoint x="1689.6530578532147" y="1294.95"></omgdi:waypoint>
         <omgdi:waypoint x="1689.6530578532147" y="1545.0"></omgdi:waypoint>
@@ -709,6 +705,10 @@ println('[Liberar aula] aula ' + execution.getVariable('aulaAsignada') + ' liber
       <bpmndi:BPMNEdge bpmnElement="sid-94956322-F99A-4B1A-9BE2-8A45982F1A6B" id="BPMNEdge_sid-94956322-F99A-4B1A-9BE2-8A45982F1A6B" flowable:sourceDockerX="15.0" flowable:sourceDockerY="15.0" flowable:targetDockerX="48.578651837648806" flowable:targetDockerY="37.24150991687881">
         <omgdi:waypoint x="876.7044319126773" y="422.3765944260921"></omgdi:waypoint>
         <omgdi:waypoint x="943.2951923286686" y="422.3765944260921"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="sid-263CEB68-CF22-4D33-AD6D-46D5AFCBF358" id="BPMNEdge_sid-263CEB68-CF22-4D33-AD6D-46D5AFCBF358" flowable:sourceDockerX="15.0" flowable:sourceDockerY="15.0" flowable:targetDockerX="50.0" flowable:targetDockerY="40.0">
+        <omgdi:waypoint x="1692.3645531837863" y="715.1135649382438"></omgdi:waypoint>
+        <omgdi:waypoint x="1725.0" y="726.916372954558"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="sid-8F805188-09AC-4F46-882F-10F12262F677" id="BPMNEdge_sid-8F805188-09AC-4F46-882F-10F12262F677" flowable:sourceDockerX="50.0" flowable:sourceDockerY="40.0" flowable:targetDockerX="50.0" flowable:targetDockerY="40.0">
         <omgdi:waypoint x="1454.7570927871886" y="491.6023642624017"></omgdi:waypoint>
@@ -777,6 +777,10 @@ println('[Liberar aula] aula ' + execution.getVariable('aulaAsignada') + ' liber
         <omgdi:waypoint x="2105.9500000000007" y="1420.0"></omgdi:waypoint>
         <omgdi:waypoint x="2151.0" y="1420.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge bpmnElement="sid-10959710-7CD6-49B1-99C8-2FB83876C095" id="BPMNEdge_sid-10959710-7CD6-49B1-99C8-2FB83876C095" flowable:sourceDockerX="15.0" flowable:sourceDockerY="15.0" flowable:targetDockerX="50.0" flowable:targetDockerY="40.0">
+        <omgdi:waypoint x="1690.9164138675576" y="1024.317282800267"></omgdi:waypoint>
+        <omgdi:waypoint x="1711.7411831825657" y="1036.879953451698"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="sid-FAC29A0F-69BA-4869-950A-65AF5E775F8B" id="BPMNEdge_sid-FAC29A0F-69BA-4869-950A-65AF5E775F8B" flowable:sourceDockerX="20.0" flowable:sourceDockerY="20.0" flowable:targetDockerX="15.5" flowable:targetDockerY="15.5">
         <omgdi:waypoint x="804.6036317119724" y="237.9230092560699"></omgdi:waypoint>
         <omgdi:waypoint x="825.0" y="238.0"></omgdi:waypoint>
@@ -807,15 +811,11 @@ println('[Liberar aula] aula ' + execution.getVariable('aulaAsignada') + ' liber
         <omgdi:waypoint x="1739.6030578532148" y="1585.0"></omgdi:waypoint>
         <omgdi:waypoint x="1785.0" y="1585.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge bpmnElement="sid-055E8B42-1AA2-45BE-AC8D-96EFDBFEFD9C" id="BPMNEdge_sid-055E8B42-1AA2-45BE-AC8D-96EFDBFEFD9C" flowable:sourceDockerX="15.0" flowable:sourceDockerY="15.000000000000028" flowable:targetDockerX="50.0" flowable:targetDockerY="40.00000000000003">
-        <omgdi:waypoint x="1690.9164138675578" y="1024.3172828002673"></omgdi:waypoint>
-        <omgdi:waypoint x="1711.7411831825657" y="1036.879953451698"></omgdi:waypoint>
-      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="sid-C798F081-2C67-49FF-8AAD-74CADD69D311" id="BPMNEdge_sid-C798F081-2C67-49FF-8AAD-74CADD69D311" flowable:sourceDockerX="20.0" flowable:sourceDockerY="19.999999999999996" flowable:targetDockerX="50.0" flowable:targetDockerY="40.0">
         <omgdi:waypoint x="1313.3936360040072" y="607.8129182185613"></omgdi:waypoint>
         <omgdi:waypoint x="1358.0621413793633" y="607.7728777759506"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge bpmnElement="sid-B3BFCDAB-429B-4BE3-904F-E881BDC33838" id="BPMNEdge_sid-B3BFCDAB-429B-4BE3-904F-E881BDC33838" flowable:sourceDockerX="15.000000000000057" flowable:sourceDockerY="15.0" flowable:targetDockerX="50.00000000000006" flowable:targetDockerY="40.0">
+      <bpmndi:BPMNEdge bpmnElement="sid-B3BFCDAB-429B-4BE3-904F-E881BDC33838" id="BPMNEdge_sid-B3BFCDAB-429B-4BE3-904F-E881BDC33838" flowable:sourceDockerX="15.0" flowable:sourceDockerY="15.0" flowable:targetDockerX="50.00000000000006" flowable:targetDockerY="40.0">
         <omgdi:waypoint x="1159.838068676475" y="1164.4133225292094"></omgdi:waypoint>
         <omgdi:waypoint x="1189.559907198907" y="1215.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
