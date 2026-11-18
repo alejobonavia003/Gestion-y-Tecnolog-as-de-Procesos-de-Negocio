@@ -125,6 +125,7 @@ export type NuevaPropuesta = {
   programa: string
   presupuesto: Presupuesto
   fechasPosibles: string[]
+  versionBase?: number
 }
 
 export type PropuestaCreada = {
