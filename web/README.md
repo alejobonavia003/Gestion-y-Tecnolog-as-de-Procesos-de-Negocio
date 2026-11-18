@@ -46,4 +46,4 @@ Para comprobar la compilación: `npm run build`.
 
 Se utiliza Vite 7 con `@vitejs/plugin-react` 5: la dependencia nativa Rolldown de Vite 8 provoca `Illegal instruction` en el equipo de desarrollo.
 
-Dependencias: API institucional de Lauty en [backend/](../backend/), proceso de Alejo y [contrato de integración](../docs/ACUERDO_DE_INTEGRACION.md). La interacción con Flowable será por REST a través del backend; el navegador no recibe credenciales técnicas del motor.
+Dependencias: API institucional de Lauty en [backend/](../backend/), proceso de Alejo y [contrato de integración](../docs/MODELO_Y_INTEGRACION.md#acuerdo-de-integración). La interacción con Flowable será por REST a través del backend; el navegador no recibe credenciales técnicas del motor.

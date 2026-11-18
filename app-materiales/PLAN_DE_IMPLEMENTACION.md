@@ -3,12 +3,12 @@
 Fecha: 17/11/2026. Rama de trabajo: `codex/app-materiales-java`, creada desde
 `backend-lauty` en `228af43`. El plan original se conserva como referencia;
 la implementación M0–M6 fue entregada el 17/11/2026. La rama actual es
-`app-materiales` (renombrada durante el trabajo). Ver [guía de uso y pruebas](../docs/APP_MATERIALES.md).
+`app-materiales` (renombrada durante el trabajo). Ver [guía de uso y pruebas](../docs/MODELO_Y_INTEGRACION.md#app-de-materiales).
 
 ## Ubicación en el proyecto
 
 Corresponde a §4.2.1 de `contexto/ProyectoCursos_V2.pdf`, a las responsabilidades
-de §2 y a los escenarios 8 y 11 de §5. En `docs/BACKEND_PROGRESO_Y_ETAPAS.md`
+de §2 y a los escenarios 8 y 11 de §5. En `docs/BACKEND.md#avance-y-etapas`
 figura en §7.1, fuera de las etapas del backend. Puede avanzar en paralelo a
 las etapas 9–11. Etapas 6 y 7: validadas con Postman según el equipo; etapa 8:
 implementada en la rama de origen. La integración web es una validación distinta.

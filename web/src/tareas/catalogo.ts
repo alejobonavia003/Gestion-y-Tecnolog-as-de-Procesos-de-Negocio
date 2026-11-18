@@ -1,5 +1,5 @@
 // Qué se sabe de cada tipo de tarea del BPMN, según su taskDefinitionKey.
-// Los IDs salen del modelo (docs/ACUERDO_DE_INTEGRACION.md §C). Si Alejo los cambia, se actualizan acá.
+// Los IDs salen del modelo (docs/MODELO_Y_INTEGRACION.md#acuerdo-de-integración §C). Si Alejo los cambia, se actualizan acá.
 
 export type DondeSeCompleta = 'web' | 'flowable' | 'app-materiales'
 

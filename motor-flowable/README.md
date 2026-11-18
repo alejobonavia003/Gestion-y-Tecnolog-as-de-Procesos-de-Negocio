@@ -31,7 +31,7 @@ apuntando a una línea del `.env`, esa línea tiene un espacio alrededor del `=`
 - `FinProcesoListener`: escribe el estado final del curso en la base `institucion`.
 
 Se compilan en un `.jar` (Java 11), se copian a `flowable-persistente:/app/WEB-INF/lib/`
-y se reinicia el contenedor (ver `docs/notas_y_tips_de_clases_grabadas_sobre_el_proyecto.md`).
+y se reinicia el contenedor (ver `docs/README.md#notas-y-tips-de-las-clases-grabadas`).
 
-Dependencias: [acuerdo de integración](../docs/ACUERDO_DE_INTEGRACION.md) e IDs de
+Dependencias: [acuerdo de integración](../docs/MODELO_Y_INTEGRACION.md#acuerdo-de-integración) e IDs de
 tareas centralizados en `backend/.../services/TareasProceso.java`.

@@ -23,7 +23,7 @@ Para generar además el JAR con dependencias: `mvn -f app-materiales/pom.xml cle
 Lee el `.env` de la raíz (o `../.env` si se ejecuta desde esta carpeta).
 También se puede iniciar con `./app-materiales/ejecutar.sh`.
 
-- [Funcionamiento, configuración, uso y pruebas](../docs/APP_MATERIALES.md)
+- [Funcionamiento, configuración, uso y pruebas](../docs/MODELO_Y_INTEGRACION.md#app-de-materiales)
 - [Plan y estado de implementación](PLAN_DE_IMPLEMENTACION.md)
 
 El backend REST no es necesario para operar materiales. PostgreSQL, el esquema

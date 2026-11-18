@@ -14,12 +14,14 @@ auxiliares.
 | Backend etapas 1 a 5 (base, datos, cliente Flowable, sesiones, solicitudes) | ✅ Implementadas y probadas |
 | Backend etapas 6 a 8 (tareas, propuestas y PDF, portal de empresa) | 🔧 Implementadas; falta validarlas desde la web |
 | Backend etapa 9 (docente, dictado, informe) | ✅ Completa: #17, #18 y #19 probados con Postman contra Flowable real |
-| Backend etapas 10 y 11 (simulador, integración final) | ⏳ Pendientes |
+| Backend etapa 10 (simulación de la empresa) | 🔧 Implementada; falta validarla con Flowable real |
+| Backend etapa 11 (integración final) | ⏳ Pendiente; antes hay que cerrar el modelo BPMN (ver [docs/BACKEND.md](docs/BACKEND.md#correcciones-pendientes-del-bpmn)) |
 | Web (React + Vite) | ✅ Completa contra mocks; falta conectarla al backend real |
-| App de materiales, simulador REST, listeners del motor | ⏳ Pendientes |
+| App de materiales y simulador REST | 🔧 Código en el repo; falta validarlos de punta a punta |
+| Listeners del motor | ⏳ Pendientes |
 
 El detalle de qué está hecho y qué falta está en
-[docs/BACKEND_PROGRESO_Y_ETAPAS.md](docs/BACKEND_PROGRESO_Y_ETAPAS.md).
+[docs/BACKEND.md (avance y etapas)](docs/BACKEND.md#avance-y-etapas).
 
 ## Estructura y responsabilidades
 
@@ -44,7 +46,7 @@ El detalle de qué está hecho y qué falta está en
 
 Hacer esto **una vez** por máquina (o cuando se borre el volumen de Postgres).
 Todos los comandos se corren desde la raíz del repo. La guía detallada de Docker está en
-[docs/INSTALACION_EQUIPO.md](docs/INSTALACION_EQUIPO.md).
+[docs/README.md (instalación con Docker)](docs/README.md#instalación-del-equipo-con-docker).
 
 ### 1. Archivo `.env`
 
@@ -175,8 +177,8 @@ Para detener los contenedores conservando los datos: `docker compose stop`.
 
 ## Documentación
 
-- [docs/BACKEND_PROGRESO_Y_ETAPAS.md](docs/BACKEND_PROGRESO_Y_ETAPAS.md): avance y etapas pendientes.
-- [docs/ENDPOINTS_WEB.md](docs/ENDPOINTS_WEB.md): contrato de los endpoints que usa la web.
-- [docs/ACUERDO_DE_INTEGRACION.md](docs/ACUERDO_DE_INTEGRACION.md): identificadores, variables, estados y permisos.
-- [docs/INSTALACION_EQUIPO.md](docs/INSTALACION_EQUIPO.md): instalación con Docker paso a paso.
-- [docs/README.md](docs/README.md): índice completo.
+- [docs/BACKEND.md (avance y etapas)](docs/BACKEND.md#avance-y-etapas): avance y etapas pendientes.
+- [docs/BACKEND.md (contrato de endpoints)](docs/BACKEND.md#contrato-de-endpoints-de-la-web): contrato de los endpoints que usa la web.
+- [docs/MODELO_Y_INTEGRACION.md (acuerdo de integración)](docs/MODELO_Y_INTEGRACION.md#acuerdo-de-integración): identificadores, variables, estados y permisos.
+- [docs/README.md (instalación con Docker)](docs/README.md#instalación-del-equipo-con-docker): instalación con Docker paso a paso.
+- [docs/MODELO_Y_INTEGRACION.md](docs/MODELO_Y_INTEGRACION.md): acuerdo, modelo BPMN y app de materiales. Los 3 documentos de `docs/` son: `README.md` (guía del equipo), `BACKEND.md` y `MODELO_Y_INTEGRACION.md`.

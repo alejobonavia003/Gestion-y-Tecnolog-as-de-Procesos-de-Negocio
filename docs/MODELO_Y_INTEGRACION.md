@@ -1,4 +1,10 @@
-# Acuerdo inicial de integración
+# Modelo BPMN e integración
+
+Acuerdo de integración entre las partes, referencias del modelo BPMN y la app de materiales.
+
+---
+
+## Acuerdo de integración
 
 Proyecto universitario **Gestión y Tecnologías de Procesos de Negocio**. Equipo: **Alejo, Lauty y Luka**.
 
@@ -12,7 +18,7 @@ el alcance del acuerdo documental inicial. Los pasos actuales están en el READM
 
 Este documento permite preparar cambios en paralelo; no acredita funcionalidades ejecutadas. Todas las rutas, variables, cuentas y modelos de datos propuestos requieren implementación posterior. No se incorporan lógica, dependencias ni cambios de infraestructura con este acuerdo.
 
-## Base revisada y forma de leer el acuerdo
+### Base revisada y forma de leer el acuerdo
 
 | Marca | Significado |
 |---|---|
@@ -35,7 +41,7 @@ Base local: `main`, commit `2c973426c8499be67b58e7e635db44169aa1af89`, sin cambi
 
 La consigna prevalece sobre documentación residual de encuestas o correcciones individuales en el modelo conceptual: no se incorporan esos requisitos (§1.2). No mover ni alterar ahora los BPMN de referencia. El futuro archivo ejecutable se ubicará en `motor-flowable/`, con nombre y método de despliegue por validar; esta carpeta no implica otro motor.
 
-## A. Responsables y límites
+### A. Responsables y límites
 
 | Componente y ruta real | Responsable | Límite y coordinación |
 |---|---|---|
@@ -51,7 +57,7 @@ Compartidos: este acuerdo, README principal, raíz de paquetes Java, IDs y varia
 
 Antes de cambiar un contrato: describir impacto en issue/PR, acordar con productor y consumidores, actualizar tablas y ejemplos en el mismo PR y documentar migración/compatibilidad. Un cambio de ID, variable, tipo, estado o ruta no se integra silenciosamente.
 
-## B. Arquitectura y comunicación
+### B. Arquitectura y comunicación
 
 ```mermaid
 flowchart LR
@@ -74,9 +80,9 @@ Todos comparten `processInstanceId`, `taskId` y `cursoId`; la aplicación Java n
 
 La BD institucional será propia y separada de las tablas internas de Flowable (§3.2). **C:** base lógica distinta, aunque pueda compartir servidor PostgreSQL; conexión y aprovisionamiento por acordar, sin editar Compose ahora. Solo Flowable administra su esquema. El backend no modifica `ACT_*`; la app Java usa servicios del motor, nunca SQL directo para reclamar/completar.
 
-## C. Convenciones e identificadores
+### C. Convenciones e identificadores
 
-### Carpetas, Java y proceso
+#### Carpetas, Java y proceso
 
 | Elemento | Convención **C** / evidencia **E** |
 |---|---|
@@ -90,7 +96,7 @@ La BD institucional será propia y separada de las tablas internas de Flowable (
 
 No regenerar IDs al editar diagramas. UI/CLI usan `taskDefinitionKey` para reconocer una actividad y `taskId` para operar una tarea concreta. Conservar nombres visibles legibles sin usarlos como claves de código.
 
-### IDs de actividades relevantes
+#### IDs de actividades relevantes
 
 Los IDs siguientes **existen en el conceptual**; su utilización en el modelo ejecutable es **C/P1**. No se afirma que ya tengan asignaciones o código funcional. El borrador versión 2 usa otros IDs; no mezclar clientes contra ambos modelos.
 
@@ -119,7 +125,7 @@ Los IDs siguientes **existen en el conceptual**; su utilización en el modelo ej
 | `Informe` | Elaborar informe de resultados | Jefe docente; PDF por UI Flowable o web opcional. |
 | `EnviarInforme` | Enviar informe y archivar expediente | Jefe administrativo; después liberar recursos antes del fin real. |
 
-### Identidades de prueba de la institución
+#### Identidades de prueba de la institución
 
 No se encontraron IDs de personal configurados en los archivos inspeccionados. Estos son **C**, no cuentas creadas ni las identidades de Alejo, Lauty y Luka.
 
@@ -133,7 +139,7 @@ No se encontraron IDs de personal configurados en los archivos inspeccionados. E
 
 Grupos: ID `administracion`, etiqueta **Administración**; ID `docentes`, etiqueta **Docentes**. Son dos y tres integrantes respectivamente; los jefes ya están incluidos. No existe una cuenta por desarrollador como requisito del proceso. Cualquier identidad técnica de integración se acuerda aparte y no se cuenta como empleado. No fijar contraseñas aquí.
 
-## D. Diccionario de variables del proceso
+### D. Diccionario de variables del proceso
 
 **C:** tipos Flowable explícitos `string`, `integer`, `boolean`. Las estructuras JSON se exponen como objetos/listas en la API propia, pero se serializan como texto JSON en una variable `string` al cruzar REST/Java, hasta acordar otro formato. No usar serialización de clases Java entre componentes. Todas las variables de proceso de esta tabla tienen alcance de instancia, no task-local; validaciones en backend y motor según autoría.
 
@@ -172,7 +178,7 @@ Datos de solicitud (contacto, tema, descripción, cantidad estimada, preferencia
 
 Compensación: el registro BPMN de actividades completadas es el criterio principal para invocar handlers; flags/referencias son el contrato con la simulación y permiten idempotencia. No compensar un recurso solo porque `requiere*` sea true. No finalizar normalmente ni por cancelación hasta que terminen las liberaciones, incluida la humana.
 
-## E. Estados del curso y resultados finales
+### E. Estados del curso y resultados finales
 
 **C:** los estados de seguimiento son proyecciones derivadas de Flowable al consultar. No persistir otro `estadoSeguimiento` editable ni hacer que web lo calcule. Lauty implementa el mapeo de actividades/esperas activas acordado con Alejo. El único resultado terminal institucional lo escribe el servicio de cierre invocado por el Execution Listener (§3.4).
 
@@ -198,9 +204,9 @@ Compensación: el registro BPMN de actividades completadas es el criterio princi
 
 Si Flowable no responde, devolver indisponibilidad o último resultado terminal confirmado; no adivinar un estado operativo. Una discrepancia entre fin del motor y callback se muestra como sincronización pendiente, sin inventar un sexto resultado. El diagrama/reserva sin aulas necesita manejo de error **P7**, no un resultado terminal agregado por conveniencia.
 
-## F. Contrato REST inicial
+### F. Contrato REST inicial
 
-### API propia de la institución — propuesta, todavía sin implementar
+#### API propia de la institución — propuesta, todavía sin implementar
 
 Base **C**: `http://localhost:8081/api/v1`. Única ruta de negocio HTTP existente observada: `GET /api/estado`, fuera de esta base versionada; no cambiarla.
 
@@ -234,7 +240,7 @@ Todas las solicitudes usan JSON salvo archivos. Errores propios: `400 VALIDACION
 
 `datos` en completado genérico es una lista cerrada por actividad: `Lista` admite `participantes`; `Activity_12i2hpf` los tres `requiere*`; `Virtual` admite `plataformaReservaId`; `Equipo` admite `equipamientoReservaId`; `Informe` admite `informeId` ya creado. `Enviar`, `Archivar`, `EnviarInforme` y liberación de equipamiento admiten `{}` con validaciones propias. Para propuesta/docente/dictado se usan las rutas específicas; impedir saltar validaciones enviando el mismo contenido por la genérica. `Material` se completa por API Java, no necesita endpoint propio para su app.
 
-### Ejemplos concretos de la API propia (**C**)
+#### Ejemplos concretos de la API propia (**C**)
 
 IDs ficticios: `cursoId = 11111111-1111-4111-8111-111111111111`, `empresaId = 22222222-2222-4222-8222-222222222222`. Los IDs `pi-demo-001` y `t-demo-001` solo ilustran campos; en ejecución se usan los devueltos por Flowable.
 
@@ -323,7 +329,7 @@ Ese ejemplo representa otra selección que incluye virtual, no la selección de 
 {"codigo":"VERSION_DESACTUALIZADA","mensaje":"La propuesta vigente es la versión 2."}
 ```
 
-### REST nativo Flowable — adaptador, no endpoints institucionales
+#### REST nativo Flowable — adaptador, no endpoints institucionales
 
 Referencia técnica: [guía REST oficial de Flowable](https://www.flowable.com/open-source/docs/bpmn/ch14-REST). Las operaciones siguientes son de esa API; **P2:** verificar compatibilidad y ruta base efectivas en la instalación 6.8.0. No se presupone que la imagen UI publique un WAR `flowable-rest` separado. Definir `FLOWABLE_REST_BASE_URL` con una base probada, sin fijar aquí un contexto no comprobado.
 
@@ -353,7 +359,7 @@ Ejemplo nativo de inicio, enviado por backend, no por navegador:
 
 El encabezado técnico de autenticación no se muestra. Para reclamar: `{"action":"claim","assignee":"admin_01"}`; el backend toma el usuario de la sesión, no de un valor arbitrario de cliente.
 
-### Callbacks y consistencia de inicio/cierre
+#### Callbacks y consistencia de inicio/cierre
 
 **C/P4:** primero confirmar en I una solicitud/curso con estado de vinculación pendiente y su clave de idempotencia; cerrar esa transacción antes del HTTP al motor. Iniciar por clave con `cursoId` y business key. Después guardar el ID devuelto en otra transacción. No mantener un bloqueo de fila/BD mientras Flowable necesita llamar de vuelta al backend.
 
@@ -361,7 +367,7 @@ Una decisión no viable podría terminar y ejecutar el Listener antes de respond
 
 Si se pierde la respuesta del motor, recuperar por business key y registro de solicitud antes de iniciar otra instancia; la business key por sí sola no impone unicidad en Flowable. Serializar reintentos de la misma clave en backend y definir conciliación/reintento de callbacks. `eventoId` terminal puede ser `cierre:<processInstanceId>`: resultado repetido idéntico devuelve 200; resultado diferente devuelve 409. No marcar éxito de sincronización hasta persistir. Alejo y Lauty deben probar rollback/reintentos y acordar estrategia antes de integrar; no se promete transacción distribuida automática.
 
-## G. Mensajes BPMN
+### G. Mensajes BPMN
 
 Se reutilizan IDs y **nombres** del conceptual; Flowable correlaciona por nombre exacto (`message.name`), no por ID XML. **C:** API propia usa códigos sin tildes y el adaptador aplica este mapa. Los enlaces `messageRef` faltantes deben completarse en el futuro, no se consideran ya funcionales.
 
@@ -385,7 +391,7 @@ Mapeo del comando a variables: `ACEPTACION` fija `respuestaEmpresa=ACEPTADA` y `
 
 El backend obtiene la instancia de la BD a partir del curso; no acepta un `executionId` libre desde CLI. Localiza la espera activa y comprueba versión/estado inmediatamente antes de entregar. **C/P4:** deduplicar `comunicacionId` por curso en I, con hash del payload y resultado; reenvío idéntico ya aplicado devuelve el mismo resultado, sin volver a entregar. Mismo ID con otro contenido: 409. Otra comunicación que ya no corresponde al estado: 409, nunca entrega a una espera posterior. Probar carreras respuesta/timer, cancelación/completado y pérdida de respuesta; si resultado de entrega es incierto, conciliar antes de reintentar, no presumir aplicación ni reenviar ciegamente. Este registro es de entrega, no una segunda fuente mutable de variables del proceso.
 
-## H. Persistencia
+### H. Persistencia
 
 Modelo mínimo **C**, a cargo de Lauty; no se crean tablas con este documento.
 
@@ -404,7 +410,7 @@ No crear usuarios/contraseñas independientes del personal en I. La sesión pued
 
 Cada consulta o descarga del portal añade el filtro `curso.empresa_id = empresa de sesión` en servidor. Comprobar también el documento y su curso, no solo la URL. No confiar en `empresaId` recibido de UI. Dos empresas de prueba deben demostrar que una no accede a datos, documentos ni actividades de la otra. Lista definitiva y recursos permanecen en M como permite §3.2.
 
-## I. Reglas de tareas y permisos
+### I. Reglas de tareas y permisos
 
 | Actividad | Asignación **C**, basada en §2 | Reclamo |
 |---|---|---|
@@ -423,7 +429,7 @@ Validar en backend y motor (incluidos caminos UI nativa y API Java), además de 
 
 El jefe docente elabora PDF desde UI Flowable como alcance obligatorio; web es opcional. **P6:** coordinar integración de formulario/adjunto con almacenamiento institucional para obtener `informeId` antes de completar `Informe`. Virtual, equipamiento y liberación de equipamiento pueden resolverse en UI Flowable sin pantallas web extra.
 
-## J. Configuración compartida
+### J. Configuración compartida
 
 | Elemento | Existente por inspección **E** | Acuerdo / pendiente |
 |---|---|---|
@@ -451,7 +457,7 @@ Estas variables nuevas son nombres acordables de entrada a componentes futuros: 
 
 No se agrega `.env.example`: el README ya usa el nombre `env` con `--env-file env`; introducir otro formato sin consumidores sería redundante. El ejemplo `env.example` mencionado no existe y debe acordarse al implementar configuración. El inventario Git muestra `env` y `.env` rastreados aunque `.gitignore` los enumera; ignorarlos no elimina seguimiento previo. No se inspecciona ni publica su contenido, ni se modifica el historial con esta tarea. Resolver su tratamiento en P8 antes de incorporar credenciales nuevas.
 
-## K. Trabajo con Git
+### K. Trabajo con Git
 
 **C:** ramas cortas por funcionalidad, por ejemplo `feat/motor-viabilidad`, `feat/backend-solicitudes`, `feat/web-solicitud`, `docs/contrato-integracion`; PR hacia `main`. No reservar una rama perpetua por persona ni introducir en una rama archivos ajenos para resolver conflictos sin coordinar.
 
@@ -465,7 +471,7 @@ No se agrega `.env.example`: el README ya usa el nombre `env` con `--env-file en
 
 No versionar credenciales, `.env`/`env` reales, bases locales, `target/`, logs ni binarios generados. Los PDFs de negocio se generan en ejecución; solo fixtures ficticios necesarios se agregarían intencionalmente. No modificar ahora `.gitignore` ni asumir que protege archivos ya rastreados. Cada integrante prueba su parte, publica pasos/resultado real y limitaciones; integra sin romper el recorrido común. Mantener este acuerdo en el mismo PR que cambia un contrato. Este trabajo no hace commits, push ni PR.
 
-## L. Primer recorrido integrado
+### L. Primer recorrido integrado
 
 Objetivo: **formulario web → curso persistido → instancia iniciada → vínculo confirmado → primera tarea visible para el responsable**. Usar motor real compartido y datos ficticios; no basta el endpoint `/api/estado`. Precondición: menos de cinco otras instancias activas, para llegar a `Propuesta`.
 
@@ -491,7 +497,7 @@ Checklist verificable, inicialmente pendiente:
 
 Una vez logrado: integrar propuesta/PDF → CLI aceptación → habilitación de empresa → preparación paralela → materiales por API Java → dictado/informe/compensación. Los once escenarios de §5 siguen siendo alcance de validación posterior; no quedan aprobados por este checklist documental.
 
-## M. Decisiones pendientes
+### M. Decisiones pendientes
 
 Solo dudas no resueltas por archivos o consigna; el equipo de tres y el permiso de CLI ya están confirmados, no son dudas pendientes.
 
@@ -509,3 +515,334 @@ Solo dudas no resueltas por archivos o consigna; el equipo de tres y el permiso 
 | P10 | Zona horaria, fechas pasadas y compatibilidad del timer | Usar zona Córdoba en UI e instantes ISO-8601 con offset; rechazar aceptación con fecha pasada salvo pruebas explícitas, comprobar parser 6.8.0. No agregar dos campos para el mismo inicio. | Alejo/Lauty/Luka. |
 
 **Revisión documental realizada:** rutas locales y enlaces relativos, IDs contra el conceptual, consistencia de tablas/ejemplos y JSON. **No verificado en ejecución:** endpoints propuestos, autenticación, conexiones, despliegues, temporizadores, listeners o recorrido integrado. La primera implementación debe registrar qué convenciones se ratificaron y actualizar las pendientes que resuelva.
+
+---
+
+## Referencias del modelo BPMN
+
+> [!NOTE]
+> Actualización 17/11/2026 (revisada contra `proyecto-institucion.bpmn`): el modelo ya tiene `desarrollar_curso` con `${docenteId}`, el timer sobre `fechaCurso`, `elaborar_informe` para `Jefe-Docente`, el mensaje `cancelacion` en la cancelación y `definir_docente` (el typo `definr_docente` ya no existe). La lista de lo que falta corregir está en [BACKEND.md](BACKEND.md#correcciones-pendientes-del-bpmn). Donde esta sección diga otra cosa, manda esa lista.
+
+Separado entre lo que **ya está en el modelo** y lo que **todavía es provisorio**, para no apoyarse en algo que va a cambiar.
+
+### Proceso, usuarios y grupos
+
+| Dato | Valor |
+| --- | --- |
+| Process key | `process` hoy. **Se va a cambiar** (por ejemplo `organizacionCursos`). No dejarla fija en el código todavía |
+| Usuarios con rol | `Jefe-Administrativo`, `Jefe-Docente` (pasar los ids de los otros 3 usuarios creados) |
+| Grupos | `Equipo-Administrativo`, `Equipo-Docente` |
+| Login | Con usuario y contraseña de Flowable IDM, sin cuentas propias en la BD |
+
+### Mensajes (nombres exactos)
+
+| Mensaje | Evento | Variables que debe llevar |
+| --- | --- | --- |
+| `solicitudRecibida` | Start del proceso | datos de la solicitud |
+| `modificaciones` | Espera de respuesta | observaciones |
+| `rechazo` | Espera de respuesta | ninguna |
+| `aceptacion` | Espera de respuesta | **`fechaCurso`** |
+| `cancelacion` | Event subprocess de cancelación | ninguna |
+
+- La **nómina** no es un mensaje: "Recibir nómina" (`recibir_nomina`) se destraba con un *signal* sobre esa ejecución.
+- Para encontrar la ejecución correcta, se pueden consultar las ejecuciones por `activityId` (nómina) o por nombre de suscripción de mensaje. Conviene probarlo.
+- Al iniciar el proceso por REST, probar si alcanza con la key o hay que iniciar por el mensaje (todavía sin confirmar).
+- **Falta en el modelo**: el start de "Cancelación" aún no tiene el mensaje `cancelacion` asociado.
+
+### Variables
+
+| Variable | Tipo | Quién la escribe | Estado |
+| --- | --- | --- | --- |
+| `otrasInstanciasActivas` | Integer | Delegate de viabilidad | Fijada (el DMN la lee) |
+| `resultadoViabilidad` | boolean | DMN | Fijada (el gateway la lee) |
+| `fechaCurso` | texto ISO 8601 con zona, ej. `2026-11-20T09:00:00-03:00` | App REST, junto con `aceptacion` | Fijada. Tiene que ser futura |
+| `resultado` | texto | Listeners del modelo | Hoy solo `cancelado` |
+| `docenteSeleccionado` | id de usuario | Formulario de "Definir docente" | Planeada |
+
+- Valores previstos de `resultado`: `finalizado`, `cancelado`, `rechazado`, `sin_respuesta`, `no_viable`. El listener de fin de proceso los usa para actualizar el estado en la BD. Los textos de la BD tienen que coincidir con estos.
+- Todavía **sin nombre definido**: la nómina y la lista definitiva, los recursos elegidos (los booleanos para aula física, virtual y equipamiento), el aula asignada y el informe. Se van a ir fijando.
+
+### Tareas de usuario (ids para filtrar)
+
+| Id | Responsable |
+| --- | --- |
+| `registrar_elaborar_propuesta`, `revisar_propuesta`, `archivar_solicitud` | Assignee `Jefe-Administrativo` |
+| `preparar_materiales`, `evaluar_recursos`, `confeccionar_lista` | Candidate group `Equipo-Administrativo` |
+| `definr_docente` | Assignee `Jefe-Docente` |
+
+Tres cosas a tener en cuenta:
+
+- **Typo**: `definr_docente` va a pasar a `definir_docente`. No fijarlo todavía.
+- **Cambios pendientes**: `archivar_expediente` pasa a assignee `Jefe-Administrativo` (hoy tiene grupo), `elaborar_informe` a `Jefe-Docente`, y `desarrollar_curso` a `${docenteSeleccionado}`. Hoy estos tres figuran con grupo, así que no hay que basarse en eso.
+- **Confeccionar lista** va a quedar asignada por un listener al crearse, por eso su responsable puede aparecer ya asignado.
+
+El resto de las tareas de recursos tiene id provisorio (`sid-...`) y no necesita pantalla propia en el sitio.
+
+---
+
+## App de materiales
+
+Implementación del 17/11/2026. Corresponde a **§4.2.1** de la consigna y al bloque
+**§7.1** del archivo de etapas. Su desarrollo M0–M6 es independiente de las etapas
+9–11 del backend. Código en `app-materiales/`, paquete `ar.edu.cursos.materiales`.
+
+### Inicio rápido
+
+Requisitos: **JDK 21**, Maven y entorno gráfico de escritorio. Para ejecutar el
+JAR ya compilado alcanza un runtime Java 21 con soporte de escritorio. La primera
+compilación descarga dependencias desde Maven Central.
+
+Desde la raíz del repositorio:
+
+```bash
+docker compose up -d
+mvn -f app-materiales/pom.xml compile
+./app-materiales/target/app-materiales
+```
+
+En Linux, `compile` genera el ejecutable `app-materiales/target/app-materiales`
+y el acceso directo `app-materiales/target/Materiales.desktop`, que podés abrir con
+doble clic. Si tu administrador de archivos lo pide, habilitá «Permitir ejecutar».
+Necesitan Java 21 y las dependencias locales de Maven. El lanzador ubica el `.env`
+desde la raíz del repositorio, independientemente de dónde lo abras. Si movés el
+repositorio, recompilá para actualizar la ruta del acceso directo.
+
+Para generar además un único JAR con sus dependencias
+(`app-materiales/target/app-materiales.jar`), ejecutá
+`mvn -f app-materiales/pom.xml clean verify`.
+`clean verify` corre **6 pruebas rápidas**, sin conectarse a Docker. Hay otras
+**2 pruebas de integración opcionales**, explicadas más abajo; aparecen omitidas
+si no se habilitan. No hace falta correr una batería grande para usar esta app.
+
+Alternativamente, después de compilar:
+
+```bash
+./app-materiales/ejecutar.sh
+```
+
+La app es de escritorio: se ejecuta en tu máquina, no dentro del contenedor del
+backend. Para conectarse solo necesita PostgreSQL; para el funcionamiento completo
+del proceso conviene mantener Flowable UI iniciado, ya que ejecuta timers y jobs.
+No necesita que el backend REST o la web estén iniciados para listar/reclamar/completar.
+
+### Configuración y credenciales
+
+Por defecto lee `.env` desde el directorio de ejecución o `../.env`. Con los
+comandos anteriores usa el archivo de la raíz del proyecto. No modifica ese archivo.
+
+| Variable | Uso / valor predeterminado |
+|---|---|
+| `FLOWABLE_JDBC_URL` | `jdbc:postgresql://127.0.0.1:5433/` seguido de `POSTGRES_DB` (o `flowable`) |
+| `FLOWABLE_JDBC_USER` | Si no está, toma `POSTGRES_USER` |
+| `FLOWABLE_JDBC_PASSWORD` | Si no está, toma `POSTGRES_PASSWORD` |
+| `FLOWABLE_PROCESO_CLAVE` | `process` |
+| `FLOWABLE_TAREA_MATERIALES` | `preparar_materiales` |
+| `GRUPO_ADMINISTRACION` | `Equipo-Administrativo` |
+
+La URL debe apuntar a la **base del motor Flowable**, no a `institucion`. En este
+Compose, desde el host se usa `127.0.0.1:5433`; desde otra máquina debe usarse el
+host/puerto accesible de esa instalación. La publicación actual es solo loopback;
+no se modificó la exposición de PostgreSQL para acceso remoto.
+
+Para tener configuración independiente, copiar la plantilla y ajustar los valores:
+
+```bash
+cp app-materiales/materiales.env.example app-materiales/materiales.env.local
+java -jar app-materiales/target/app-materiales.jar --config app-materiales/materiales.env.local
+```
+
+Orden de prioridad: archivo pasado con `--config` > variables de entorno > `.env`.
+Los archivos admiten `CLAVE=valor`, comentarios en líneas que comienzan con `#`,
+`export CLAVE=valor` y valores entre comillas simples o dobles. No ejecutan shell,
+no interpolan `${VARIABLE}` y no interpretan escapes: escribir los valores finales.
+`*.local` está ignorado por Git. La plantilla contiene una clave ficticia que debe
+reemplazarse. No poner credenciales reales en la documentación ni en el repositorio.
+
+Hay **dos credenciales diferentes**:
+
+- La conexión JDBC usa usuario/contraseña de PostgreSQL desde la configuración.
+- La ventana pide el usuario/contraseña del administrativo de **Flowable IDM**.
+
+Los usuarios habituales son `Jefe-Administrativo` y `empleado-administrativo`.
+El script IDM utiliza `1234` como clave de desarrollo al crear usuarios, salvo que
+se haya configurado otra; no cambia usuarios existentes. Los docentes no pueden
+ingresar a esta app, aunque tengan una contraseña válida en Flowable.
+
+### Uso de las pantallas
+
+1. Ingresar con un administrativo. La conexión y el login se hacen en segundo plano.
+2. En **Disponibles para reclamar** aparecen únicamente tareas libres de materiales
+   candidatas al grupo administrativo del proceso configurado.
+3. Seleccionar una tarea y usar **Ver detalle**: temática, empresa, descripción,
+   cursoId, processInstanceId, taskId y asignado. Los campos que no existan en
+   variables del proceso quedan vacíos; no se consulta la BD institucional.
+4. Usar **Reclamar** y confirmar. La tarea pasa a **Asignadas** del usuario que ganó
+   el reclamo. Si otra persona la tomó primero se informa el conflicto.
+5. Preparar los materiales fuera del programa. En **Asignadas**, seleccionar la
+   tarea y usar **Completar materiales**, confirmando que el trabajo está hecho.
+   Esto completa la tarea en Flowable y hace avanzar su rama del proceso.
+6. **Actualizar** vuelve a consultar el motor. Las páginas tienen 20 tareas; los
+   botones Anterior/Siguiente permiten recorrerlas. La tabla se puede ordenar.
+7. **Cerrar sesión** limpia la sesión y la tabla. Cerrar la ventana cierra también
+   el contexto del motor y sus conexiones. Mientras una operación está en curso,
+   se espera su resultado antes de cerrar o lanzar otra.
+
+Captura de la bandeja con datos ficticios de la comprobación gráfica (el fixture ya fue eliminado):
+
+![Bandeja de materiales](imagenes/app-materiales-bandeja.png)
+
+Una bandeja vacía puede ser correcta: la instancia debe haber llegado a
+`preparar_materiales`. Publicar el proceso no crea tareas por sí solo. Las instancias
+anteriores conservan su versión de definición. No se crean solicitudes desde esta app.
+
+La aplicación no exige archivos adjuntos ni una descripción adicional de materiales:
+la consigna requiere identificar, listar, reclamar y completar.
+
+### Cómo funciona por dentro
+
+```text
+Swing → MaterialesService → servicios Java de Flowable → PostgreSQL compartido
+                              IdentityService / TaskService / RuntimeService
+```
+
+`Motor` crea un contexto Flowable **6.8.0** contra el esquema existente, con
+`databaseSchemaUpdate=false`, ejecutor asíncrono local desactivado y pool pequeño.
+No usa H2, no crea otra base ni redespliega BPMN. Se incluye configurador DMN y
+Groovy JSR-223: completar la última rama puede ejecutar scripts de confirmación
+en la propia JVM de la app. Se agregan límites de conexión de 5 s y lectura de
+20 s al driver PostgreSQL.
+
+`MaterialesService` valida identidad por `IdentityService.checkPassword`, exige
+membresía administrativa en cada operación y consulta únicamente tareas activas
+del proceso y tipo configurados. Reclamo y completado reconsultan la tarea dentro
+del comando/transacción del motor: candidatura y ausencia de asignado para
+reclamar; asignación al usuario actual para completar. No usa `setAssignee`, no
+acepta un usuario arbitrario desde la interfaz ni envía variables de proceso al
+completar. Se establece y limpia el contexto de usuario del hilo de ejecución.
+Los botones son una ayuda; las restricciones se comprueban también en el servicio.
+
+Todas las operaciones de motor usan `SwingWorker`, evitando bloquear la ventana.
+La contraseña del login se borra del campo al enviarse y se limpia el arreglo de
+caracteres al terminar. La API requiere temporalmente un `String`; no se guarda
+la contraseña en la sesión ni se imprime desde el código de la app.
+
+| Archivo | Responsabilidad |
+|---|---|
+| `Main.java` | Inicio gráfico o diagnóstico de lectura |
+| `Configuracion.java` | Carga de configuración y validación PostgreSQL |
+| `Motor.java` | Contexto Flowable, DMN, conexiones y cierre |
+| `MaterialesService.java` | Login, filtros y permisos para consultar/reclamar/completar |
+| `Ventana.java` | Login, bandejas, detalle y acciones en segundo plano |
+| `Usuario.java`, `Material.java` | Datos de sesión y filas/detalles |
+| `ErrorAplicacion.java` | Mensajes para conflictos, tareas inexistentes y fallas de conexión |
+
+Si el equipo agrega delegates/listeners Java, sus clases y dependencias deberán
+estar **también en la app** cuando puedan ejecutarse tras completar materiales.
+Para incorporar un JAR compartido sin recompilar la app, se puede iniciar con un
+classpath explícito, por ejemplo en Linux:
+
+```bash
+java -cp 'app-materiales/target/app-materiales.jar:app-materiales/extensiones/*' ar.edu.cursos.materiales.Main
+```
+
+En Windows el separador del classpath es `;`. El modelo actual fue probado con
+Groovy y DMN incluidos. No se modificó el BPMN para introducir saltos asíncronos.
+
+### Pruebas mínimas
+
+#### Las de todos los días: 6 pruebas sin Docker
+
+Desde la raíz:
+
+```bash
+mvn -f app-materiales/pom.xml test
+```
+
+Comprueban configuración, identidad y grupo, limpieza de contraseña, filtros de
+bandeja, reclamo permitido/denegado, completado propio frente a ajeno/sin reclamo,
+logout y limpieza del contexto de usuario incluso ante fallas. Usan mocks del
+motor; no crean ni alteran cursos reales.
+
+#### Una vez al integrar: 2 pruebas adicionales contra tu motor
+
+Con PostgreSQL y Flowable configurados y el proceso publicado:
+
+```bash
+mvn -f app-materiales/pom.xml verify -Dmateriales.integracion=true
+```
+
+Se ejecutan **8 pruebas en total**, no cientos:
+
+- `IntegracionTest`: crea un proceso ficticio con ramas paralelas y una tarea de
+  materiales, usuarios/grupo temporales y comprueba login, rechazo de docente y
+  clave incorrecta, filtros, dos reclamos simultáneos (un solo ganador), rechazo
+  de completado ajeno/de otra tarea, cancelación y ejecución de Groovy cuando se
+  une la última rama. Borra únicamente sus fixtures al terminar.
+- `ProcesoPublicadoTest`: crea una instancia ficticia de la definición publicada
+  `process`, la posiciona en `preparar_curso` mediante la API del motor para preparar
+  el escenario y reclama/completa materiales por el servicio de la app. Comprueba
+  que desaparezca esa tarea y que las otras ramas sigan activas. Limpia su instancia,
+  historial y usuario temporal. No altera el modelo ni toca instancias previas.
+
+La segunda prueba supone los IDs actuales `registrar_elaborar_propuesta` y
+`preparar_curso`; si el equipo cambia el contrato, actualizar esa preparación.
+El escenario omite negociación/habilitación: **no certifica el curso completo**.
+Ejecutar las integraciones en el entorno local/de pruebas del equipo. No necesitan
+backend REST, contraseñas de administrativos existentes ni Postman. No despliegan
+una nueva versión del proceso `process`; solo el primer test crea una definición
+con clave temporal única. Si se interrumpe abruptamente la JVM, revisar fixtures
+identificados con `mat-test-`, `mat_test_`, `mat-real-` o `TEST app-materiales` antes
+de preparar una defensa.
+
+#### Comprobar conexión sin abrir ventanas
+
+```bash
+java -jar app-materiales/target/app-materiales.jar --diagnostico
+```
+
+Muestra la definición más reciente y hasta 20 IDs de tareas activas del proceso,
+para contrastarlos con Flowable UI/REST. Es de lectura: no inicia instancias ni
+reclama/completa tareas. Este modo usa credenciales JDBC, no sustituye el login
+de la app. Puede ejecutarse en una terminal sin entorno gráfico.
+
+#### Comprobación manual breve
+
+Con una instancia ficticia en preparación: ingresar como administrativo, reclamar
+materiales, comprobar el mismo taskId en Flowable UI, completar y actualizar.
+Con el otro administrativo verificar que ya no está disponible; con un docente
+comprobar que se rechaza el ingreso. Con eso alcanza como prueba cotidiana de UI.
+No hace falta repetir la suite integrada ante cambios solo de texto o disposición.
+
+### Errores habituales
+
+| Síntoma | Qué comprobar |
+|---|---|
+| No hay tareas | Versión de proceso, fase actual, usuario, bandeja y `preparar_materiales` |
+| Usuario o contraseña incorrectos | Credencial de Flowable IDM, distinta de PostgreSQL/pgAdmin |
+| Usuario sin permiso | Pertenencia a `Equipo-Administrativo` |
+| Conexión rechazada | PostgreSQL iniciado y host/puerto JDBC; en esta máquina es 5433 |
+| Autenticación JDBC fallida | Contraseña vigente de la base existente, no solo el valor de inicialización de Compose |
+| Error de esquema | Misma versión Flowable 6.8.0 y base del motor correcta; la app no migra el esquema |
+| Tarea cambió/desapareció | Otra persona la reclamó/completó o el proceso se canceló; actualizar |
+| Error al completar | Actualizar antes de reintentar; revisar variables BPMN, Groovy, listeners/delegates y sus dependencias |
+| Sin entorno gráfico | Ejecutar en sesión de escritorio; `--diagnostico` sirve en consola |
+
+Ante fallo de conexión o respuesta incierta, el programa no anuncia éxito. Primero
+usar Actualizar y comprobar si la tarea sigue activa/asignada; no repetir comandos
+a ciegas. Si la operación ocurrió pero falló el refresco, ese estado aparece al
+consultar de nuevo. Los cambios de backend Docker previos son independientes de
+este módulo.
+
+### Verificación realizada
+
+El 17/11/2026, con Java 21 y PostgreSQL 15 del proyecto:
+
+- JAR ejecutable compilado con dependencias, consulta real por Java a
+  `process:4:51c6f829-e293-11f1-a462-721b934a1603` y lectura del mismo taskId
+  observado previamente por REST.
+- **8 pruebas aprobadas, 0 fallas, 0 errores**, incluidas ambas integraciones.
+- Comprobación gráfica en escritorio: login con identidad temporal real, carga de
+  bandeja y logout; capturas revisadas visualmente.
+- Fixtures de pruebas eliminados, sin cambiar usuarios de negocio, modelos ni
+  instancias preexistentes. Validación del ejecutable en otra máquina y la defensa
+  del equipo siguen siendo una comprobación manual posterior.

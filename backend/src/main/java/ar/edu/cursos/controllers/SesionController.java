@@ -15,7 +15,7 @@ import ar.edu.cursos.services.SesionService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
-/** Endpoints #2 a #5 de ENDPOINTS_WEB.md. */
+/** Endpoints #2 a #5 de docs/BACKEND.md (contrato de endpoints). */
 @RestController
 @RequestMapping("/api/v1/sesiones")
 public class SesionController {

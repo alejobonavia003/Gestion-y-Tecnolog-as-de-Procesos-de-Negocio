@@ -1,4 +1,4 @@
-// Estados del curso que ve la empresa (docs/ACUERDO_DE_INTEGRACION.md §E y enunciado §4.1.2).
+// Estados del curso que ve la empresa (docs/MODELO_Y_INTEGRACION.md#acuerdo-de-integración §E y enunciado §4.1.2).
 // El backend los calcula a partir de Flowable; la web solo los muestra.
 
 type InfoEstado = {

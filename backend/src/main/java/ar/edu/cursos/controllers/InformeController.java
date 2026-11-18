@@ -16,7 +16,7 @@ import ar.edu.cursos.services.InformeService;
 import ar.edu.cursos.services.SesionService;
 import jakarta.servlet.http.HttpServletRequest;
 
-/** Endpoint #19 de ENDPOINTS_WEB.md (etapa 9). */
+/** Endpoint #19 de docs/BACKEND.md (contrato de endpoints) (etapa 9). */
 @RestController
 @RequestMapping("/api/v1/cursos")
 public class InformeController {

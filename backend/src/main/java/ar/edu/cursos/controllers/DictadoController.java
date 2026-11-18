@@ -14,7 +14,7 @@ import ar.edu.cursos.services.SesionService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
-/** Endpoints #17 y #18 de ENDPOINTS_WEB.md (etapa 9). */
+/** Endpoints #17 y #18 de docs/BACKEND.md (contrato de endpoints) (etapa 9). */
 @RestController
 @RequestMapping("/api/v1/tareas")
 public class DictadoController {
