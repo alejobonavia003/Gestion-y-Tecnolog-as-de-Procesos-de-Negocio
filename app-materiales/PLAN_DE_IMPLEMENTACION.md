@@ -7,7 +7,7 @@ la implementación M0–M6 fue entregada el 17/11/2026. La rama actual es
 
 ## Ubicación en el proyecto
 
-Corresponde a §4.2.1 de `contexto/ProyectoCursos_V2.pdf`, a las responsabilidades
+Corresponde a §4.2.1 de `contexto/ProyectoCursos_V3_168631696404.pdf`, a las responsabilidades
 de §2 y a los escenarios 8 y 11 de §5. En `docs/BACKEND.md#avance-y-etapas`
 figura en §7.1, fuera de las etapas del backend. Puede avanzar en paralelo a
 las etapas 9–11. Etapas 6 y 7: validadas con Postman según el equipo; etapa 8:

@@ -28,7 +28,7 @@ Este documento permite preparar cambios en paralelo; no acredita funcionalidades
 
 Salvo que se indique **E**, las tablas de contratos son **C**. Las decisiones **P** deben resolverse antes de integrar el comportamiento afectado.
 
-Fuente principal: [ProyectoCursos_V2.pdf](../contexto/ProyectoCursos_V2.pdf), §§1–5. También se inspeccionaron [README](../README.md), [.gitignore](../.gitignore), [Compose](../docker-compose.yml), [pom.xml](../backend/pom.xml), las clases Java y [application.properties](../backend/src/main/resources/application.properties). No se encontraron `AGENTS.md` aplicables en los ancestros ni dentro del proyecto. Los ejemplos Java externos y «Soluciones varias» no están disponibles; sí existe `unrc.Main`.
+Fuente principal: [ProyectoCursos_V3.pdf](../contexto/ProyectoCursos_V3_168631696404.pdf), §§1–5. También se inspeccionaron [README](../README.md), [.gitignore](../.gitignore), [Compose](../docker-compose.yml), [pom.xml](../backend/pom.xml), las clases Java y [application.properties](../backend/src/main/resources/application.properties). No se encontraron `AGENTS.md` aplicables en los ancestros ni dentro del proyecto. Los ejemplos Java externos y «Soluciones varias» no están disponibles; sí existe `unrc.Main`.
 
 Base local: `main`, commit `2c973426c8499be67b58e7e635db44169aa1af89`, sin cambios rastreados al comenzar. La consulta remota de la planificación anterior confirmó el mismo commit; este trabajo no hizo fetch ni supone que GitHub siga sin cambios. No se ejecutaron Maven, Docker, aplicaciones ni modelos.
 

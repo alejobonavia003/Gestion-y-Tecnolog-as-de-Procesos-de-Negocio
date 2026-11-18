@@ -215,7 +215,7 @@ formularios web o implementadas las etapas 9–10.
 
 ## Notas y tips de las clases grabadas
 
-Este documento recopila las aclaraciones técnicas, atajos prácticos, advertencias de errores comunes y criterios de evaluación que el docente mencionó en los audios de clase respecto al proyecto en **Flowable**, y que no figuran textualmente en la consigna (`ProyectoCursos_V2.pdf`).
+Este documento recopila las aclaraciones técnicas, atajos prácticos, advertencias de errores comunes y criterios de evaluación que el docente mencionó en los audios de clase respecto al proyecto en **Flowable**, y que no figuran textualmente en la consigna (`ProyectoCursos_V3_168631696404.pdf`).
 
 ---
 

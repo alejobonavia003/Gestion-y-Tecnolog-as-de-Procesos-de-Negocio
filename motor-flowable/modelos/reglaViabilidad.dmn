@@ -1,25 +1,25 @@
 <definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/" xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/" xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/" xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/" id="definition_9356c703-dc78-11f1-9cb8-deba9f74507d" name="reglaViabilidad" namespace="http://www.flowable.org/dmn" exporter="Flowable Open Source Modeler" exporterVersion="6.8.0">
   <decision id="reglaViabilidad" name="reglaViabilidad">
-    <decisionTable id="decisionTable_4e705dd1-576f-4d70-ad30-a90bfba23c6e" hitPolicy="FIRST">
+    <decisionTable id="decisionTable_a09d3d1b-261f-48ce-ba06-6c6765fadd85" hitPolicy="FIRST">
       <input label="Cantidad-Cursos">
-        <inputExpression id="inputExpression_5bd32f1f-a1a0-4dab-8eac-824ae081c998" typeRef="number">
+        <inputExpression id="inputExpression_88d546f5-321f-4c81-a861-a2b944c3b4be" typeRef="number">
           <text>cantCursos</text>
         </inputExpression>
       </input>
-      <output id="outputExpression_54bc55ad-6da7-4239-85f6-27aec0a23d5c" label="Viabilidad-curso" name="resultadoViabilidad" typeRef="boolean"></output>
+      <output id="outputExpression_2a5fec42-6d15-4288-b0c8-e6831ab80c76" label="Viabilidad-curso" name="resultadoViabilidad" typeRef="boolean"></output>
       <rule>
-        <inputEntry id="inputEntry_5bd32f1f-a1a0-4dab-8eac-824ae081c998_1">
+        <inputEntry id="inputEntry_88d546f5-321f-4c81-a861-a2b944c3b4be_1">
           <text><![CDATA[>= 5]]></text>
         </inputEntry>
-        <outputEntry id="outputEntry_54bc55ad-6da7-4239-85f6-27aec0a23d5c_1">
+        <outputEntry id="outputEntry_2a5fec42-6d15-4288-b0c8-e6831ab80c76_1">
           <text><![CDATA[false]]></text>
         </outputEntry>
       </rule>
       <rule>
-        <inputEntry id="inputEntry_5bd32f1f-a1a0-4dab-8eac-824ae081c998_2">
+        <inputEntry id="inputEntry_88d546f5-321f-4c81-a861-a2b944c3b4be_2">
           <text><![CDATA[< 5]]></text>
         </inputEntry>
-        <outputEntry id="outputEntry_54bc55ad-6da7-4239-85f6-27aec0a23d5c_2">
+        <outputEntry id="outputEntry_2a5fec42-6d15-4288-b0c8-e6831ab80c76_2">
           <text><![CDATA[true]]></text>
         </outputEntry>
       </rule>

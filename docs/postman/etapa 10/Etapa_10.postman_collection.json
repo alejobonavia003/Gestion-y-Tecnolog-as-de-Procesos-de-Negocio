@@ -1,0 +1,4084 @@
+{
+  "info": {
+    "_postman_id": "99426cba-81dd-50cc-b81a-dca8d02b0441",
+    "name": "Cursos GyTPN - Etapa 10 (simulador y modelo BPMN)",
+    "description": "Pruebas de la etapa 10: comunicaciones de la empresa (aceptación, rechazo, modificaciones, nómina, cancelación) contra el modelo BPMN publicado. Usar con el entorno 'Cursos - Local' (etapa 10). Ver README.md.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "cursoId",
+      "value": ""
+    },
+    {
+      "key": "processInstanceId",
+      "value": ""
+    },
+    {
+      "key": "taskId",
+      "value": ""
+    },
+    {
+      "key": "taskIdFlowable",
+      "value": ""
+    },
+    {
+      "key": "jobId",
+      "value": ""
+    },
+    {
+      "key": "comId",
+      "value": ""
+    },
+    {
+      "key": "idemKey",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "00 - Utilidades",
+      "description": "Chequeos previos.",
+      "item": [
+        {
+          "name": "Estado del backend",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/estado"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Proceso publicado (clave process)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/repository/process-definitions?key={{procesoClave}}&latest=true",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Hay definición publicada', () => pm.expect(pm.response.json().data.length).to.be.above(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Instancias activas (cuentan para cantCursos)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances?processDefinitionKey={{procesoClave}}&size=50",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "console.log('Instancias activas:', pm.response.json().total, '(con 5 o más, la solicitud es NO_VIABLE)');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] BORRAR todas las instancias activas del proceso",
+          "description": "Lista las instancias de la clave del proceso y borra cada una. Usar solo para limpiar pruebas.",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances?processDefinitionKey={{procesoClave}}&size=100",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data || [];",
+                  "const base = pm.variables.replaceIn('{{flowableUrl}}');",
+                  "const auth = { type: 'basic', basic: [{key:'username',value:pm.variables.replaceIn('{{flowableUser}}')},{key:'password',value:pm.variables.replaceIn('{{flowablePass}}')}] };",
+                  "d.forEach(i => pm.sendRequest({ url: base + '/runtime/process-instances/' + i.id, method: 'DELETE', auth: auth }, (e, r) => console.log('Borrada', i.id, e ? e : r.code)));",
+                  "console.log('Instancias a borrar:', d.length);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 - Aceptación y preparación del curso",
+      "description": "Aceptación (idempotencia, versión vigente), habilitación de acceso, nómina y reserva automática de aula. Se corre con Run folder.",
+      "item": [
+        {
+          "name": "Login Jefe-Administrativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"Jefe-Administrativo\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear solicitud",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idemKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/solicitudes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empresa\": {\n    \"nombre\": \"Metalúrgica Río Cuarto SA\",\n    \"identificador\": \"30-71234567-8\"\n  },\n  \"contacto\": {\n    \"nombre\": \"Ana Pérez\",\n    \"email\": \"ana.perez@example.com\",\n    \"telefono\": \"358 4123456\"\n  },\n  \"tematica\": \"Seguridad e higiene en planta\",\n  \"descripcion\": \"Capacitación para operarios nuevos sobre uso de EPP y procedimientos de emergencia.\",\n  \"cantidadEstimadaParticipantes\": 15,\n  \"fechasPreferidas\": \"Martes y jueves por la tarde, desde marzo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('idemKey', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.collectionVariables.set('cursoId', r.cursoId);",
+                  "pm.collectionVariables.set('processInstanceId', r.processInstanceId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bandeja asignadas: registrar_elaborar_propuesta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas?bandeja=asignadas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "const curso = pm.collectionVariables.get('cursoId');",
+                  "const t = (r.items || []).find(x => x.cursoId === curso && x.taskDefinitionKey === 'registrar_elaborar_propuesta');",
+                  "pm.test('Aparece registrar_elaborar_propuesta del curso actual', () => pm.expect(t, 'no está en la bandeja').to.exist);",
+                  "if (t) pm.collectionVariables.set('taskId', t.taskId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registrar propuesta v1 (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/propuesta",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"programa\": \"Módulo 1: EPP.\\nMódulo 2: Procedimientos de emergencia.\",\n  \"presupuesto\": {\n    \"importe\": \"150000.00\",\n    \"moneda\": \"ARS\"\n  },\n  \"fechasPosibles\": [\n    \"2026-12-01T09:00:00-03:00\",\n    \"2026-12-08T09:00:00-03:00\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Es la versión 1', () => pm.expect(pm.response.json().propuestaVersion).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Habilitadas con propuesta enviada: ACEPTACION, RECHAZO, MODIFICACION",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const a = pm.response.json().accionesHabilitadas || [];",
+                  "pm.test('Habilita ACEPTACION', () => pm.expect(a).to.include('ACEPTACION'));",
+                  "pm.test('Habilita RECHAZO', () => pm.expect(a).to.include('RECHAZO'));",
+                  "pm.test('Habilita MODIFICACION', () => pm.expect(a).to.include('MODIFICACION'));",
+                  "pm.test('No habilita NOMINA', () => pm.expect(a).to.not.include('NOMINA'));",
+                  "pm.test('No habilita CANCELACION', () => pm.expect(a).to.not.include('CANCELACION'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado de simulación incluye el curso",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/simulacion/solicitudes"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const it = (pm.response.json().items || []).find(x => x.cursoId === pm.collectionVariables.get('cursoId'));",
+                  "pm.test('El curso está en la lista', () => pm.expect(it).to.exist);",
+                  "if (it) pm.test('Versión vigente 1', () => pm.expect(it.propuestaVersionVigente).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "PDF de la propuesta vigente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/propuesta-pdf"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tipo desconocido → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"{{comId}}\",\n  \"tipo\": \"FIRMA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('comId', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aceptación sin fechaCurso → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"{{comId}}\",\n  \"tipo\": \"ACEPTACION\",\n  \"propuestaVersion\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('comId', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aceptación de versión inexistente → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"{{comId}}\",\n  \"tipo\": \"ACEPTACION\",\n  \"propuestaVersion\": 99,\n  \"fechaCurso\": \"2026-12-01T09:00:00-03:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('comId', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Nómina antes de aceptar → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"{{comId}}\",\n  \"tipo\": \"NOMINA\",\n  \"participantes\": [\n    {\n      \"nombre\": \"Luis Gómez\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('comId', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aceptación v1 (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"{{comId}}\",\n  \"tipo\": \"ACEPTACION\",\n  \"propuestaVersion\": 1,\n  \"fechaCurso\": \"2026-12-01T09:00:00-03:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('comId', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test('Aplicada y no repetida', () => { pm.expect(r.aplicada).to.eql(true); pm.expect(r.repetida).to.eql(false); });",
+                  "pm.test('Devuelve la cuenta de empresa', () => pm.expect(r.cuentaEmpresaUsuario).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mismo comunicacionId y datos → 200 repetida",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"{{comId}}\",\n  \"tipo\": \"ACEPTACION\",\n  \"propuestaVersion\": 1,\n  \"fechaCurso\": \"2026-12-01T09:00:00-03:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Marcada como repetida', () => pm.expect(pm.response.json().repetida).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mismo comunicacionId con otros datos → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"{{comId}}\",\n  \"tipo\": \"ACEPTACION\",\n  \"propuestaVersion\": 1,\n  \"fechaCurso\": \"2027-01-10T09:00:00-03:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Curso en EN_PREPARACION",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('estado = EN_PREPARACION', () => pm.expect(pm.response.json().estado).to.eql('EN_PREPARACION'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] respuestaEmpresa = ACEPTADA",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}/variables/respuestaEmpresa",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('respuestaEmpresa = ACEPTADA', () => pm.expect(String(pm.response.json().value)).to.eql('ACEPTADA'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] habilitar_acceso_empresa fue automática (no hay tarea humana)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/tasks?processInstanceId={{processInstanceId}}&taskDefinitionKey=habilitar_acceso_empresa",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Sin tarea humana', () => pm.expect(pm.response.json().data.length).to.eql(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] habilitar_acceso_empresa quedó en el historial",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/history/historic-activity-instances?processInstanceId={{processInstanceId}}&activityId=habilitar_acceso_empresa&finished=true",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Actividad ejecutada', () => pm.expect(pm.response.json().data.length).to.be.above(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Habilitadas en preparación: NOMINA y CANCELACION",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const a = pm.response.json().accionesHabilitadas || [];",
+                  "pm.test('Habilita NOMINA', () => pm.expect(a).to.include('NOMINA'));",
+                  "pm.test('Habilita CANCELACION', () => pm.expect(a).to.include('CANCELACION'));",
+                  "pm.test('No habilita ACEPTACION', () => pm.expect(a).to.not.include('ACEPTACION'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aceptar otra vez con otro id → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"{{comId}}\",\n  \"tipo\": \"ACEPTACION\",\n  \"propuestaVersion\": 1,\n  \"fechaCurso\": \"2026-12-01T09:00:00-03:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('comId', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Nómina vacía → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"{{comId}}\",\n  \"tipo\": \"NOMINA\",\n  \"participantes\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('comId', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Nómina (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"{{comId}}\",\n  \"tipo\": \"NOMINA\",\n  \"participantes\": [\n    {\n      \"nombre\": \"Luis Gómez\"\n    },\n    {\n      \"nombre\": \"Marta Díaz\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('comId', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] participantes guardados",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}/variables/participantes",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Se creó confeccionar_lista",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/tasks?processInstanceId={{processInstanceId}}&taskDefinitionKey=confeccionar_lista",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.test('Existe confeccionar_lista', () => pm.expect(d.length).to.be.above(0));",
+                  "if (d.length) pm.collectionVariables.set('taskIdFlowable', d[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Nómina otra vez con otro id → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"{{comId}}\",\n  \"tipo\": \"NOMINA\",\n  \"participantes\": [\n    {\n      \"nombre\": \"X\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('comId', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login empleado-administrativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"empleado-administrativo\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bandeja disponibles: evaluar_recursos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas?bandeja=disponibles"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "const curso = pm.collectionVariables.get('cursoId');",
+                  "const t = (r.items || []).find(x => x.cursoId === curso && x.taskDefinitionKey === 'evaluar_recursos');",
+                  "pm.test('Aparece evaluar_recursos del curso actual', () => pm.expect(t, 'no está en la bandeja').to.exist);",
+                  "if (t) pm.collectionVariables.set('taskId', t.taskId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reclamar evaluar_recursos",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/reclamo"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Completar evaluar_recursos (solo aula física)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/completado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"datos\": {\n    \"requiereAula\": true,\n    \"requierePlataforma\": false,\n    \"requiereEquipamiento\": false\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Aula reservada por el script",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}/variables/aulaGestionada",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('aulaGestionada = true', () => pm.expect(String(pm.response.json().value)).to.eql('true'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] aulaAsignada = AULA-101",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}/variables/aulaAsignada",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('aulaAsignada = AULA-101', () => pm.expect(String(pm.response.json().value)).to.eql('AULA-101'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Borrar la instancia de prueba",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Las instancias de prueba cuentan para cantCursos. Si ya terminó devuelve 404 (normal)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204 o 404', () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - Rechazo de la propuesta",
+      "description": "La empresa rechaza: el motor fija resultadoProceso=RECHAZADO y queda la tarea humana archivar_solicitud.",
+      "item": [
+        {
+          "name": "Login Jefe-Administrativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"Jefe-Administrativo\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear solicitud",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idemKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/solicitudes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empresa\": {\n    \"nombre\": \"Metalúrgica Río Cuarto SA\",\n    \"identificador\": \"30-71234567-8\"\n  },\n  \"contacto\": {\n    \"nombre\": \"Ana Pérez\",\n    \"email\": \"ana.perez@example.com\",\n    \"telefono\": \"358 4123456\"\n  },\n  \"tematica\": \"Seguridad e higiene en planta\",\n  \"descripcion\": \"Capacitación para operarios nuevos sobre uso de EPP y procedimientos de emergencia.\",\n  \"cantidadEstimadaParticipantes\": 15,\n  \"fechasPreferidas\": \"Martes y jueves por la tarde, desde marzo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('idemKey', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.collectionVariables.set('cursoId', r.cursoId);",
+                  "pm.collectionVariables.set('processInstanceId', r.processInstanceId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bandeja asignadas: registrar_elaborar_propuesta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas?bandeja=asignadas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "const curso = pm.collectionVariables.get('cursoId');",
+                  "const t = (r.items || []).find(x => x.cursoId === curso && x.taskDefinitionKey === 'registrar_elaborar_propuesta');",
+                  "pm.test('Aparece registrar_elaborar_propuesta del curso actual', () => pm.expect(t, 'no está en la bandeja').to.exist);",
+                  "if (t) pm.collectionVariables.set('taskId', t.taskId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registrar propuesta v1 (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/propuesta",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"programa\": \"Módulo 1: EPP.\\nMódulo 2: Procedimientos de emergencia.\",\n  \"presupuesto\": {\n    \"importe\": \"150000.00\",\n    \"moneda\": \"ARS\"\n  },\n  \"fechasPosibles\": [\n    \"2026-12-01T09:00:00-03:00\",\n    \"2026-12-08T09:00:00-03:00\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Es la versión 1', () => pm.expect(pm.response.json().propuestaVersion).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rechazo de versión inexistente → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"{{comId}}\",\n  \"tipo\": \"RECHAZO\",\n  \"propuestaVersion\": 99\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('comId', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rechazo v1 (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"{{comId}}\",\n  \"tipo\": \"RECHAZO\",\n  \"propuestaVersion\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('comId', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] resultadoProceso = RECHAZADO",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}/variables/resultadoProceso",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('resultadoProceso = RECHAZADO', () => pm.expect(String(pm.response.json().value)).to.eql('RECHAZADO'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] respuestaEmpresa = RECHAZADA",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}/variables/respuestaEmpresa",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('respuestaEmpresa = RECHAZADA', () => pm.expect(String(pm.response.json().value)).to.eql('RECHAZADA'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bandeja asignadas: archivar_solicitud (Jefe-Administrativo)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas?bandeja=asignadas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "const curso = pm.collectionVariables.get('cursoId');",
+                  "const t = (r.items || []).find(x => x.cursoId === curso && x.taskDefinitionKey === 'archivar_solicitud');",
+                  "pm.test('Aparece archivar_solicitud del curso actual', () => pm.expect(t, 'no está en la bandeja').to.exist);",
+                  "if (t) pm.collectionVariables.set('taskId', t.taskId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rechazar otra vez → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"{{comId}}\",\n  \"tipo\": \"RECHAZO\",\n  \"propuestaVersion\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('comId', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Buscar archivar_solicitud",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/tasks?processInstanceId={{processInstanceId}}&taskDefinitionKey=archivar_solicitud",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.test('Existe archivar_solicitud', () => pm.expect(d.length).to.be.above(0));",
+                  "if (d.length) pm.collectionVariables.set('taskIdFlowable', d[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Completar archivar_solicitud",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{flowableUrl}}/runtime/tasks/{{taskIdFlowable}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"complete\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 o 204', () => pm.expect(pm.response.code).to.be.oneOf([200, 204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] La instancia terminó",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/history/historic-process-instances/{{processInstanceId}}",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('La instancia terminó', () => pm.expect(pm.response.json().endTime).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Borrar la instancia de prueba",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Las instancias de prueba cuentan para cantCursos. Si ya terminó devuelve 404 (normal)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204 o 404', () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Modificaciones y nueva versión",
+      "description": "La empresa pide cambios: revisar_propuesta → v2. La v1 queda desactualizada y recordatorios se reinicia.",
+      "item": [
+        {
+          "name": "Login Jefe-Administrativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"Jefe-Administrativo\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear solicitud",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idemKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/solicitudes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empresa\": {\n    \"nombre\": \"Metalúrgica Río Cuarto SA\",\n    \"identificador\": \"30-71234567-8\"\n  },\n  \"contacto\": {\n    \"nombre\": \"Ana Pérez\",\n    \"email\": \"ana.perez@example.com\",\n    \"telefono\": \"358 4123456\"\n  },\n  \"tematica\": \"Seguridad e higiene en planta\",\n  \"descripcion\": \"Capacitación para operarios nuevos sobre uso de EPP y procedimientos de emergencia.\",\n  \"cantidadEstimadaParticipantes\": 15,\n  \"fechasPreferidas\": \"Martes y jueves por la tarde, desde marzo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('idemKey', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.collectionVariables.set('cursoId', r.cursoId);",
+                  "pm.collectionVariables.set('processInstanceId', r.processInstanceId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bandeja asignadas: registrar_elaborar_propuesta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas?bandeja=asignadas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "const curso = pm.collectionVariables.get('cursoId');",
+                  "const t = (r.items || []).find(x => x.cursoId === curso && x.taskDefinitionKey === 'registrar_elaborar_propuesta');",
+                  "pm.test('Aparece registrar_elaborar_propuesta del curso actual', () => pm.expect(t, 'no está en la bandeja').to.exist);",
+                  "if (t) pm.collectionVariables.set('taskId', t.taskId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registrar propuesta v1 (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/propuesta",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"programa\": \"Módulo 1: EPP.\\nMódulo 2: Procedimientos de emergencia.\",\n  \"presupuesto\": {\n    \"importe\": \"150000.00\",\n    \"moneda\": \"ARS\"\n  },\n  \"fechasPosibles\": [\n    \"2026-12-01T09:00:00-03:00\",\n    \"2026-12-08T09:00:00-03:00\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Es la versión 1', () => pm.expect(pm.response.json().propuestaVersion).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Modificación sin observaciones → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"{{comId}}\",\n  \"tipo\": \"MODIFICACION\",\n  \"propuestaVersion\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('comId', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Modificación v1 (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"{{comId}}\",\n  \"tipo\": \"MODIFICACION\",\n  \"propuestaVersion\": 1,\n  \"observacionesEmpresa\": \"Reducir a dos módulos y bajar el presupuesto.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('comId', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] respuestaEmpresa = MODIFICACIONES",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}/variables/respuestaEmpresa",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('respuestaEmpresa = MODIFICACIONES', () => pm.expect(String(pm.response.json().value)).to.eql('MODIFICACIONES'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bandeja asignadas: revisar_propuesta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas?bandeja=asignadas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "const curso = pm.collectionVariables.get('cursoId');",
+                  "const t = (r.items || []).find(x => x.cursoId === curso && x.taskDefinitionKey === 'revisar_propuesta');",
+                  "pm.test('Aparece revisar_propuesta del curso actual', () => pm.expect(t, 'no está en la bandeja').to.exist);",
+                  "if (t) pm.collectionVariables.set('taskId', t.taskId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registrar propuesta v2 (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/propuesta",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"programa\": \"Módulo 1: EPP (resumido).\",\n  \"presupuesto\": {\n    \"importe\": \"120000.00\",\n    \"moneda\": \"ARS\"\n  },\n  \"fechasPosibles\": [\n    \"2026-12-10T09:00:00-03:00\"\n  ],\n  \"versionBase\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Es la versión 2', () => pm.expect(pm.response.json().propuestaVersion).to.eql(2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] recordatorios reiniciado a 0",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}/variables/recordatorios",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('recordatorios = 0', () => pm.expect(String(pm.response.json().value)).to.eql('0'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aceptar la v1 desactualizada → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"{{comId}}\",\n  \"tipo\": \"ACEPTACION\",\n  \"propuestaVersion\": 1,\n  \"fechaCurso\": \"2026-12-01T09:00:00-03:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('comId', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aceptar la v2 (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"{{comId}}\",\n  \"tipo\": \"ACEPTACION\",\n  \"propuestaVersion\": 2,\n  \"fechaCurso\": \"2026-12-10T09:00:00-03:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('comId', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Curso en EN_PREPARACION",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('estado = EN_PREPARACION', () => pm.expect(pm.response.json().estado).to.eql('EN_PREPARACION'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Borrar la instancia de prueba",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Las instancias de prueba cuentan para cantCursos. Si ya terminó devuelve 404 (normal)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204 o 404', () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - Cancelación de la empresa",
+      "description": "Solo se puede cancelar durante la preparación. El motor compensa, termina con resultadoProceso=CANCELADO.",
+      "item": [
+        {
+          "name": "Login Jefe-Administrativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"Jefe-Administrativo\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear solicitud",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idemKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/solicitudes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empresa\": {\n    \"nombre\": \"Metalúrgica Río Cuarto SA\",\n    \"identificador\": \"30-71234567-8\"\n  },\n  \"contacto\": {\n    \"nombre\": \"Ana Pérez\",\n    \"email\": \"ana.perez@example.com\",\n    \"telefono\": \"358 4123456\"\n  },\n  \"tematica\": \"Seguridad e higiene en planta\",\n  \"descripcion\": \"Capacitación para operarios nuevos sobre uso de EPP y procedimientos de emergencia.\",\n  \"cantidadEstimadaParticipantes\": 15,\n  \"fechasPreferidas\": \"Martes y jueves por la tarde, desde marzo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('idemKey', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.collectionVariables.set('cursoId', r.cursoId);",
+                  "pm.collectionVariables.set('processInstanceId', r.processInstanceId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bandeja asignadas: registrar_elaborar_propuesta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas?bandeja=asignadas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "const curso = pm.collectionVariables.get('cursoId');",
+                  "const t = (r.items || []).find(x => x.cursoId === curso && x.taskDefinitionKey === 'registrar_elaborar_propuesta');",
+                  "pm.test('Aparece registrar_elaborar_propuesta del curso actual', () => pm.expect(t, 'no está en la bandeja').to.exist);",
+                  "if (t) pm.collectionVariables.set('taskId', t.taskId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registrar propuesta v1 (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/propuesta",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"programa\": \"Módulo 1: EPP.\\nMódulo 2: Procedimientos de emergencia.\",\n  \"presupuesto\": {\n    \"importe\": \"150000.00\",\n    \"moneda\": \"ARS\"\n  },\n  \"fechasPosibles\": [\n    \"2026-12-01T09:00:00-03:00\",\n    \"2026-12-08T09:00:00-03:00\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Es la versión 1', () => pm.expect(pm.response.json().propuestaVersion).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancelar antes de aceptar → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"{{comId}}\",\n  \"tipo\": \"CANCELACION\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('comId', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aceptación v1 (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"{{comId}}\",\n  \"tipo\": \"ACEPTACION\",\n  \"propuestaVersion\": 1,\n  \"fechaCurso\": \"2026-12-01T09:00:00-03:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('comId', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CANCELACION habilitada",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const a = pm.response.json().accionesHabilitadas || [];",
+                  "pm.test('Habilita CANCELACION', () => pm.expect(a).to.include('CANCELACION'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancelación (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"{{comId}}\",\n  \"tipo\": \"CANCELACION\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('comId', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Curso en CANCELADO",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/cursos/{{cursoId}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('estado = CANCELADO', () => pm.expect(pm.response.json().estado).to.eql('CANCELADO'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] resultadoProceso = CANCELADO",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/history/historic-variable-instances?processInstanceId={{processInstanceId}}&variableName=resultadoProceso",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.test('Existe resultadoProceso', () => pm.expect(d.length).to.be.above(0));",
+                  "if (d.length) pm.test('resultadoProceso = CANCELADO', () => pm.expect(String(d[0].variable.value)).to.eql('CANCELADO'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] La instancia terminó",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/history/historic-process-instances/{{processInstanceId}}",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('La instancia terminó', () => pm.expect(pm.response.json().endTime).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancelar otra vez → 409 o 404",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"{{comId}}\",\n  \"tipo\": \"CANCELACION\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('comId', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409 o 404', () => pm.expect(pm.response.code).to.be.oneOf([409, 404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Borrar la instancia de prueba",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Las instancias de prueba cuentan para cantCursos. Si ya terminó devuelve 404 (normal)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204 o 404', () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 - Falta de aulas (SIN_AULAS)",
+      "description": "Se fuerza la respuesta negativa del web service simulado con la variable simularSinAulas. El error sube al boundary de preparar_curso y el curso se cancela.",
+      "item": [
+        {
+          "name": "Login Jefe-Administrativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"Jefe-Administrativo\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear solicitud",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idemKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/solicitudes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empresa\": {\n    \"nombre\": \"Metalúrgica Río Cuarto SA\",\n    \"identificador\": \"30-71234567-8\"\n  },\n  \"contacto\": {\n    \"nombre\": \"Ana Pérez\",\n    \"email\": \"ana.perez@example.com\",\n    \"telefono\": \"358 4123456\"\n  },\n  \"tematica\": \"Seguridad e higiene en planta\",\n  \"descripcion\": \"Capacitación para operarios nuevos sobre uso de EPP y procedimientos de emergencia.\",\n  \"cantidadEstimadaParticipantes\": 15,\n  \"fechasPreferidas\": \"Martes y jueves por la tarde, desde marzo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('idemKey', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.collectionVariables.set('cursoId', r.cursoId);",
+                  "pm.collectionVariables.set('processInstanceId', r.processInstanceId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bandeja asignadas: registrar_elaborar_propuesta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas?bandeja=asignadas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "const curso = pm.collectionVariables.get('cursoId');",
+                  "const t = (r.items || []).find(x => x.cursoId === curso && x.taskDefinitionKey === 'registrar_elaborar_propuesta');",
+                  "pm.test('Aparece registrar_elaborar_propuesta del curso actual', () => pm.expect(t, 'no está en la bandeja').to.exist);",
+                  "if (t) pm.collectionVariables.set('taskId', t.taskId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registrar propuesta v1 (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/propuesta",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"programa\": \"Módulo 1: EPP.\\nMódulo 2: Procedimientos de emergencia.\",\n  \"presupuesto\": {\n    \"importe\": \"150000.00\",\n    \"moneda\": \"ARS\"\n  },\n  \"fechasPosibles\": [\n    \"2026-12-01T09:00:00-03:00\",\n    \"2026-12-08T09:00:00-03:00\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Es la versión 1', () => pm.expect(pm.response.json().propuestaVersion).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aceptación v1 (200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"{{comId}}\",\n  \"tipo\": \"ACEPTACION\",\n  \"propuestaVersion\": 1,\n  \"fechaCurso\": \"2026-12-01T09:00:00-03:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('comId', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Fijar simularSinAulas = true",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}/variables",
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"name\": \"simularSinAulas\",\n    \"type\": \"string\",\n    \"value\": \"true\"\n  }\n]",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 o 201', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login empleado-administrativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"empleado-administrativo\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bandeja disponibles: evaluar_recursos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas?bandeja=disponibles"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "const curso = pm.collectionVariables.get('cursoId');",
+                  "const t = (r.items || []).find(x => x.cursoId === curso && x.taskDefinitionKey === 'evaluar_recursos');",
+                  "pm.test('Aparece evaluar_recursos del curso actual', () => pm.expect(t, 'no está en la bandeja').to.exist);",
+                  "if (t) pm.collectionVariables.set('taskId', t.taskId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reclamar evaluar_recursos",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/reclamo"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Completar evaluar_recursos pidiendo aula",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/completado",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"datos\": {\n    \"requiereAula\": true,\n    \"requierePlataforma\": false,\n    \"requiereEquipamiento\": false\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] La instancia terminó",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/history/historic-process-instances/{{processInstanceId}}",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('La instancia terminó', () => pm.expect(pm.response.json().endTime).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] resultadoProceso = CANCELADO",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/history/historic-variable-instances?processInstanceId={{processInstanceId}}&variableName=resultadoProceso",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.test('Existe resultadoProceso', () => pm.expect(d.length).to.be.above(0));",
+                  "if (d.length) pm.test('resultadoProceso = CANCELADO', () => pm.expect(String(d[0].variable.value)).to.eql('CANCELADO'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Pasó por notificarCierre",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/history/historic-activity-instances?processInstanceId={{processInstanceId}}&activityId=notificarCierre&finished=true",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Se notificó el cierre', () => pm.expect(pm.response.json().data.length).to.be.above(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Borrar la instancia de prueba",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Las instancias de prueba cuentan para cantCursos. Si ya terminó devuelve 404 (normal)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204 o 404', () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 - Falta de respuesta (recordatorios y cierre)",
+      "description": "El timer es P5D. Se dispara a mano con la API de jobs: 2 recordatorios y al tercer vencimiento se archiva con CERRADO_SIN_RESPUESTA.",
+      "item": [
+        {
+          "name": "Login Jefe-Administrativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"Jefe-Administrativo\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear solicitud",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idemKey}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/solicitudes",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"empresa\": {\n    \"nombre\": \"Metalúrgica Río Cuarto SA\",\n    \"identificador\": \"30-71234567-8\"\n  },\n  \"contacto\": {\n    \"nombre\": \"Ana Pérez\",\n    \"email\": \"ana.perez@example.com\",\n    \"telefono\": \"358 4123456\"\n  },\n  \"tematica\": \"Seguridad e higiene en planta\",\n  \"descripcion\": \"Capacitación para operarios nuevos sobre uso de EPP y procedimientos de emergencia.\",\n  \"cantidadEstimadaParticipantes\": 15,\n  \"fechasPreferidas\": \"Martes y jueves por la tarde, desde marzo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('idemKey', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.collectionVariables.set('cursoId', r.cursoId);",
+                  "pm.collectionVariables.set('processInstanceId', r.processInstanceId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bandeja asignadas: registrar_elaborar_propuesta",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas?bandeja=asignadas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "const curso = pm.collectionVariables.get('cursoId');",
+                  "const t = (r.items || []).find(x => x.cursoId === curso && x.taskDefinitionKey === 'registrar_elaborar_propuesta');",
+                  "pm.test('Aparece registrar_elaborar_propuesta del curso actual', () => pm.expect(t, 'no está en la bandeja').to.exist);",
+                  "if (t) pm.collectionVariables.set('taskId', t.taskId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Registrar propuesta v1 (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/tareas/{{taskId}}/propuesta",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"programa\": \"Módulo 1: EPP.\\nMódulo 2: Procedimientos de emergencia.\",\n  \"presupuesto\": {\n    \"importe\": \"150000.00\",\n    \"moneda\": \"ARS\"\n  },\n  \"fechasPosibles\": [\n    \"2026-12-01T09:00:00-03:00\",\n    \"2026-12-08T09:00:00-03:00\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Es la versión 1', () => pm.expect(pm.response.json().propuestaVersion).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] recordatorios inicia en 0",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}/variables/recordatorios",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('recordatorios = 0', () => pm.expect(String(pm.response.json().value)).to.eql('0'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Buscar timer de 5 días (vuelta 1)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/management/timer-jobs?processInstanceId={{processInstanceId}}",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.test('Hay un timer pendiente', () => pm.expect(d.length).to.be.above(0));",
+                  "if (d.length) pm.collectionVariables.set('jobId', d[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Disparar el timer ahora (vuelta 1)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{flowableUrl}}/management/timer-jobs/{{jobId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"move\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Mueve el timer a trabajos ejecutables: el motor lo corre solo en segundos (no hace falta esperar 5 días)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 o 204', () => pm.expect(pm.response.code).to.be.oneOf([200, 204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Esperar 3 s y leer recordatorios = 1",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}/variables/recordatorios",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// El job executor tarda unos instantes en correr el timer",
+                  "const fin = Date.now() + 3000; while (Date.now() < fin) {}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('recordatorios = 1', () => pm.expect(Number(pm.response.json().value)).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Buscar timer de 5 días (vuelta 2)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/management/timer-jobs?processInstanceId={{processInstanceId}}",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.test('Hay un timer pendiente', () => pm.expect(d.length).to.be.above(0));",
+                  "if (d.length) pm.collectionVariables.set('jobId', d[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Disparar el timer ahora (vuelta 2)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{flowableUrl}}/management/timer-jobs/{{jobId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"move\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Mueve el timer a trabajos ejecutables: el motor lo corre solo en segundos (no hace falta esperar 5 días)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 o 204', () => pm.expect(pm.response.code).to.be.oneOf([200, 204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Esperar 3 s y leer recordatorios = 2",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}/variables/recordatorios",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// El job executor tarda unos instantes en correr el timer",
+                  "const fin = Date.now() + 3000; while (Date.now() < fin) {}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('recordatorios = 2', () => pm.expect(Number(pm.response.json().value)).to.eql(2));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Buscar timer (tercer vencimiento)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/management/timer-jobs?processInstanceId={{processInstanceId}}",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.test('Hay un timer pendiente', () => pm.expect(d.length).to.be.above(0));",
+                  "if (d.length) pm.collectionVariables.set('jobId', d[0].id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Disparar el timer (tercer vencimiento)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{flowableUrl}}/management/timer-jobs/{{jobId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"move\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200 o 204', () => pm.expect(pm.response.code).to.be.oneOf([200, 204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bandeja asignadas: aparece archivar_solicitud",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/tareas?bandeja=asignadas"
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const fin = Date.now() + 3000; while (Date.now() < fin) {}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "const t = (pm.response.json().items || []).find(x => x.cursoId === pm.collectionVariables.get('cursoId') && x.taskDefinitionKey === 'archivar_solicitud');",
+                  "pm.test('Aparece archivar_solicitud', () => pm.expect(t).to.exist);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] resultadoProceso = CERRADO_SIN_RESPUESTA",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}/variables/resultadoProceso",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('resultadoProceso = CERRADO_SIN_RESPUESTA', () => pm.expect(String(pm.response.json().value)).to.eql('CERRADO_SIN_RESPUESTA'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] recordatorios = 2",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}/variables/recordatorios",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('recordatorios = 2', () => pm.expect(String(pm.response.json().value)).to.eql('2'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aceptar tarde → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/{{cursoId}}/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"{{comId}}\",\n  \"tipo\": \"ACEPTACION\",\n  \"propuestaVersion\": 1,\n  \"fechaCurso\": \"2026-12-01T09:00:00-03:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('comId', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[Flowable] Borrar la instancia de prueba",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{flowableUrl}}/runtime/process-instances/{{processInstanceId}}",
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{flowableUser}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{flowablePass}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "Las instancias de prueba cuentan para cantCursos. Si ya terminó devuelve 404 (normal)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204 o 404', () => pm.expect(pm.response.code).to.be.oneOf([204, 404]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 - Errores generales",
+      "description": "Validaciones que no necesitan un curso en marcha.",
+      "item": [
+        {
+          "name": "Login Jefe-Administrativo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/sesiones/personal",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuarioId\": \"Jefe-Administrativo\",\n  \"clave\": \"{{claveDemo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Comunicaciones de un curso inexistente → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/simulacion/solicitudes/00000000-0000-0000-0000-000000000000/comunicaciones"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cuerpo inválido (sin tipo) → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/00000000-0000-0000-0000-000000000000/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"x\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Comunicación a un curso inexistente → 404",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{baseUrl}}/simulacion/solicitudes/00000000-0000-0000-0000-000000000000/comunicaciones",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comunicacionId\": \"x-1\",\n  \"tipo\": \"RECHAZO\",\n  \"propuestaVersion\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listado de simulación",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/simulacion/solicitudes"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Trae items', () => pm.expect(pm.response.json().items).to.be.an('array'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

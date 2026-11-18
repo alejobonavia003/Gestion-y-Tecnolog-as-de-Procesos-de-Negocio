@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:flowable="http://flowable.org/bpmn" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC" xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI" typeLanguage="http://www.w3.org/2001/XMLSchema" expressionLanguage="http://www.w3.org/1999/XPath" targetNamespace="http://flowable.org/test" exporter="Flowable Open Source Modeler" exporterVersion="6.8.0">
   <collaboration id="Collaboration">
-    <participant id="timer-5-dias" name="institucion-de-capacitacion
+    <participant id="participant_institucion" name="institucion-de-capacitacion
 " processRef="process"></participant>
   </collaboration>
   <message id="solicitudRecibida" name="solicitudRecibida"></message>
@@ -9,6 +9,8 @@
   <message id="rechazo" name="rechazo"></message>
   <message id="aceptacion" name="aceptacion"></message>
   <message id="cancelacion" name="cancelacion"></message>
+  <error id="CANCELADO_EMPRESA" errorCode="CANCELADO_EMPRESA"></error>
+  <error id="SIN_AULAS" errorCode="SIN_AULAS"></error>
   <process id="process" name="institucion-de-capacitacion
 " isExecutable="true">
     <laneSet id="laneSet_process">
@@ -29,7 +31,6 @@
         <flowNodeRef>archivar_solicitud</flowNodeRef>
         <flowNodeRef>fin_rechazado_o_sin_respuesta</flowNodeRef>
         <flowNodeRef>evento-aceptacion</flowNodeRef>
-        <flowNodeRef>habilitar_acceso_empresa</flowNodeRef>
         <flowNodeRef>preparar_curso</flowNodeRef>
         <flowNodeRef>sid-82F1FB52-7BB9-463C-B469-F0D722ACF8D7</flowNodeRef>
         <flowNodeRef>notificarCierre</flowNodeRef>
@@ -41,6 +42,7 @@
         <flowNodeRef>fin_finalizado</flowNodeRef>
         <flowNodeRef>evaluar_viabilidad</flowNodeRef>
         <flowNodeRef>sid-1700F600-53F2-44A9-A0D1-593D9A05C0CC</flowNodeRef>
+        <flowNodeRef>habilitar_acceso_empresa</flowNodeRef>
         <flowNodeRef>sid-B9F705AE-DEAB-487A-8F6E-FEA95A7B8582</flowNodeRef>
         <flowNodeRef>sid-2637EB15-F2AE-4A8B-99AB-2DAED79CA523</flowNodeRef>
         <flowNodeRef>sid-10B338E0-AA06-4AEA-86F2-3AADAD9FE73F</flowNodeRef>
@@ -52,8 +54,6 @@
         <flowNodeRef>sid-449F9D57-A772-416D-BD25-22270BFDC4CD</flowNodeRef>
         <flowNodeRef>sid-EE052408-2A90-41B3-93FD-09BD187F836B</flowNodeRef>
         <flowNodeRef>sid-82CD5F2E-87AB-42D6-9CD5-6AC2CF4088F1</flowNodeRef>
-        <flowNodeRef>sid-4F76DDB7-54A0-4153-9302-29D8EB74F373</flowNodeRef>
-        <flowNodeRef>sid-0515383D-B33E-4EB0-8670-C2F5DC2BCFA5</flowNodeRef>
         <flowNodeRef>sid-AE59083D-0DAD-4709-BE98-D83287D1DC11</flowNodeRef>
         <flowNodeRef>sid-94956322-F99A-4B1A-9BE2-8A45982F1A6B</flowNodeRef>
         <flowNodeRef>sid-6D56A69C-EFCF-410A-94F5-E69C8B236F94</flowNodeRef>
@@ -70,6 +70,8 @@
         <flowNodeRef>sid-C8AD3EBE-E6EC-4164-AE57-9D0444D7DE89</flowNodeRef>
         <flowNodeRef>sid-8252B714-44DB-478A-801F-5B83E60AA0D6</flowNodeRef>
         <flowNodeRef>sid-B3BFCDAB-429B-4BE3-904F-E881BDC33838</flowNodeRef>
+        <flowNodeRef>sid-4F76DDB7-54A0-4153-9302-29D8EB74F373</flowNodeRef>
+        <flowNodeRef>sid-0515383D-B33E-4EB0-8670-C2F5DC2BCFA5</flowNodeRef>
       </lane>
       <lane id="sid-CAD44F27-E9A7-4F1B-AF9A-F9A36B57D83C" name="Equipo-docente
 ">
@@ -103,7 +105,8 @@
       </extensionElements>
     </userTask>
     <scriptTask id="enviar_propuesta" name="Enviar propuesta" scriptFormat="groovy" flowable:autoStoreVariables="false">
-      <script><![CDATA[println('[Enviar propuesta] curso ' + execution.getVariable('cursoId'))]]></script>
+      <script><![CDATA[execution.setVariable('recordatorios', 0)
+println('[Enviar propuesta] curso ' + execution.getVariable('cursoId') + ' - recordatorios reiniciado a 0')]]></script>
     </scriptTask>
     <eventBasedGateway id="gw_esperar_respuesta" name="Esperar propuesta
 "></eventBasedGateway>
@@ -129,18 +132,24 @@
     <exclusiveGateway id="gw_recordatorios" name="Se enviaron 2 recordatorios?
 "></exclusiveGateway>
     <scriptTask id="enviar_recordatorios" name="Enviar recordatorios" scriptFormat="groovy" flowable:autoStoreVariables="false">
-      <script><![CDATA[println('[Enviar recordatorios] curso ' + execution.getVariable('cursoId'))]]></script>
+      <script><![CDATA[def n = execution.getVariable('recordatorios')
+n = (n == null ? 0 : n) + 1
+execution.setVariable('recordatorios', n)
+println('[Enviar recordatorio] curso ' + execution.getVariable('cursoId') + ' - recordatorio nro ' + n)]]></script>
     </scriptTask>
     <intermediateCatchEvent id="evento-rechazo" name="Rechazo
 ">
+      <extensionElements>
+        <flowable:executionListener event="end" expression="${execution.setVariable('resultadoProceso', 'RECHAZADO')}"></flowable:executionListener>
+      </extensionElements>
       <messageEventDefinition messageRef="rechazo"></messageEventDefinition>
     </intermediateCatchEvent>
-    <userTask id="archivar_solicitud" name="Archivar solicitud" flowable:assignee="Jefe-Docente" flowable:formFieldValidation="true">
+    <userTask id="archivar_solicitud" name="Archivar solicitud" flowable:assignee="Jefe-Administrativo" flowable:formFieldValidation="true">
       <extensionElements>
         <modeler:activiti-idm-assignee xmlns:modeler="http://flowable.org/modeler"><![CDATA[true]]></modeler:activiti-idm-assignee>
-        <modeler:assignee-info-email xmlns:modeler="http://flowable.org/modeler"><![CDATA[Jefedocente@gmail.com]]></modeler:assignee-info-email>
-        <modeler:assignee-info-firstname xmlns:modeler="http://flowable.org/modeler"><![CDATA[maria]]></modeler:assignee-info-firstname>
-        <modeler:assignee-info-lastname xmlns:modeler="http://flowable.org/modeler"><![CDATA[jefe-docente]]></modeler:assignee-info-lastname>
+        <modeler:assignee-info-email xmlns:modeler="http://flowable.org/modeler"><![CDATA[Jefeadm@gmail.com]]></modeler:assignee-info-email>
+        <modeler:assignee-info-firstname xmlns:modeler="http://flowable.org/modeler"><![CDATA[marcos]]></modeler:assignee-info-firstname>
+        <modeler:assignee-info-lastname xmlns:modeler="http://flowable.org/modeler"><![CDATA[jefeadm]]></modeler:assignee-info-lastname>
         <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
       </extensionElements>
     </userTask>
@@ -149,15 +158,6 @@
 ">
       <messageEventDefinition messageRef="aceptacion"></messageEventDefinition>
     </intermediateCatchEvent>
-    <userTask id="habilitar_acceso_empresa" name="Habilitar
-acceso de la
-empresa" flowable:candidateGroups="Equipo-Administrativo" flowable:formFieldValidation="true">
-      <extensionElements>
-        <modeler:group-info-name-Equipo-Administrativo xmlns:modeler="http://flowable.org/modeler"><![CDATA[Equipo-Administrativo]]></modeler:group-info-name-Equipo-Administrativo>
-        <modeler:activiti-idm-candidate-group xmlns:modeler="http://flowable.org/modeler"><![CDATA[true]]></modeler:activiti-idm-candidate-group>
-        <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
-      </extensionElements>
-    </userTask>
     <subProcess id="preparar_curso" name="preparar-curso
 ">
       <startEvent id="inicio_preparar" flowable:formFieldValidation="true"></startEvent>
@@ -177,7 +177,7 @@ empresa" flowable:candidateGroups="Equipo-Administrativo" flowable:formFieldVali
         </extensionElements>
       </userTask>
       <inclusiveGateway id="gw_recursos"></inclusiveGateway>
-      <userTask id="contratar_equipamiento" name="Contratar equipamento" flowable:candidateGroups="Equipo-Administrativo" flowable:formFieldValidation="true">
+      <userTask id="contratar_equipamiento" name="Contratar equipamiento" flowable:candidateGroups="Equipo-Administrativo" flowable:formFieldValidation="true">
         <extensionElements>
           <modeler:group-info-name-Equipo-Administrativo xmlns:modeler="http://flowable.org/modeler"><![CDATA[Equipo-Administrativo]]></modeler:group-info-name-Equipo-Administrativo>
           <modeler:activiti-idm-candidate-group xmlns:modeler="http://flowable.org/modeler"><![CDATA[true]]></modeler:activiti-idm-candidate-group>
@@ -187,14 +187,14 @@ empresa" flowable:candidateGroups="Equipo-Administrativo" flowable:formFieldVali
       <boundaryEvent id="sid-93AE2488-5B12-413D-A40B-EB5A6E37CA86" attachedToRef="contratar_equipamiento" cancelActivity="false">
         <compensateEventDefinition></compensateEventDefinition>
       </boundaryEvent>
-      <userTask id="liberar_equipamento" name="Liberar equipamento" isForCompensation="true" flowable:candidateGroups="Equipo-Administrativo" flowable:formFieldValidation="true">
+      <userTask id="liberar_equipamiento" name="Liberar equipamento" isForCompensation="true" flowable:candidateGroups="Equipo-Administrativo" flowable:formFieldValidation="true">
         <extensionElements>
           <modeler:group-info-name-Equipo-Administrativo xmlns:modeler="http://flowable.org/modeler"><![CDATA[Equipo-Administrativo]]></modeler:group-info-name-Equipo-Administrativo>
           <modeler:activiti-idm-candidate-group xmlns:modeler="http://flowable.org/modeler"><![CDATA[true]]></modeler:activiti-idm-candidate-group>
           <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
         </extensionElements>
       </userTask>
-      <inclusiveGateway id="sid-76E4E49D-A355-4933-9F9D-660D1B1B6F5F"></inclusiveGateway>
+      <inclusiveGateway id="gw_recursos_listos"></inclusiveGateway>
       <userTask id="confeccionar_lista" name="confeccionar lista" flowable:candidateGroups="Equipo-Administrativo" flowable:formFieldValidation="true">
         <extensionElements>
           <modeler:group-info-name-Equipo-Administrativo xmlns:modeler="http://flowable.org/modeler"><![CDATA[Equipo-Administrativo]]></modeler:group-info-name-Equipo-Administrativo>
@@ -219,10 +219,34 @@ empresa" flowable:candidateGroups="Equipo-Administrativo" flowable:formFieldVali
         <sequenceFlow id="sid-EB204FEC-E1AE-4389-B081-AA278A826EF0" sourceRef="sid-9253ED70-D3D8-4CA2-A2F1-6F7E7EEC8FDE" targetRef="sid-01841094-DD42-4A5D-9BC4-0658E6D8098E"></sequenceFlow>
       </subProcess>
       <parallelGateway id="parallelo_preparar_curso"></parallelGateway>
-      <serviceTask id="reservar_aula_fisica" name="Reservar aula fisica"></serviceTask>
-      <serviceTask id="liberar_aula" name="Liberar aula" isForCompensation="true"></serviceTask>
-      <userTask id="liberar_aula_virtual" name="Liberar aula virtual" isForCompensation="true" flowable:formFieldValidation="true"></userTask>
-      <userTask id="reservar_aula_virtual" name="Reservar aula Virtual" flowable:formFieldValidation="true"></userTask>
+      <scriptTask id="reservar_aula_fisica" name="Reservar aula fisica" scriptFormat="groovy" flowable:autoStoreVariables="false">
+        <script><![CDATA[// Simula la llamada a un web service de reservas
+if (String.valueOf(execution.getVariable('simularSinAulas')) == 'true') {
+    println('[Reservar aula] el web service informa: sin aulas disponibles')
+    throw new org.flowable.engine.delegate.BpmnError('SIN_AULAS', 'No hay aulas disponibles')
+}
+execution.setVariable('aulaGestionada', true)
+execution.setVariable('aulaAsignada', 'AULA-101')
+println('[Reservar aula] aula AULA-101 reservada para el curso ' + execution.getVariable('cursoId'))]]></script>
+      </scriptTask>
+      <scriptTask id="liberar_aula" name="Liberar aula" isForCompensation="true" scriptFormat="groovy" flowable:autoStoreVariables="false">
+        <script><![CDATA[execution.setVariable('aulaGestionada', false)
+println('[Liberar aula] aula ' + execution.getVariable('aulaAsignada') + ' liberada (simulado)')]]></script>
+      </scriptTask>
+      <userTask id="liberar_aula_virtual" name="Liberar aula virtual" isForCompensation="true" flowable:candidateGroups="Equipo-Administrativo" flowable:formFieldValidation="true">
+        <extensionElements>
+          <modeler:group-info-name-Equipo-Administrativo xmlns:modeler="http://flowable.org/modeler"><![CDATA[Equipo-Administrativo]]></modeler:group-info-name-Equipo-Administrativo>
+          <modeler:activiti-idm-candidate-group xmlns:modeler="http://flowable.org/modeler"><![CDATA[true]]></modeler:activiti-idm-candidate-group>
+          <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
+        </extensionElements>
+      </userTask>
+      <userTask id="reservar_aula_virtual" name="Reservar aula Virtual" flowable:candidateGroups="Equipo-Administrativo" flowable:formFieldValidation="true">
+        <extensionElements>
+          <modeler:group-info-name-Equipo-Administrativo xmlns:modeler="http://flowable.org/modeler"><![CDATA[Equipo-Administrativo]]></modeler:group-info-name-Equipo-Administrativo>
+          <modeler:activiti-idm-candidate-group xmlns:modeler="http://flowable.org/modeler"><![CDATA[true]]></modeler:activiti-idm-candidate-group>
+          <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
+        </extensionElements>
+      </userTask>
       <boundaryEvent id="sid-A20C6124-E589-4783-BDD0-C4A2480CCEC6" attachedToRef="reservar_aula_fisica">
         <errorEventDefinition errorRef="SIN_AULAS" flowable:errorVariableLocalScope="true" flowable:errorVariableTransient="true"></errorEventDefinition>
       </boundaryEvent>
@@ -236,20 +260,20 @@ empresa" flowable:candidateGroups="Equipo-Administrativo" flowable:formFieldVali
         <compensateEventDefinition></compensateEventDefinition>
       </boundaryEvent>
       <endEvent id="sid-7B6E6AAF-38AA-471A-BB74-B654B7DE6BF1">
-        <errorEventDefinition flowable:errorVariableLocalScope="true" flowable:errorVariableTransient="true"></errorEventDefinition>
+        <errorEventDefinition errorRef="SIN_AULAS" flowable:errorVariableLocalScope="true" flowable:errorVariableTransient="true"></errorEventDefinition>
       </endEvent>
       <sequenceFlow id="sid-2FCDAC23-31FA-491C-B59D-BB4133218F0B" sourceRef="inicio_preparar" targetRef="parallelo_preparar_curso"></sequenceFlow>
       <sequenceFlow id="sid-86852A56-83DF-4376-804F-851357E84A2C" sourceRef="parallelo_preparar_curso" targetRef="recibir_nomina"></sequenceFlow>
       <sequenceFlow id="sid-150A0F53-F1C5-48DA-8DD1-F2345FBA7F36" sourceRef="parallelo_preparar_curso" targetRef="evaluar_recursos"></sequenceFlow>
       <sequenceFlow id="sid-74109E1B-A2A4-4017-8562-86A8480C6FA3" sourceRef="evaluar_recursos" targetRef="gw_recursos"></sequenceFlow>
       <sequenceFlow id="sid-E6A2C96D-D54D-41DA-8D19-A59E73EF3707" sourceRef="sid-16D99AD4-12C2-44F8-9B09-9AC4526792A2" targetRef="liberar_aula"></sequenceFlow>
-      <sequenceFlow id="sid-055E8B42-1AA2-45BE-AC8D-96EFDBFEFD9C" sourceRef="sid-93AE2488-5B12-413D-A40B-EB5A6E37CA86" targetRef="liberar_equipamento"></sequenceFlow>
-      <sequenceFlow id="sid-96A3E8F1-7F97-4103-B7C1-C6C566337D9C" sourceRef="reservar_aula_fisica" targetRef="sid-76E4E49D-A355-4933-9F9D-660D1B1B6F5F"></sequenceFlow>
-      <sequenceFlow id="sid-C6BA6549-0679-45A1-BD75-42C655953876" sourceRef="reservar_aula_virtual" targetRef="sid-76E4E49D-A355-4933-9F9D-660D1B1B6F5F"></sequenceFlow>
-      <sequenceFlow id="sid-36F07336-C2E4-4222-B950-C5557F4C58DC" sourceRef="contratar_equipamiento" targetRef="sid-76E4E49D-A355-4933-9F9D-660D1B1B6F5F"></sequenceFlow>
+      <sequenceFlow id="sid-055E8B42-1AA2-45BE-AC8D-96EFDBFEFD9C" sourceRef="sid-93AE2488-5B12-413D-A40B-EB5A6E37CA86" targetRef="liberar_equipamiento"></sequenceFlow>
+      <sequenceFlow id="sid-96A3E8F1-7F97-4103-B7C1-C6C566337D9C" sourceRef="reservar_aula_fisica" targetRef="gw_recursos_listos"></sequenceFlow>
+      <sequenceFlow id="sid-C6BA6549-0679-45A1-BD75-42C655953876" sourceRef="reservar_aula_virtual" targetRef="gw_recursos_listos"></sequenceFlow>
+      <sequenceFlow id="sid-36F07336-C2E4-4222-B950-C5557F4C58DC" sourceRef="contratar_equipamiento" targetRef="gw_recursos_listos"></sequenceFlow>
       <sequenceFlow id="sid-8F805188-09AC-4F46-882F-10F12262F677" sourceRef="recibir_nomina" targetRef="confeccionar_lista"></sequenceFlow>
       <sequenceFlow id="sid-2EBCF241-DBF7-49A7-B474-64DD6A0D1968" sourceRef="confeccionar_lista" targetRef="fin_parallelo_preparar_curso"></sequenceFlow>
-      <sequenceFlow id="sid-1A3A4F99-0ECD-4E95-A9A9-616949220266" sourceRef="sid-76E4E49D-A355-4933-9F9D-660D1B1B6F5F" targetRef="fin_parallelo_preparar_curso"></sequenceFlow>
+      <sequenceFlow id="sid-1A3A4F99-0ECD-4E95-A9A9-616949220266" sourceRef="gw_recursos_listos" targetRef="fin_parallelo_preparar_curso"></sequenceFlow>
       <sequenceFlow id="sid-B9AF208A-964B-4D25-871F-7DEC093BB86F" sourceRef="fin_parallelo_preparar_curso" targetRef="fin_preparar"></sequenceFlow>
       <sequenceFlow id="sid-864C5446-EE70-40FD-BE76-EF116C9A93EF" sourceRef="sid-65E0C277-61D9-4DB6-B385-C21B9CF8F392" targetRef="liberar_aula_virtual"></sequenceFlow>
       <sequenceFlow id="sid-EA076A2B-406A-41E9-BA23-254FEB1D3A7B" sourceRef="preparar_materiales" targetRef="fin_parallelo_preparar_curso"></sequenceFlow>
@@ -271,7 +295,7 @@ empresa" flowable:candidateGroups="Equipo-Administrativo" flowable:formFieldVali
     </boundaryEvent>
     <scriptTask id="notificarCierre" name="Notificar cierre" scriptFormat="groovy" flowable:autoStoreVariables="false">
       <extensionElements>
-        <flowable:executionListener event="start" expression="${execution.setVariable('resultado', 'cancelado')}"></flowable:executionListener>
+        <flowable:executionListener event="start" expression="${execution.setVariable('resultadoProceso', 'CANCELADO')}"></flowable:executionListener>
       </extensionElements>
       <script><![CDATA[println('[Notificar cierre] curso ' + execution.getVariable('cursoId'))]]></script>
     </scriptTask>
@@ -294,7 +318,11 @@ empresa" flowable:candidateGroups="Equipo-Administrativo" flowable:formFieldVali
     <intermediateThrowEvent id="liberar_recursos">
       <compensateEventDefinition activityRef="preparar_curso"></compensateEventDefinition>
     </intermediateThrowEvent>
-    <endEvent id="fin_finalizado"></endEvent>
+    <endEvent id="fin_finalizado">
+      <extensionElements>
+        <flowable:executionListener event="start" expression="${execution.setVariable('resultadoProceso', 'FINALIZADO')}"></flowable:executionListener>
+      </extensionElements>
+    </endEvent>
     <serviceTask id="evaluar_viabilidad" name="Evaluar viabilidad
 " flowable:type="dmn">
       <extensionElements>
@@ -310,12 +338,17 @@ empresa" flowable:candidateGroups="Equipo-Administrativo" flowable:formFieldVali
         <flowable:field name="sameDeployment">
           <flowable:string><![CDATA[false]]></flowable:string>
         </flowable:field>
-        <flowable:decisionReferenceType xmlns:flowable="http://flowable.org/bpmn"><![CDATA[decisionService]]></flowable:decisionReferenceType>
+        <flowable:decisionReferenceType xmlns:flowable="http://flowable.org/bpmn"><![CDATA[decisionTable]]></flowable:decisionReferenceType>
       </extensionElements>
     </serviceTask>
     <boundaryEvent id="sid-1700F600-53F2-44A9-A0D1-593D9A05C0CC" attachedToRef="preparar_curso">
       <errorEventDefinition errorRef="SIN_AULAS" flowable:errorVariableLocalScope="true" flowable:errorVariableTransient="true"></errorEventDefinition>
     </boundaryEvent>
+    <scriptTask id="habilitar_acceso_empresa" name="Habilitar
+acceso de la
+empresa" scriptFormat="groovy" flowable:autoStoreVariables="false">
+      <script><![CDATA[println('[Habilitar acceso] curso ' + execution.getVariable('cursoId') + ' - cuenta de empresa creada o reutilizada (simulado)')]]></script>
+    </scriptTask>
     <userTask id="definir_docente" name="Definir docente
 para el dictado
 del curso" flowable:assignee="Jefe-Docente" flowable:formFieldValidation="true">
@@ -338,12 +371,12 @@ del curso" flowable:assignee="Jefe-Docente" flowable:formFieldValidation="true">
         <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
       </extensionElements>
     </userTask>
-    <userTask id="elaborar_informe" name="Elaborar informe" flowable:candidateUsers="Jefe-Docente" flowable:formFieldValidation="true">
+    <userTask id="elaborar_informe" name="Elaborar informe" flowable:assignee="Jefe-Docente" flowable:formFieldValidation="true">
       <extensionElements>
-        <modeler:user-info-email-Jefe-Docente xmlns:modeler="http://flowable.org/modeler"><![CDATA[Jefedocente@gmail.com]]></modeler:user-info-email-Jefe-Docente>
-        <modeler:user-info-firstname-Jefe-Docente xmlns:modeler="http://flowable.org/modeler"><![CDATA[maria]]></modeler:user-info-firstname-Jefe-Docente>
-        <modeler:user-info-lastname-Jefe-Docente xmlns:modeler="http://flowable.org/modeler"><![CDATA[jefe-docente]]></modeler:user-info-lastname-Jefe-Docente>
-        <modeler:activiti-idm-candidate-user xmlns:modeler="http://flowable.org/modeler"><![CDATA[true]]></modeler:activiti-idm-candidate-user>
+        <modeler:activiti-idm-assignee xmlns:modeler="http://flowable.org/modeler"><![CDATA[true]]></modeler:activiti-idm-assignee>
+        <modeler:assignee-info-email xmlns:modeler="http://flowable.org/modeler"><![CDATA[Jefedocente@gmail.com]]></modeler:assignee-info-email>
+        <modeler:assignee-info-firstname xmlns:modeler="http://flowable.org/modeler"><![CDATA[maria]]></modeler:assignee-info-firstname>
+        <modeler:assignee-info-lastname xmlns:modeler="http://flowable.org/modeler"><![CDATA[jefe-docente]]></modeler:assignee-info-lastname>
         <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
       </extensionElements>
     </userTask>
@@ -358,10 +391,6 @@ del curso" flowable:assignee="Jefe-Docente" flowable:formFieldValidation="true">
     <sequenceFlow id="sid-449F9D57-A772-416D-BD25-22270BFDC4CD" sourceRef="gw_esperar_respuesta" targetRef="evento-rechazo"></sequenceFlow>
     <sequenceFlow id="sid-EE052408-2A90-41B3-93FD-09BD187F836B" sourceRef="evento-rechazo" targetRef="archivar_solicitud"></sequenceFlow>
     <sequenceFlow id="sid-82CD5F2E-87AB-42D6-9CD5-6AC2CF4088F1" sourceRef="archivar_solicitud" targetRef="fin_rechazado_o_sin_respuesta"></sequenceFlow>
-    <sequenceFlow id="sid-4F76DDB7-54A0-4153-9302-29D8EB74F373" name="No
-" sourceRef="gw_recordatorios" targetRef="enviar_recordatorios"></sequenceFlow>
-    <sequenceFlow id="sid-0515383D-B33E-4EB0-8670-C2F5DC2BCFA5" name="Si
-" sourceRef="gw_recordatorios" targetRef="archivar_solicitud"></sequenceFlow>
     <sequenceFlow id="sid-AE59083D-0DAD-4709-BE98-D83287D1DC11" sourceRef="gw_esperar_respuesta" targetRef="evento-aceptacion"></sequenceFlow>
     <sequenceFlow id="sid-94956322-F99A-4B1A-9BE2-8A45982F1A6B" sourceRef="evento-aceptacion" targetRef="habilitar_acceso_empresa"></sequenceFlow>
     <sequenceFlow id="sid-6D56A69C-EFCF-410A-94F5-E69C8B236F94" sourceRef="notificarCierre" targetRef="fin_cancelado"></sequenceFlow>
@@ -388,10 +417,21 @@ del curso" flowable:assignee="Jefe-Docente" flowable:formFieldValidation="true">
     <sequenceFlow id="sid-C8AD3EBE-E6EC-4164-AE57-9D0444D7DE89" sourceRef="preparar_curso" targetRef="enviar_confirmacion"></sequenceFlow>
     <sequenceFlow id="sid-8252B714-44DB-478A-801F-5B83E60AA0D6" sourceRef="sid-82F1FB52-7BB9-463C-B469-F0D722ACF8D7" targetRef="notificarCierre"></sequenceFlow>
     <sequenceFlow id="sid-B3BFCDAB-429B-4BE3-904F-E881BDC33838" sourceRef="sid-1700F600-53F2-44A9-A0D1-593D9A05C0CC" targetRef="notificarCierre"></sequenceFlow>
+    <sequenceFlow id="sid-4F76DDB7-54A0-4153-9302-29D8EB74F373" name="No
+" sourceRef="gw_recordatorios" targetRef="enviar_recordatorios">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${recordatorios < 2}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="sid-0515383D-B33E-4EB0-8670-C2F5DC2BCFA5" name="Si
+" sourceRef="gw_recordatorios" targetRef="archivar_solicitud">
+      <extensionElements>
+        <flowable:executionListener event="take" expression="${execution.setVariable('resultadoProceso', 'CERRADO_SIN_RESPUESTA')}"></flowable:executionListener>
+      </extensionElements>
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${recordatorios >= 2}]]></conditionExpression>
+    </sequenceFlow>
   </process>
   <bpmndi:BPMNDiagram id="BPMNDiagram_Collaboration">
     <bpmndi:BPMNPlane bpmnElement="Collaboration" id="BPMNPlane_Collaboration">
-      <bpmndi:BPMNShape bpmnElement="timer-5-dias" id="BPMNShape_timer-5-dias">
+      <bpmndi:BPMNShape bpmnElement="participant_institucion" id="BPMNShape_participant_institucion">
         <omgdc:Bounds height="1704.1654020707913" width="2311.5358752269526" x="109.80445899621157" y="52.032309217729335"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="sid-AB239F35-A034-48F9-81EC-BCAF34433557" id="BPMNShape_sid-AB239F35-A034-48F9-81EC-BCAF34433557">
@@ -445,9 +485,6 @@ del curso" flowable:assignee="Jefe-Docente" flowable:formFieldValidation="true">
       <bpmndi:BPMNShape bpmnElement="evento-aceptacion" id="BPMNShape_evento-aceptacion">
         <omgdc:Bounds height="30.0" width="30.0" x="846.7544329920032" y="407.3765944260921"></omgdc:Bounds>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape bpmnElement="habilitar_acceso_empresa" id="BPMNShape_habilitar_acceso_empresa">
-        <omgdc:Bounds height="74.48301983375762" width="97.15730367529761" x="943.2951923286686" y="385.13508450921324"></omgdc:Bounds>
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="preparar_curso" id="BPMNShape_preparar_curso">
         <omgdc:Bounds height="752.687874380061" width="1074.779279306877" x="1152.263418199776" y="411.5226493570629"></omgdc:Bounds>
       </bpmndi:BPMNShape>
@@ -472,10 +509,10 @@ del curso" flowable:assignee="Jefe-Docente" flowable:formFieldValidation="true">
       <bpmndi:BPMNShape bpmnElement="sid-93AE2488-5B12-413D-A40B-EB5A6E37CA86" id="BPMNShape_sid-93AE2488-5B12-413D-A40B-EB5A6E37CA86">
         <omgdc:Bounds height="30.000000000000057" width="30.0" x="1662.5813992466362" y="1001.4537683959518"></omgdc:Bounds>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape bpmnElement="liberar_equipamento" id="BPMNShape_liberar_equipamento">
+      <bpmndi:BPMNShape bpmnElement="liberar_equipamiento" id="BPMNShape_liberar_equipamiento">
         <omgdc:Bounds height="80.00000000000006" width="100.0" x="1711.741183182566" y="1027.0447099095395"></omgdc:Bounds>
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape bpmnElement="sid-76E4E49D-A355-4933-9F9D-660D1B1B6F5F" id="BPMNShape_sid-76E4E49D-A355-4933-9F9D-660D1B1B6F5F">
+      <bpmndi:BPMNShape bpmnElement="gw_recursos_listos" id="BPMNShape_gw_recursos_listos">
         <omgdc:Bounds height="40.0" width="40.0" x="1856.7395235394406" y="800.7669957513755"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="confeccionar_lista" id="BPMNShape_confeccionar_lista">
@@ -557,7 +594,10 @@ del curso" flowable:assignee="Jefe-Docente" flowable:formFieldValidation="true">
         <omgdc:Bounds height="80.0" width="100.0" x="273.07603436480076" y="87.90059106560045"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="sid-1700F600-53F2-44A9-A0D1-593D9A05C0CC" id="BPMNShape_sid-1700F600-53F2-44A9-A0D1-593D9A05C0CC">
-        <omgdc:Bounds height="30.0" width="29.999999999999886" x="1137.1352691059426" y="1136.4036566970765"></omgdc:Bounds>
+        <omgdc:Bounds height="30.0" width="29.999999999999886" x="1137.1352691059428" y="1136.4036566970765"></omgdc:Bounds>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape bpmnElement="habilitar_acceso_empresa" id="BPMNShape_habilitar_acceso_empresa">
+        <omgdc:Bounds height="74.48301983375762" width="97.15730367529761" x="943.2951923286686" y="385.13508450921324"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="sid-CAD44F27-E9A7-4F1B-AF9A-F9A36B57D83C" id="BPMNShape_sid-CAD44F27-E9A7-4F1B-AF9A-F9A36B57D83C">
         <omgdc:Bounds height="250.0" width="2281.5358752269526" x="139.80445899621157" y="1506.1977112885206"></omgdc:Bounds>
@@ -574,14 +614,14 @@ del curso" flowable:assignee="Jefe-Docente" flowable:formFieldValidation="true">
       <bpmndi:BPMNShape bpmnElement="elaborar_informe" id="BPMNShape_elaborar_informe">
         <omgdc:Bounds height="80.0" width="100.00000000000011" x="2006.0" y="1545.0"></omgdc:Bounds>
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge bpmnElement="sid-F51B61E7-CE8E-4A59-8BA7-8F6006060E37" id="BPMNEdge_sid-F51B61E7-CE8E-4A59-8BA7-8F6006060E37" flowable:sourceDockerX="48.578651837648756" flowable:sourceDockerY="37.24150991687884" flowable:targetDockerX="5.373896396534384" flowable:targetDockerY="235.21496074376938">
+        <omgdi:waypoint x="991.8738441663173" y="459.56810434297086"></omgdi:waypoint>
+        <omgdi:waypoint x="991.8738441663174" y="646.7376101008323"></omgdi:waypoint>
+        <omgdi:waypoint x="1152.263418199776" y="646.7376101008323"></omgdi:waypoint>
+      </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="sid-0515383D-B33E-4EB0-8670-C2F5DC2BCFA5" id="BPMNEdge_sid-0515383D-B33E-4EB0-8670-C2F5DC2BCFA5" flowable:sourceDockerX="20.5" flowable:sourceDockerY="20.5" flowable:targetDockerX="50.0" flowable:targetDockerY="40.0">
         <omgdi:waypoint x="992.2590119992892" y="262.6059659497539"></omgdi:waypoint>
         <omgdi:waypoint x="992.1138434000375" y="286.78244581956903"></omgdi:waypoint>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge bpmnElement="sid-F51B61E7-CE8E-4A59-8BA7-8F6006060E37" id="BPMNEdge_sid-F51B61E7-CE8E-4A59-8BA7-8F6006060E37" flowable:sourceDockerX="48.578651837648806" flowable:sourceDockerY="37.24150991687881" flowable:targetDockerX="5.373896396534384" flowable:targetDockerY="235.21496074376938">
-        <omgdi:waypoint x="991.8738441663174" y="459.56810434297086"></omgdi:waypoint>
-        <omgdi:waypoint x="991.8738441663174" y="646.7376101008323"></omgdi:waypoint>
-        <omgdi:waypoint x="1152.263418199776" y="646.7376101008323"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="sid-86A01C76-E300-4405-85A1-3663B40AE667" id="BPMNEdge_sid-86A01C76-E300-4405-85A1-3663B40AE667" flowable:sourceDockerX="20.5" flowable:sourceDockerY="20.5" flowable:targetDockerX="50.0" flowable:targetDockerY="40.0">
         <omgdi:waypoint x="1523.961502969157" y="797.1179050543585"></omgdi:waypoint>
@@ -800,9 +840,9 @@ del curso" flowable:assignee="Jefe-Docente" flowable:formFieldValidation="true">
         <omgdi:waypoint x="1312.912983405968" y="608.3207857802678"></omgdi:waypoint>
         <omgdi:waypoint x="1358.0621413793633" y="608.0394325208246"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge bpmnElement="sid-B3BFCDAB-429B-4BE3-904F-E881BDC33838" id="BPMNEdge_sid-B3BFCDAB-429B-4BE3-904F-E881BDC33838" flowable:sourceDockerX="14.999999999999943" flowable:sourceDockerY="15.0" flowable:targetDockerX="50.0" flowable:targetDockerY="40.0">
-        <omgdi:waypoint x="1159.7153016961265" y="1164.2911618078606"></omgdi:waypoint>
-        <omgdi:waypoint x="1189.5374221350687" y="1215.0"></omgdi:waypoint>
+      <bpmndi:BPMNEdge bpmnElement="sid-B3BFCDAB-429B-4BE3-904F-E881BDC33838" id="BPMNEdge_sid-B3BFCDAB-429B-4BE3-904F-E881BDC33838" flowable:sourceDockerX="15.0" flowable:sourceDockerY="15.0" flowable:targetDockerX="50.0" flowable:targetDockerY="40.0">
+        <omgdi:waypoint x="1159.715301696127" y="1164.2911618078606"></omgdi:waypoint>
+        <omgdi:waypoint x="1189.537422135069" y="1215.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="sid-36F07336-C2E4-4222-B950-C5557F4C58DC" id="BPMNEdge_sid-36F07336-C2E4-4222-B950-C5557F4C58DC" flowable:sourceDockerX="50.0" flowable:sourceDockerY="40.0" flowable:targetDockerX="20.0" flowable:targetDockerY="20.0">
         <omgdi:waypoint x="1677.25345200763" y="980.0091279641431"></omgdi:waypoint>

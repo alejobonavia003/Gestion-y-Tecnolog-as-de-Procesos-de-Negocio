@@ -1,6 +1,6 @@
 # Arquitectura y base de datos — Organización de cursos
 
-Documento de diseño propuesto, basado en ProyectoCursos_V2.pdf, el BPMN adjunto y los ejemplos Java. No describe una implementación ya verificada: no se dispone aquí del repositorio ni de su configuración actual. Fecha: 09/11/2026.
+Documento de diseño propuesto, basado en ProyectoCursos_V3_168631696404.pdf, el BPMN adjunto y los ejemplos Java. No describe una implementación ya verificada: no se dispone aquí del repositorio ni de su configuración actual. Fecha: 09/11/2026.
 
 ## 1. Decisión de arquitectura
 
@@ -360,7 +360,7 @@ Prueba de integración clave: crear un curso desde la web, localizar su instanci
 
 ## 14. Fuentes y alcance
 
-- `ProyectoCursos_V2.pdf`: requisitos de datos, identidades, listeners, aplicaciones y demostración.
+- `ProyectoCursos_V3_168631696404.pdf`: requisitos de datos, identidades, listeners, aplicaciones y demostración.
 - `Proyecto_Organizacion_cursos.bpmn`: IDs y estructura del modelo adjunto.
 - `SolucionesVarias_168428749935.pdf`: JAR en el motor, autenticación y privilegio REST.
 - Ejemplos Java y `verciones.txt`: referencias provistas; no prueban el estado actual del repositorio.

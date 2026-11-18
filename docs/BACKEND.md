@@ -475,7 +475,7 @@ PUT runtime/executions/{executionId}  {"action":"messageEventReceived","messageN
 Si no hay una ejecución suscrita, la acción no está habilitada en ese momento → 409.
 
 **A implementar:**
-- `SimulacionService` y `SimulacionController`. El permiso de simulación es para una sesión de personal.
+- `SimulacionService` y `SimulacionController`. Los endpoints de simulación **no requieren sesión**: representan a la empresa (que responde por mail), no al personal.
 - Una tabla para registrar cada comunicación (`comunicacionId` único) y así responder igual ante una repetición.
 - Validar la versión de la propuesta: si no coincide con la vigente → 409.
 
@@ -1204,25 +1204,34 @@ La prueba real y el mantenimiento del volumen se describen en
 
 ## Correcciones pendientes del BPMN
 
-Revisión del 17/11/2026 contra `motor-flowable/modelos/proyecto-institucion.bpmn`. Es lo que hay que cerrar **antes de la etapa 11**.
+Revisión del 18/11/2026 contra la consigna V3 (`contexto/ProyectoCursos_V3_168631696404.pdf`, Figura 1) y el modelo `docs/proyecto-institucion.bpmn20.xml`. Es lo que hay que cerrar **antes de la etapa 11**.
 
-**Ya resuelto en el modelo:** `desarrollar_curso` con `assignee=${docenteId}`, timer `fecha_programa` sobre `${fechaCurso}`, `elaborar_informe` asignado a `Jefe-Docente`, mensaje `cancelacion` en el inicio del subproceso de cancelación, DMN con `cantCursos`.
+**Aclaraciones de la V3 que cierran dudas anteriores:**
+- «Enviar propuesta» y «Habilitar acceso de la empresa» son **automáticas** (script en la Figura 1). Solo «Archivar solicitud» es humana.
+- «Recibir nómina» es una *receive task* (se destraba con señal): **no hace falta cambiarla a mensaje**.
+- Solo son humanas: solicitar aula virtual, contratar equipamiento y liberar equipamiento. **Reservar y liberar aula física, y liberar aula virtual, son automáticas** (el aula física simula un web service).
+- Hay **una sola tarea** «Enviar informe a empresa y archivar expediente» (jefe administrativo). Dividirla en dos es una modificación menor que habría que justificar.
+- El resultado del proceso se fija en cada camino de cierre: `FINALIZADO`, `CANCELADO`, `RECHAZADO`, `CERRADO_SIN_RESPUESTA`, `NO_VIABLE`.
 
-**Pendiente:**
+**Ya resuelto en el modelo:** `confeccionar_lista` sin multi-instancia, gateway inclusivo con condiciones, `desarrollar_curso` con `${docenteId}`, timer sobre `${fechaCurso}`, aula física automática y virtual humana, boundary `SIN_AULAS` y su captura en `preparar_curso`.
 
-| # | Corrección | Detalle |
+**Estado tras la revisión del modelo del 18/11 (`motor-flowable/modelos/proyecto-institucion.bpmn20.xml` y `.zip`):**
+
+| # | Corrección | Estado |
 |---|---|---|
-| 1 | Gateway inclusivo de recursos sin condiciones | Sale por las tres ramas siempre. Condicionar con `requiereAula`, `requierePlataforma` y `requiereEquipamiento`. |
-| 2 | Aula física y virtual invertidas | Hoy la virtual es automática y la física es tarea humana; debe ser al revés. |
-| 3 | Recordatorios | El gateway «¿Se enviaron 2 recordatorios?» no tiene condiciones y nadie incrementa `recordatorios` (el backend solo lo inicia en 0). |
-| 4 | `confeccionar_lista` | Debe ser una sola tarea (hoy es multi-instancia secuencial sobre `nominaParticipantes`). |
-| 5 | Nómina | Hoy `recibir_nomina` es `receiveTask` y el backend la destraba con señal. Documentos y acuerdo dicen mensaje: decidir y alinear `SimulacionService.procesarNomina`. |
-| 6 | Variables | El backend manda `participantes`; el BPMN usa `nominaParticipantes`. `resultado` vs `resultadoProceso` (unificar en `resultadoProceso`). |
-| 7 | `archivar_expediente` | Pasar a assignee `Jefe-Administrativo` (hoy grupo `Equipo-Administrativo`). |
-| 8 | Error por falta de aulas (escenario 7) y `CANCELADO_EMPRESA` | No hay `<error>` declarado ni caso de falta de aulas. |
-| 9 | Cancelación y compensación | Verificar que la cancelación no continúe a «Enviar confirmacion» y que la compensación libere los recursos. |
-| 10 | Scripts marcadores | Reemplazar los `println` por lógica real (listeners / delegates). |
-| 11 | Ids y nombres | Muchos `sid-...` sin nombre: ponerlos descriptivos (necesario para 4.3 y 4.4). |
-| 12 | `enviar_informe` | En el BPMN es tarea de `Jefe-Administrativo`, no script (corrige lo dicho en la sección de etapas). |
-| 13 | Listeners | `AsignarListaListener` y `FinProcesoListener` no existen (`motor-flowable/extensiones/` vacío). |
-| 14 | `.zip` y `.bar` | Verificar que `Organizacion de cursos.zip` y el `.bar` coincidan con el `.bpmn` actual. |
+| 1 | `archivar_solicitud` assignee `Jefe-Administrativo` | ✅ |
+| 2 | `elaborar_informe`: assignee `Jefe-Docente` y Form reference `formInforme` | 🔧 assignee hecho; **falta el formulario** (el backend funciona igual con `informeResumen` por REST) |
+| 3 | `habilitar_acceso_empresa` automática | ✅ script (la lógica real está en `SimulacionService`) |
+| 4 | `reservar_aula_fisica` / `liberar_aula` con script y `BpmnError('SIN_AULAS')` | ✅ (se fuerza con la variable `simularSinAulas`) |
+| 5 | Error `SIN_AULAS` | 🔧 funciona, pero el modelo publicado **no declara** `<error>`: `docs/proyecto-institucion.bpmn20.xml` sí y `motor-flowable/modelos/` no. Unificar las dos copias |
+| 6 | `liberar_aula_virtual` automática | ❌ sigue siendo tarea humana |
+| 7 | Recordatorios (contador y condiciones) | ✅ lógica; el timer sigue en `P5D` (la etapa 10 lo dispara por API) |
+| 8 | `resultadoProceso` en cada cierre | ✅ `NO_VIABLE`, `RECHAZADO`, `CERRADO_SIN_RESPUESTA`, `CANCELADO` (incluye sin aulas), `FINALIZADO` |
+| 9 | «Enviar informe» y «Archivar expediente» en una sola tarea | ❌ siguen `enviar_informe` (script) + `archivar_expediente` (humana) |
+| 10 | Viabilidad: contar instancias dentro del modelo | ❌ sigue dependiendo de `cantCursos` del backend |
+| 11 | Scripts marcadores | 🔧 quedan `println` en `enviar_confirmacion`, `enviar_informe`, `habilitar_acceso_empresa`, `notificarCierre` |
+| 12 | Ids y nombres | 🔧 quedan ids `sid-...` y los nombres «Liberar equipamento» y «confeccionar lista» |
+| 13 | Listeners `AsignarListaListener` y `FinProcesoListener` | ❌ `motor-flowable/extensiones/` sigue vacío |
+| 14 | `.zip` y `.bar` actualizados | ✅ del 18/11 |
+
+Pruebas del modelo contra el backend: `docs/postman/etapa 10/`.
