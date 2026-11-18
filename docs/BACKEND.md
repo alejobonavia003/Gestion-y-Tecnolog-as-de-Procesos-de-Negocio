@@ -161,7 +161,7 @@ Este documento sirve para seguir el avance: qué quedó implementado y probado, 
 | Backend etapa 8 | Implementada; validación integrada con motor/web pendiente |
 | Backend etapa 9 | ✅ Completa: #17, #18 y #19 probados con Postman contra Flowable real |
 | Backend etapa 10 (simulación de la empresa) | 🚀 Implementada (`SimulacionController` / `SimulacionService`) y probada con `simulador-rest`, web y Postman (`docs/postman/etapa 10/`) |
-| Backend etapa 11 (integración final y 11 escenarios) | ⏳ Pendiente. **Antes hay que cerrar las asociaciones de compensación y los listeners del BPMN** (ver «Correcciones pendientes del BPMN») |
+| Backend etapa 11 (integración final y 11 escenarios) | ⏳ Pendiente. **Antes hay que cerrar los listeners del BPMN** (las asociaciones de compensación ya están corregidas; ver «Correcciones pendientes del BPMN») |
 | Web (etapas 1 a 9) | 🚀 Conectada al backend real con los `taskDefinitionKey` reales del BPMN (`catalogo.ts`, `DetalleTarea.tsx`, `FormPropuesta.tsx`) |
 | Extensiones del motor (listeners en Java) | ⏳ Pendiente |
 | App de Materiales (`app-materiales/`, API Java) | 🚀 Probada contra el proceso publicado (reclamo y completado de `preparar_materiales` por API Java) |
@@ -529,7 +529,7 @@ Si no hay una ejecución suscrita, la acción no está habilitada en ese momento
 - [ ] "Habilitar acceso de la empresa": automática.
 - [ ] `archivar_expediente`: asignada al jefe administrativo.
 - [x] `messageRef` del inicio de la cancelación (`cancelacionEmpresa`).
-- [ ] Declarar `<error id="CANCELADO_EMPRESA">`.
+- [x] ~~Declarar `<error id="CANCELADO_EMPRESA">`~~: ya no hace falta, el modelo no usa eventos de error (la cancelación pone `cursoCancelado=true` y decide `gw_curso_cancelado`).
 - [ ] Recordatorios: condición del gateway y contador.
 - [ ] "Recibir nómina" como evento intermedio de mensaje.
 - [ ] Unificar la variable de resultado en `resultadoProceso`.
@@ -1213,7 +1213,7 @@ Revisión del 18/11/2026 contra la consigna V3 (`contexto/ProyectoCursos_V3_1686
 - Hay **una sola tarea** «Enviar informe a empresa y archivar expediente» (jefe administrativo). Dividirla en dos es una modificación menor que habría que justificar.
 - El resultado del proceso se fija en cada camino de cierre: `FINALIZADO`, `CANCELADO`, `RECHAZADO`, `CERRADO_SIN_RESPUESTA`, `NO_VIABLE`.
 
-**Ya resuelto en el modelo:** `confeccionar_lista` sin multi-instancia, gateway inclusivo con condiciones, `desarrollar_curso` con `${docenteId}`, timer sobre `${fechaCurso}`, aula física automática y virtual humana, boundary `SIN_AULAS` y su captura en `preparar_curso`.
+**Ya resuelto en el modelo:** `confeccionar_lista` sin multi-instancia, gateway inclusivo con condiciones, `desarrollar_curso` con `${docenteId}`, timer sobre `${fechaCurso}`, aula física automática y virtual humana, falta de aulas con `aulaDisponible=false` → `gw_hay_aula` → compensación → fin de terminación, y compuerta `gw_curso_cancelado` a la salida de `preparar_curso`.
 
 **Estado tras la revisión del modelo del 18/11 (`motor-flowable/modelos/proyecto-institucion.bpmn20.xml` y `.zip`):**
 
@@ -1222,8 +1222,8 @@ Revisión del 18/11/2026 contra la consigna V3 (`contexto/ProyectoCursos_V3_1686
 | 1 | `archivar_solicitud` assignee `Jefe-Administrativo` | ✅ |
 | 2 | `elaborar_informe`: assignee `Jefe-Docente` y Form reference `formInforme` | 🔧 assignee hecho; **falta el formulario** (el backend funciona igual con `informeResumen` por REST) |
 | 3 | `habilitar_acceso_empresa` automática | ✅ script (la lógica real está en `SimulacionService`) |
-| 4 | `reservar_aula_fisica` / `liberar_aula` con script y `BpmnError('SIN_AULAS')` | ✅ (se fuerza con la variable `simularSinAulas`) |
-| 5 | Error `SIN_AULAS` | 🔧 funciona, pero el modelo publicado **no declara** `<error>`: `docs/proyecto-institucion.bpmn20.xml` sí y `motor-flowable/modelos/` no. Unificar las dos copias |
+| 4 | `reservar_aula_fisica` / `liberar_aula` con script; falta de aulas sin `BpmnError` | ✅ con `simularSinAulas=true` el script pone `aulaDisponible=false` (ya no lanza `BpmnError('SIN_AULAS')`) |
+| 5 | Errores `SIN_AULAS` y `CANCELADO_EMPRESA` | ✅ ya no hacen falta: el modelo **no usa eventos de error**. Las dos salidas anormales (cancelación de la empresa y falta de aulas) ponen `cursoCancelado=true`, y la compuerta `gw_curso_cancelado`, a la salida de `preparar_curso`, decide entre `notificarCierre` (`CANCELADO`) y `enviar_confirmacion`. El camino sin aulas (`gw_hay_aula` → compensar aula virtual y equipamiento → `marcar_sin_aulas`) termina con un **fin de terminación** (`fin_sin_aulas`) que cierra el subproceso |
 | 6 | `liberar_aula_virtual` automática | ❌ sigue siendo tarea humana |
 | 7 | Recordatorios (contador y condiciones) | ✅ lógica; el timer sigue en `P5D` (la etapa 10 lo dispara por API) |
 | 8 | `resultadoProceso` en cada cierre | ✅ `NO_VIABLE`, `RECHAZADO`, `CERRADO_SIN_RESPUESTA`, `CANCELADO` (incluye sin aulas), `FINALIZADO` |
@@ -1232,7 +1232,7 @@ Revisión del 18/11/2026 contra la consigna V3 (`contexto/ProyectoCursos_V3_1686
 | 11 | Scripts marcadores | 🔧 quedan `println` en `enviar_confirmacion`, `enviar_informe`, `habilitar_acceso_empresa`, `notificarCierre` |
 | 12 | Ids y nombres | 🔧 quedan ids `sid-...` y los nombres «Liberar equipamento» y «confeccionar lista» |
 | 13 | Listeners `AsignarListaListener` y `FinProcesoListener` | ❌ `motor-flowable/extensiones/` sigue vacío |
-| 14 | `.zip` y `.bar` actualizados | ✅ del 18/11 |
-| 15 | **Conectores de los 3 eventos de borde de compensación** (`liberar_aula`, `liberar_aula_virtual`, `liberar_equipamiento`) | ❌ En el XML/JSON del Modeler quedaron como `<sequenceFlow>` en vez de `<association>`. Por eso al completar `reservar_aula_fisica`, `reservar_aula_virtual` o `contratar_equipamiento`, Flowable lanza `FlowableException: Parent activity for boundary compensation event could not be found` (`BoundaryCompensateEventActivityBehavior.java:75`). Deben ser `<association id="..." sourceRef="..." targetRef="..." associationDirection="None"/>` ubicados al final de `<subProcess id="preparar_curso">` |
+| 14 | `.zip` y `.bar` actualizados | ✅ del 18/11. El `.bar` se genera con `corregir-asociaciones.py --bar` y es **lo que se despliega**; el `.zip` es el export del Modeler (sirve para editar, trae las asociaciones rotas) |
+| 15 | **Conectores de los 3 eventos de borde de compensación** (`liberar_aula`, `liberar_aula_virtual`, `liberar_equipamiento`) | ✅ Son `<association ... associationDirection="One">` dentro de `preparar_curso` (versión 11 de `process`, 18/11). El Modeler 6.8.0 las vuelve a convertir en `<sequenceFlow>` cuando el modelo tiene pool (al importar, exportar y en **Publish**), y entonces el motor lanza `Compensation activity could not be found` al completar `reservar_aula_fisica`, `reservar_aula_virtual` o `contratar_equipamiento`. Por eso **no se publica desde el Modeler**: se exporta el XML, se corre `motor-flowable/modelos/corregir-asociaciones.py --bar` y se despliega con `desplegar.sh` (ver `motor-flowable/modelos/README.md`). Verificado por REST: cancelación con las tres compensaciones y cierre `CANCELADO` |
 
 Pruebas del modelo contra el backend: `docs/postman/etapa 10/`.

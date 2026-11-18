@@ -305,9 +305,9 @@ println('[Sin aulas] curso ' + execution.getVariable('cursoId') + ' cancelado po
       <sequenceFlow id="sid-C7240CF8-9E91-485F-BA12-B0DB18078EC5" sourceRef="gw_recursos" targetRef="contratar_equipamiento">
         <conditionExpression xsi:type="tFormalExpression"><![CDATA[${requiereEquipamiento}]]></conditionExpression>
       </sequenceFlow>
-      <sequenceFlow id="sid-1BCB8BD0-78F5-4477-B5B1-9EBC2DFA0922" sourceRef="sid-16D99AD4-12C2-44F8-9B09-9AC4526792A2" targetRef="liberar_aula"></sequenceFlow>
-      <sequenceFlow id="sid-263CEB68-CF22-4D33-AD6D-46D5AFCBF358" sourceRef="sid-65E0C277-61D9-4DB6-B385-C21B9CF8F392" targetRef="liberar_aula_virtual"></sequenceFlow>
-      <sequenceFlow id="sid-10959710-7CD6-49B1-99C8-2FB83876C095" sourceRef="sid-93AE2488-5B12-413D-A40B-EB5A6E37CA86" targetRef="liberar_equipamiento"></sequenceFlow>
+      <association id="sid-1BCB8BD0-78F5-4477-B5B1-9EBC2DFA0922" sourceRef="sid-16D99AD4-12C2-44F8-9B09-9AC4526792A2" targetRef="liberar_aula" associationDirection="One"></association>
+      <association id="sid-263CEB68-CF22-4D33-AD6D-46D5AFCBF358" sourceRef="sid-65E0C277-61D9-4DB6-B385-C21B9CF8F392" targetRef="liberar_aula_virtual" associationDirection="One"></association>
+      <association id="sid-10959710-7CD6-49B1-99C8-2FB83876C095" sourceRef="sid-93AE2488-5B12-413D-A40B-EB5A6E37CA86" targetRef="liberar_equipamiento" associationDirection="One"></association>
     </subProcess>
     <scriptTask id="notificarCierre" name="Notificar cierre" scriptFormat="groovy" flowable:autoStoreVariables="false">
       <extensionElements>

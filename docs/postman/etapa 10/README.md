@@ -7,8 +7,9 @@
 
 ## Requisitos
 
-1. Backend en 8081 y Flowable en 8080 con la app **publicada de nuevo** (la del 18/11:
-   `motor-flowable/modelos/Organizacion de cursos.zip`; ver `motor-flowable/modelos/README.md`).
+1. Backend en 8081 y Flowable en 8080 con la app **desplegada con `desplegar.sh`** (el
+   `.bar` de `motor-flowable/modelos/`, no *Publish* desde el Modeler; ver
+   `motor-flowable/modelos/README.md`).
 2. Usuarios creados (`motor-flowable/idm/crear-usuarios.sh`).
 3. Importar los dos `.json`, elegir el entorno y completar `flowablePass` (*Current value*).
 4. Pocas instancias activas: con 5 o más el curso es NO_VIABLE y los escenarios fallan en
@@ -25,7 +26,7 @@ Cada carpeta se corre con **Run folder** (elegir el entorno en el Runner). Son i
 | 02 Rechazo | `resultadoProceso=RECHAZADO` y tarea humana `archivar_solicitud` | listener en `evento-rechazo` |
 | 03 Modificaciones | `revisar_propuesta` → v2, v1 desactualizada (409), `recordatorios` vuelve a 0 | mensaje `modificaciones` |
 | 04 Cancelación | Solo en preparación (409 antes), compensación y `CANCELADO` | evento `cancelacion` dentro de `preparar_curso` |
-| 05 Falta de aulas | `simularSinAulas=true` → `BpmnError SIN_AULAS` → `notificarCierre` | boundary `SIN_AULAS` |
+| 05 Falta de aulas | `simularSinAulas=true` → `aulaDisponible=false` → compuerta `gw_hay_aula` → compensación (aula virtual y equipamiento) → `notificarCierre` (`CANCELADO`). Ya no hay `BpmnError` | compuerta `gw_hay_aula` + `gw_curso_cancelado` |
 | 06 Falta de respuesta | Dispara el timer `P5D` a mano 3 veces: 2 recordatorios y cierre `CERRADO_SIN_RESPUESTA` | timer + contador `recordatorios` |
 | 07 Errores generales | 404 y 400 sin curso en marcha | — |
 
