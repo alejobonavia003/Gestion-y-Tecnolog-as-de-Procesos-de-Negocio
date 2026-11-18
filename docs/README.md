@@ -20,6 +20,7 @@ La documentación está unificada en tres documentos:
 | [postman/etapa 7/](postman/etapa%207/) | Propuestas, versiones y PDF. |
 | [postman/etapa 8/](postman/etapa%208/) | Portal de empresa y actividades. |
 | [postman/etapa 9/](postman/etapa%209/) | **Colección general** (`Cursos GyTPN - Backend`): sesiones, solicitudes, atajos de Flowable y la etapa 9 paso a paso. Es la que se sigue ampliando. |
+| [postman/etapa 10/](postman/etapa%2010/) | **Etapa 10** (`Etapa_10.postman_collection.json`): comunicaciones de la empresa (`/simulacion/**`) y pruebas integradas contra el modelo BPMN publicado. |
 
 Las colecciones usan la cookie de sesión del login (no Basic Auth) contra el backend, y Basic Auth con el usuario técnico solo en los requests que van directo a Flowable.
 

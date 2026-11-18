@@ -160,12 +160,12 @@ Este documento sirve para seguir el avance: qué quedó implementado y probado, 
 | Backend etapa 7 | Implementada; validación integrada con motor/web pendiente |
 | Backend etapa 8 | Implementada; validación integrada con motor/web pendiente |
 | Backend etapa 9 | ✅ Completa: #17, #18 y #19 probados con Postman contra Flowable real |
-| Backend etapa 10 (simulación de la empresa) | 🔧 Implementada (`SimulacionController` / `SimulacionService`, con `SimulacionServiceTest`); falta validarla contra Flowable real |
-| Backend etapa 11 (integración final y 11 escenarios) | ⏳ Pendiente. **Antes hay que cerrar el modelo BPMN** (ver «Correcciones pendientes del BPMN») |
-| Web (etapas 1 a 9) | ✅ Completa contra mocks; falta conectarla al backend real |
+| Backend etapa 10 (simulación de la empresa) | 🚀 Implementada (`SimulacionController` / `SimulacionService`) y probada con `simulador-rest`, web y Postman (`docs/postman/etapa 10/`) |
+| Backend etapa 11 (integración final y 11 escenarios) | ⏳ Pendiente. **Antes hay que cerrar las asociaciones de compensación y los listeners del BPMN** (ver «Correcciones pendientes del BPMN») |
+| Web (etapas 1 a 9) | 🚀 Conectada al backend real con los `taskDefinitionKey` reales del BPMN (`catalogo.ts`, `DetalleTarea.tsx`, `FormPropuesta.tsx`) |
 | Extensiones del motor (listeners en Java) | ⏳ Pendiente |
-| App de Materiales (`app-materiales/`, API Java) | 🔧 Código y pruebas en el repo; falta validarla con el motor y los listeners en el classpath |
-| Simulador REST (`simulador-rest/`) | 🔧 Código en el repo (Swing); falta validarlo de punta a punta |
+| App de Materiales (`app-materiales/`, API Java) | 🚀 Probada contra el proceso publicado (reclamo y completado de `preparar_materiales` por API Java) |
+| Simulador REST (`simulador-rest/`) | 🚀 Probado contra el backend y el motor (recepción y apertura de PDF de propuesta, modificaciones, aceptación con habilitación de cuenta de empresa y envío de nómina; botonera en 2 filas con `Cancelar curso` visible) |
 | Consultas históricas (4.3) y Minería PM4Py (4.4) | ⏳ Pendiente |
 
 #### Endpoints
@@ -1233,5 +1233,6 @@ Revisión del 18/11/2026 contra la consigna V3 (`contexto/ProyectoCursos_V3_1686
 | 12 | Ids y nombres | 🔧 quedan ids `sid-...` y los nombres «Liberar equipamento» y «confeccionar lista» |
 | 13 | Listeners `AsignarListaListener` y `FinProcesoListener` | ❌ `motor-flowable/extensiones/` sigue vacío |
 | 14 | `.zip` y `.bar` actualizados | ✅ del 18/11 |
+| 15 | **Conectores de los 3 eventos de borde de compensación** (`liberar_aula`, `liberar_aula_virtual`, `liberar_equipamiento`) | ❌ En el XML/JSON del Modeler quedaron como `<sequenceFlow>` en vez de `<association>`. Por eso al completar `reservar_aula_fisica`, `reservar_aula_virtual` o `contratar_equipamiento`, Flowable lanza `FlowableException: Parent activity for boundary compensation event could not be found` (`BoundaryCompensateEventActivityBehavior.java:75`). Deben ser `<association id="..." sourceRef="..." targetRef="..." associationDirection="None"/>` ubicados al final de `<subProcess id="preparar_curso">` |
 
 Pruebas del modelo contra el backend: `docs/postman/etapa 10/`.

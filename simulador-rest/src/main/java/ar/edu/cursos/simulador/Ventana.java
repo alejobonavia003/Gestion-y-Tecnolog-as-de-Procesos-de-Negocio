@@ -83,14 +83,20 @@ public final class Ventana extends JFrame {
         tabla.setFillsViewportHeight(true);
         p.add(new JScrollPane(tabla), BorderLayout.CENTER);
 
-        JPanel acciones = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 6));
-        acciones.add(detalle);
-        acciones.add(verPdf);
-        acciones.add(aceptar);
-        acciones.add(modificar);
-        acciones.add(rechazar);
-        acciones.add(nomina);
-        acciones.add(cancelar);
+        JPanel filaPropuesta = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 4));
+        filaPropuesta.add(detalle);
+        filaPropuesta.add(verPdf);
+        filaPropuesta.add(aceptar);
+        filaPropuesta.add(modificar);
+        filaPropuesta.add(rechazar);
+
+        JPanel filaPreparacion = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 4));
+        filaPreparacion.add(nomina);
+        filaPreparacion.add(cancelar);
+
+        JPanel acciones = new JPanel(new GridLayout(2, 1, 0, 2));
+        acciones.add(filaPropuesta);
+        acciones.add(filaPreparacion);
         p.add(acciones, BorderLayout.SOUTH);
         return p;
     }
