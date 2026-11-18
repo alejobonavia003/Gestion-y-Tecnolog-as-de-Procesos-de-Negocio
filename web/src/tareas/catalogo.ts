@@ -33,6 +33,7 @@ export const CATALOGO_TAREAS: Record<string, InfoTarea> = {
   liberar_equipamiento: { titulo: 'Liberar equipamiento', dondeSeCompleta: 'flowable' },
   Activity_1m08pcl: { titulo: 'Liberar equipamiento', dondeSeCompleta: 'flowable' },
   liberar_aula_virtual: { titulo: 'Liberar aula virtual', dondeSeCompleta: 'flowable' },
+  confirmar_cancelacion: { titulo: 'Confirmar cancelación', dondeSeCompleta: 'flowable' },
   // Docentes (Equipo-Docente / Jefe-Docente)
   definir_docente: { titulo: 'Definir docente', dondeSeCompleta: 'web' },
   Activity_1018bdz: { titulo: 'Definir docente', dondeSeCompleta: 'web' },
