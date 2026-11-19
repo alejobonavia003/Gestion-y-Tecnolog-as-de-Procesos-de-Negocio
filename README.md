@@ -1,188 +1,193 @@
-# Gestión y Tecnologías de Procesos de Negocio
+# Gestión y Tecnologías de Procesos de Negocio — Organización de Cursos
 
-Proyecto académico (GyTPN, UNRC): proceso de **organización de cursos de capacitación**
-para empresas, ejecutado en **Flowable 6.8** con un backend propio, una web y aplicaciones
-auxiliares.
+Proyecto integrador (GyTPN, UNRC): implementación en **Flowable 6.8** del proceso de **organización de cursos de capacitación para empresas**, junto con su servicio REST y base de datos institucional, sitio web, aplicaciones auxiliares de escritorio (API Java y API REST), consultas históricas y análisis de minería de procesos con PM4Py.
 
-## Estado actual (18/11/2026)
+**Integrantes:** Alejo, Lauty y Luka.
 
-| Parte | Estado |
+---
+
+## 1. Documentación de Entrega (§5 de la consigna)
+
+Toda la documentación exigida para la entrega y defensa está organizada en:
+
+| Documento | Contenido principal |
 |---|---|
-| Infraestructura Docker (Flowable UI, PostgreSQL, pgAdmin, backend, web) | ✅ Funcionando |
-| Usuarios y grupos de Flowable (`motor-flowable/idm/crear-usuarios.sh`) | ✅ |
-| Modelo del proceso + regla DMN de viabilidad | ✅ Corregido (3 `<association>` de compensación) y desplegado con `desplegar.sh` |
-| Backend etapas 1 a 10 | ✅ Implementadas (sesiones, solicitudes, tareas, propuestas/PDF, portal empresa, dictado/informe y simulación) |
-| Backend etapa 11 (integración final) | ✅ Implementada (sincronización de estados en `CursoService`/`TareaService`, `CsrfFilter`, limpieza de `DiagnosticoController` y despliegue Docker). Pendiente: correr validación E2E de los 11 escenarios |
-| Web (React + Vite) | ✅ Conectada al backend real (incluye envío de `X-XSRF-TOKEN` por CSRF) |
-| App de materiales y simulador REST | ✅ Implementados y probados contra motor/backend |
-| Listeners del motor (`motor-flowable/extensiones/`) | ✅ `AsignarListaListener` y `FinProcesoListener` compilados en `flowable-extensiones.jar`, cargados en `flowable-persistente` y asociados al BPMN |
+| **[README.md](README.md) (este archivo)** | **Instrucciones completas para configurar usuarios y grupos, desplegar el motor y configurar/ejecutar las 3 aplicaciones externas y los análisis.** |
+| **[docs/INFORME_ENTREGA.md](docs/INFORME_ENTREGA.md)** | **Informe breve de entrega:** arquitectura, diccionario de variables del proceso, regla de negocio DMN, listeners (`AsignarListaListener` y `FinProcesoListener`), decisiones de implementación y **guía paso a paso de los 11 escenarios de demostración**. |
+| **[mineria-procesos/README.md](mineria-procesos/README.md)** | **Minería de procesos (§4.4):** scripts `exportar_history.py` y `analizar.py` (PM4Py), CSV utilizado, grafo DFG, los 3 recorridos más frecuentes y conclusión comparativa con el BPMN. |
+| **[docs/BACKEND.md](docs/BACKEND.md)** | Contrato detallado de endpoints REST (`/api/v1`), arquitectura del backend y pruebas con Postman. |
+| **[docs/MODELO_Y_INTEGRACION.md](docs/MODELO_Y_INTEGRACION.md)** | Acuerdo de integración, detalle del modelo BPMN y manual de la app de materiales. |
 
-El detalle de qué está hecho y qué falta está en
-[docs/BACKEND.md (avance y etapas)](docs/BACKEND.md#avance-y-etapas).
+---
 
-## Estructura y responsabilidades
+## 2. Estructura del repositorio y estado de entregables
 
-| Ruta | Objetivo | Responsable |
+| Ruta | Entregable de la consigna | Estado |
 |---|---|---|
-| [motor-flowable/](motor-flowable/) | BPMN ejecutable, DMN, usuarios y grupos, listeners, mensajes, timers y compensación. | Alejo |
-| [backend/](backend/) | API REST (Spring Boot) y base institucional: empresas, cursos, propuestas, PDFs, vínculo con las instancias de Flowable. | Lauty |
-| [web/](web/) | Sitio público, portal de empresas y bandeja del personal. | Luka |
-| [app-materiales/](app-materiales/) | App de escritorio para "Preparar materiales" con la API Java de Flowable. | Luka |
-| [simulador-rest/](simulador-rest/) | CLI que simula las comunicaciones de la empresa. | Luka |
-| [docs/](docs/) | Acuerdos, contratos, progreso y colecciones de Postman. | Todos |
-| [contexto/](contexto/) | Consigna y modelos de referencia. | Referencia común |
+| [`motor-flowable/modelos/`](motor-flowable/modelos/) | Modelo BPMN ejecutable (`institucion-de-capacitacion.bpmn20.xml`), regla DMN (`reglaViabilidad.dmn`), paquete `.bar` (`Organizacion_de_cursos.bar`) y script `desplegar.sh`. | ✅ Completo |
+| [`motor-flowable/extensiones/`](motor-flowable/extensiones/) | Componentes incorporados al motor: `AsignarListaListener` y `FinProcesoListener` (`flowable-extensiones.jar`). | ✅ Completo |
+| [`motor-flowable/idm/`](motor-flowable/idm/) | Script `crear-usuarios.sh` para configurar usuarios, grupos y permisos REST en Flowable. | ✅ Completo |
+| [`backend/`](backend/) | Servicio REST (Spring Boot 3.5, Java 21) y base de datos institucional PostgreSQL (`institucion`), generación de PDFs con OpenPDF y protección CSRF. | ✅ Completo |
+| [`web/`](web/) | **Aplicación Externa 1 (§4.1):** Sitio web (React + TypeScript + Vite) con formulario público de solicitudes, portal de empresas y bandeja de tareas del personal. | ✅ Completo |
+| [`app-materiales/`](app-materiales/) | **Aplicación Externa 2 (§4.2.1 y §4.3):** App de escritorio Java Swing con la **API Java de Flowable** para *Preparar materiales* y las **3 consultas históricas** (`HistoryService`). | ✅ Completo |
+| [`simulador-rest/`](simulador-rest/) | **Aplicación Externa 3 (§4.2.2):** App de escritorio Java Swing que simula las 5 comunicaciones de la empresa mediante la **API REST**. | ✅ Completo |
+| [`mineria-procesos/`](mineria-procesos/) | **Minería de Procesos (§4.4):** `exportar_history.py`, `analizar.py`, `negociacion_history.csv`, grafo del comportamiento observado y conclusión. | ✅ Completo |
 
-## Requisitos
+---
 
-- Docker con Docker Compose.
-- JDK 21 y Maven (para correr el backend en desarrollo).
-- Git. Node.js 20.19+ solo si se trabaja en la web fuera de Docker.
-- Postman de escritorio (para probar el backend).
+## 3. Instrucciones para configurar y ejecutar la solución
 
-## Primera instalación en una máquina
+### Requisitos previos
+- **Docker** con **Docker Compose** (levanta PostgreSQL, Flowable UI 6.8.0, el Backend, el Sitio Web y pgAdmin).
+- **JDK 21** y **Maven** (para compilar y ejecutar las aplicaciones de escritorio `app-materiales` y `simulador-rest`, o correr el backend en modo desarrollo).
+- **Python 3** (con `pm4py`, `pandas`, `requests` y `graphviz` en un entorno virtual `.venv` si se desea regenerar el análisis con PM4Py).
 
-Hacer esto **una vez** por máquina (o cuando se borre el volumen de Postgres).
-Todos los comandos se corren desde la raíz del repo. La guía detallada de Docker está en
-[docs/README.md (instalación con Docker)](docs/README.md#instalación-del-equipo-con-docker).
+---
 
-### 1. Archivo `.env`
+### Paso 1: Configurar el archivo `.env` y levantar los contenedores
 
-Crear el `.env` en la raíz a partir de la plantilla (no se sube a git):
+Desde la raíz del repositorio, crear el archivo `.env` a partir de la plantilla (una sola vez por máquina):
 
 ```bash
 cp env.example .env
 ```
 
-Editarlo antes de levantar nada. En una instalación existente **no** sobrescribirlo:
-conservar el usuario y la clave de Postgres con los que se creó el volumen.
+> **Importante:** Conservar el formato `CLAVE=valor` **sin espacios alrededor del `=`**, ya que tanto Docker Compose como los scripts de bash leen este archivo.
 
-| Variable | Valor |
+| Variable en `.env` | Descripción y valor por defecto |
 |---|---|
-| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Credenciales de Postgres (`flowable` en una instalación nueva). |
-| `INSTITUCION_DB_NAME` | `institucion`. |
-| `FLOWABLE_REST_USUARIO`, `FLOWABLE_REST_CLAVE` | Cuenta con acceso a la API REST de Flowable (por defecto `admin` / `test`). |
-| `FLOWABLE_PROCESO_CLAVE` | `process`. |
-| `CURSOS_DATOS_DEMO` | `true` para tener la empresa demo (la usan las pruebas de Postman). |
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Base y credenciales de PostgreSQL (`flowable` / `flowable` / `flow10`). |
+| `INSTITUCION_DB_NAME` | Nombre de la base de datos institucional (`institucion`, creada automáticamente por el servicio `institucion-db`). |
+| `FLOWABLE_REST_USUARIO`, `FLOWABLE_REST_CLAVE` | Usuario técnico con acceso a la API REST de Flowable (`admin` / `test`). |
+| `FLOWABLE_PROCESO_CLAVE` | Clave del proceso BPMN (`process`). |
+| `CURSOS_DATOS_DEMO` | `true` para crear automáticamente la cuenta de prueba `empresa-demo` / `1234`. |
 
-Formato: **sin espacios alrededor del `=`** y comentarios en líneas aparte. El
-backend y `crear-usuarios.sh` lo leen como archivo de bash; una línea como
-`EMAIL= admin@example.com` rompe la carga. `CURSOS_DATOS_DEMO=true` crea la empresa
-de prueba `empresa-demo` / `1234`.
-
-### 2. Levantar la infraestructura
-
-Hay dos formas, según lo que se vaya a hacer:
-
-**Todo en Docker** (para probar o para la demo; no hace falta Java ni Maven):
+Levantar toda la infraestructura con Docker Compose:
 
 ```bash
-docker compose config --quiet
 docker compose up -d --build
 docker compose ps -a
 ```
 
-**Desarrollo del backend** (el backend corre con Maven, paso 6, y se ven los cambios al
-instante): levantar todo menos el servicio `backend`, que si no ocupa el puerto 8081.
+Esperar ~40-60 segundos hasta que Flowable termine de iniciar (`docker logs -f flowable-persistente` hasta ver `Started FlowableUiApplication`). El servicio `institucion-db` crea la base `institucion` y finaliza con `Exited (0)`.
 
-```bash
-docker compose up -d postgres institucion-db flowable pgadmin
-```
+---
 
-Flowable tarda alrededor de un minuto en arrancar:
-`docker logs -f flowable-persistente` hasta ver `Started FlowableUiApplication`.
-Si Docker pide `sudo`, agregar el usuario al grupo `docker`.
+### Paso 2: Configurar usuarios y grupos en Flowable (§3.3)
 
-### 3. Base `institucion`
-
-La crea sola el servicio `institucion-db` si falta. Es normal que aparezca como
-`Exited (0)`: corre una vez y termina. Las tablas las crea Hibernate al arrancar el backend.
-
-Si el backend dice `database "institucion" does not exist` (por ejemplo, porque no se
-levantó `institucion-db`), crearla a mano con el `POSTGRES_USER` y `POSTGRES_DB` del `.env`:
-
-```bash
-docker exec -it flowable-postgres psql -U flowable -d flowable -c "CREATE DATABASE institucion;"
-```
-
-### 4. Usuarios y grupos de Flowable
+Con el contenedor de Flowable levantado, ejecutar desde la raíz del repositorio:
 
 ```bash
 bash motor-flowable/idm/crear-usuarios.sh
 ```
 
-Crea `Equipo-Administrativo`, `Equipo-Docente` y los usuarios `Jefe-Administrativo`,
-`empleado-administrativo`, `Jefe-Docente`, `docente-1` y `docente-2` (clave `1234`).
-Correrlo con `bash` (en fish o si el archivo no tiene permiso de ejecución,
-`./crear-usuarios.sh` falla).
+Este script es idempotente y crea en Flowable IDM los grupos y usuarios requeridos por la consigna, otorgándoles el privilegio `access-rest-api`:
 
-### 5. Cargar el JAR de listeners y desplegar el proceso
+| Usuario (ID en Flowable) | Contraseña | Grupo en Flowable | Rol / Responsabilidad |
+|---|---|---|---|
+| `Jefe-Administrativo` | `1234` | `Equipo-Administrativo` | Jefe administrativo (propuestas, revisiones, archivo y cierre de expediente). |
+| `empleado-administrativo` | `1234` | `Equipo-Administrativo` | Administrativo (lista definitiva, materiales, evaluación y gestión/liberación de recursos). |
+| `Jefe-Docente` | `1234` | `Equipo-Docente` | Jefe del equipo docente (definir docente, elaborar informe y puede dictar cursos). |
+| `docente-1` | `1234` | `Equipo-Docente` | Docente (desarrollar curso cuando es seleccionado). |
+| `docente-2` | `1234` | `Equipo-Docente` | Docente (desarrollar curso cuando es seleccionado). |
 
-Ver [motor-flowable/README.md](motor-flowable/README.md) y [motor-flowable/modelos/README.md](motor-flowable/modelos/README.md). Resumen:
+---
 
-1. Copiar el JAR de listeners dentro del contenedor de Flowable y reiniciarlo:
+### Paso 3: Instalar los Listeners en el motor y desplegar el modelo BPMN + DMN
+
+1. **Copiar el JAR de listeners (`AsignarListaListener` y `FinProcesoListener`) dentro del contenedor de Flowable y reiniciarlo:**
    ```bash
    docker cp motor-flowable/extensiones/flowable-extensiones.jar flowable-persistente:/app/WEB-INF/lib/flowable-extensiones.jar
    docker restart flowable-persistente
    ```
-2. Desplegar el `.bar` por REST (**no usar *Publish* en el Modeler**, porque rompe las asociaciones de compensación):
+   *(Si se modifica el código de `motor-flowable/extensiones/`, recompilar antes con `mvn -f motor-flowable/extensiones/pom.xml clean package` y copiar `target/flowable-extensiones.jar`).*
+
+2. **Desplegar el proceso BPMN y la regla DMN mediante `desplegar.sh`:**
+   *(Esperar a que `flowable-persistente` termine de reiniciar y ejecutar):*
    ```bash
    bash motor-flowable/modelos/desplegar.sh
    ```
+   > **Nota:** Usar siempre `desplegar.sh` (que despliega `Organizacion_de_cursos.bar` y verifica las 3 etiquetas `<association>` de compensación). **No usar el botón *Publish* del Modeler 6.8.0**, ya que un bug del Modeler con *Pools* convierte las asociaciones de compensación en `sequenceFlow`.
 
-### 6. Backend
+---
 
-Si se levantó todo con Docker, el backend ya está corriendo (logs: `docker compose logs -f backend`;
-después de cambiar código: `docker compose up -d --build backend`). En desarrollo:
+### Paso 4: Configurar y ejecutar las 3 aplicaciones externas (§4.1 y §4.2)
+
+#### 4.1 Sitio Web (`web/`) y Servicio REST (`backend/`)
+Si se ejecutó `docker compose up -d --build`, **ambos servicios ya están corriendo en Docker**:
+- **Sitio Web:** [http://localhost:5173](http://localhost:5173)
+  -Formulario público de solicitud: `http://localhost:5173/solicitar`
+  -Ingreso del personal (credenciales de Flowable): `http://localhost:5173/personal/ingresar`
+  -Portal de empresas: `http://localhost:5173/empresa/ingresar` (se habilita automáticamente la cuenta de la empresa con clave `1234` al aceptar una propuesta, o `empresa-demo` / `1234` si `CURSOS_DATOS_DEMO=true`).
+- **Servicio REST (Backend):** [http://localhost:8081/api/v1/estado](http://localhost:8081/api/v1/estado)
+
+*(Opcional — Ejecución fuera de Docker para desarrollo):*
+- Backend con Maven: `docker compose stop backend && cd backend && mvn spring-boot:run`
+- Web con Node.js: `cd web && npm ci && npm run dev`
+
+#### 4.2 App de preparación de materiales por API Java (`app-materiales/`, §4.2.1)
+Se conecta **directamente al PostgreSQL del motor (`localhost:5433/flowable`) usando la API Java de Flowable** (`ProcessEngine`, `IdentityService`, `TaskService`). Lee automáticamente el `.env` de la raíz.
+
+Para compilarla y abrir la ventana gráfica:
 
 ```bash
-cd backend
-mvn spring-boot:run
+mvn -f app-materiales/pom.xml compile
+./app-materiales/ejecutar.sh
 ```
 
-Tiene que aparecer `Tomcat started on port 8081`. Comprobar:
+- Ingresar con `Jefe-Administrativo` o `empleado-administrativo` (clave `1234`).
+- Permite listar tareas `preparar_materiales` en las bandejas **Asignadas** y **Disponibles para reclamar**, ver el detalle del curso, reclamar tareas libres (`claim`) y completarlas (`complete`).
+
+#### 4.3 Simulador de comunicaciones de la empresa por API REST (`simulador-rest/`, §4.2.2)
+Consume los endpoints REST `/api/v1/simulacion/solicitudes` del backend. Lee automáticamente el `.env` de la raíz.
+
+Para compilarlo y abrir la ventana gráfica:
 
 ```bash
-curl -i http://localhost:8081/api/v1/estado
+mvn -f simulador-rest/pom.xml compile
+./simulador-rest/ejecutar.sh
 ```
 
-Más detalle en [docs/BACKEND.md](docs/BACKEND.md).
+- Muestra todas las solicitudes y habilita **únicamente** los botones de las comunicaciones válidas según el estado actual de la instancia en Flowable:
+  1. **Ver propuesta recibida** / **Abrir PDF de propuesta**
+  2. **Aceptar propuesta** (seleccionando o ingresando `fechaCurso` ISO-8601 y habilitando la cuenta de la empresa)
+  3. **Solicitar modificaciones** (enviando `observacionesEmpresa`)
+  4. **Rechazar propuesta**
+  5. **Enviar nómina** (lista de participantes durante la preparación)
+  6. **Cancelar curso** (interrumpe la preparación y dispara las compensaciones)
 
-### 7. Postman
+---
 
-Importar la colección y el entorno de [docs/postman/etapa 9/](docs/postman/etapa%209/)
-y seleccionar el entorno **Cursos - Local**. Ver su README.
+### Paso 5: Ejecutar el análisis de ejecuciones (§4.3) y la minería de procesos (§4.4)
 
-## Accesos
+#### 5.1 Consultas históricas sobre Flowable (§4.3)
+Implementadas con `HistoryService` en [`AnalisisHistoricoService.java`](app-materiales/src/main/java/ar/edu/cursos/materiales/AnalisisHistoricoService.java) dentro de `app-materiales`. Pueden ejecutarse de dos formas:
+1. **En la interfaz gráfica de `app-materiales`:** Pulsando el botón **«Análisis histórico (§4.3)»** en la barra superior para abrir la ventana con las 3 tablas (`4.3.1 Resultados de las solicitudes`, `4.3.2 Análisis de la preparación paralela` y `4.3.3 Distribución de tareas`).
+2. **Por consola:**
+   ```bash
+   ./app-materiales/ejecutar.sh --analisis
+   ```
 
-| Servicio | URL |
-|---|---|
-| Flowable UI (Modeler, Task, Admin) | http://localhost:8080/flowable-ui/ |
-| API REST de Flowable | http://localhost:8080/flowable-ui/process-api |
-| Backend | http://localhost:8081/api/v1/estado |
-| pgAdmin | http://localhost:5050 |
-| Web (Docker) | http://localhost:5173 |
+#### 5.2 Minería de procesos con PM4Py (§4.4)
+Ubicada en [`mineria-procesos/`](mineria-procesos/). Para exportar el historial de la etapa de negociación y ejecutar el análisis:
 
-pgAdmin: al registrar el servidor usar host `postgres` y puerto `5432` (pgAdmin corre
-en Docker). Desde un cliente instalado en la PC: `localhost`, puerto `5433`.
+```bash
+python3 mineria-procesos/exportar_history.py
+python3 mineria-procesos/analizar.py
+```
 
-## Problemas frecuentes
+*(Para regenerar con el lote histórico de 25 instancias de referencia sin requerir Flowable activo: `python3 mineria-procesos/exportar_history.py --ejemplo && python3 mineria-procesos/analizar.py`).*
+El detalle de los 3 recorridos más frecuentes, los gráficos generados y la conclusión comparativa se encuentran en **[mineria-procesos/README.md](mineria-procesos/README.md)**.
 
-| Síntoma | Causa y solución |
-|---|---|
-| `password authentication failed for user "${POSTGRES_USER}"` | El backend no encontró el `.env`: tiene que estar en la raíz y `mvn` se corre desde `backend/`. |
-| `database "institucion" does not exist` | No corrió `institucion-db`: ver el paso 3. |
-| Postman: `ECONNREFUSED 127.0.0.1:8081` | El backend no está corriendo o no arrancó (consola de Maven o `docker compose logs backend`). |
-| `Port 8081 was already in use` al correr Maven | Está corriendo el contenedor del backend: `docker compose stop backend`. |
-| Postman: `ECONNREFUSED 127.0.0.1:8080` | Flowable no está levantado o sigue arrancando. |
-| 503 `MOTOR_NO_DISPONIBLE` | Mirar la línea `Flowable respondió ...` en el log del backend: app sin publicar (`No process definition found`), DMN viejo (`otrasInstanciasActivas`) o clave de Flowable incorrecta (401). |
-| Variables en rojo en Postman | No está seleccionado el entorno **Cursos - Local**. |
+---
 
-Para detener los contenedores conservando los datos: `docker compose stop`.
+## 4. Resumen de accesos y puertos locales
 
-## Documentación
-
-- [docs/BACKEND.md (avance y etapas)](docs/BACKEND.md#avance-y-etapas): avance y etapas pendientes.
-- [docs/BACKEND.md (contrato de endpoints)](docs/BACKEND.md#contrato-de-endpoints-de-la-web): contrato de los endpoints que usa la web.
-- [docs/MODELO_Y_INTEGRACION.md (acuerdo de integración)](docs/MODELO_Y_INTEGRACION.md#acuerdo-de-integración): identificadores, variables, estados y permisos.
-- [docs/README.md (instalación con Docker)](docs/README.md#instalación-del-equipo-con-docker): instalación con Docker paso a paso.
-- [docs/MODELO_Y_INTEGRACION.md](docs/MODELO_Y_INTEGRACION.md): acuerdo, modelo BPMN y app de materiales. Los 3 documentos de `docs/` son: `README.md` (guía del equipo), `BACKEND.md` y `MODELO_Y_INTEGRACION.md`.
+| Servicio | URL / Puerto | Credenciales |
+|---|---|---|
+| **Sitio Web** | [http://localhost:5173](http://localhost:5173) | Personal: usuarios de Flowable (`1234`) · Empresa: usuario habilitado al aceptar propuesta (`1234`) |
+| **Backend REST** | [http://localhost:8081/api/v1/estado](http://localhost:8081/api/v1/estado) | Sesión por cookie HttpOnly + header `X-XSRF-TOKEN` |
+| **Flowable UI (Modeler, Task, Admin, IDM)** | [http://localhost:8080/flowable-ui/](http://localhost:8080/flowable-ui/) | `admin` / `test` (o cualquiera de los 5 usuarios del personal con clave `1234`) |
+| **API REST nativa de Flowable** | `http://localhost:8080/flowable-ui/process-api` | Basic Auth (`FLOWABLE_REST_USUARIO` / `FLOWABLE_REST_CLAVE`) |
+| **PostgreSQL (bases `flowable` e `institucion`)** | `localhost:5433` (interno en Docker: `postgres:5432`) | Definidas en `.env` (`POSTGRES_USER` / `POSTGRES_PASSWORD`) |
+| **pgAdmin 4** | [http://localhost:5050](http://localhost:5050) | `admin@example.com` / `lauti` |

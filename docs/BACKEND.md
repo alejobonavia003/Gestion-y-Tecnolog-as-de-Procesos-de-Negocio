@@ -159,7 +159,8 @@ Este documento sirve para seguir el avance: qué quedó implementado y probado, 
 | Extensiones del motor (listeners en Java) | ✅ Implementadas en `motor-flowable/extensiones/` (`AsignarListaListener`, `FinProcesoListener`, 4 tests en verde), instaladas en `flowable-persistente:/app/WEB-INF/lib/` y asociadas al BPMN |
 | App de Materiales (`app-materiales/`, API Java) | 🚀 Probada contra el proceso publicado (reclamo y completado de `preparar_materiales` por API Java) |
 | Simulador REST (`simulador-rest/`) | 🚀 Probado contra el backend y el motor (recepción y apertura de PDF de propuesta, modificaciones, aceptación con habilitación de cuenta de empresa y envío de nómina; botonera en 2 filas con `Cancelar curso` visible) |
-| Consultas históricas (4.3) y Minería PM4Py (4.4) | ⏳ Pendiente |
+| Consultas históricas (4.3) | ✅ Implementadas en `app-materiales` (`AnalisisHistoricoService`, botón en GUI y `--analisis` por consola, con tests unitarios en verde) |
+| Minería de procesos PM4Py (4.4) | ✅ Implementada en `mineria-procesos/` (`exportar_history.py`, `analizar.py`, `negociacion_history.csv`, grafo `comportamiento_negociacion.png`, `captura_resultados.png` y conclusión en `mineria-procesos/README.md`) |
 
 #### Endpoints
 
@@ -512,54 +513,48 @@ Si no hay una ejecución suscrita, la acción no está habilitada en ese momento
 - `ar.edu.cursos.motor.FinProcesoListener`: Execution Listener en el evento `end` de `process`; escribe el estado final en `institucion` por JDBC según `resultadoProceso`.
 - JAR compilado en `motor-flowable/extensiones/flowable-extensiones.jar` (ver [motor-flowable/README.md](../motor-flowable/README.md)).
 
-**Correcciones del modelo que quedan** (de `INICIO_Y_VIABILIDAD.md`, sección 7):
-- [x] `desarrollar_curso` con `assignee="${docenteId}"` y timer previo *Fecha programada* leyendo `${fechaCurso}` (publicado en el Flowable de Luka; falta exportar el `.zip`).
-- [ ] Volver a exportar `Organizacion de cursos.zip` con el DMN `cantCursos` y los cambios de la etapa 9.
-- [x] `elaborar_informe`: assignee `Jefe-Docente` + formulario por referencia con `informeResumen` (falta exportar el `.zip`).
-- [ ] `enviar_informe`: decidir si queda script o pasa a tarea de usuario de `Jefe-Administrativo`.
-- [ ] `confeccionar_lista`: una sola tarea, no multi-instancia.
-- [ ] Aula física y aula virtual invertidas: la física es la automática (web service simulado) y la virtual es la del administrativo.
-- [ ] Error por falta de aulas disponibles y generación de la excepción correspondiente (escenario 7).
-- [ ] "Habilitar acceso de la empresa": automática.
-- [ ] `archivar_expediente`: asignada al jefe administrativo.
-- [x] `messageRef` del inicio de la cancelación (`cancelacionEmpresa`).
-- [x] ~~Declarar `<error id="CANCELADO_EMPRESA">`~~: ya no hace falta, el modelo no usa eventos de error (la cancelación pone `cursoCancelado=true` y decide `gw_curso_cancelado`).
-- [ ] Recordatorios: condición del gateway y contador.
-- [ ] "Recibir nómina" como evento intermedio de mensaje.
-- [ ] Unificar la variable de resultado en `resultadoProceso`.
-- [ ] Reemplazar los scripts y las expresiones marcadores por la lógica real, donde corresponda.
+**Estado de configuración del modelo BPMN (`institucion-de-capacitacion.bpmn20.xml` y `Organizacion_de_cursos.bar`):**
+- [x] `desarrollar_curso` con `assignee="${docenteId}"` y timer previo *Fecha programada* leyendo `${fechaCurso}`.
+- [x] `elaborar_informe`: assignee `Jefe-Docente` + formulario por referencia con `informeResumen`.
+- [x] `confeccionar_lista`: una sola tarea con `AsignarListaListener` en `create`.
+- [x] `reservar_aula_fisica`: automática (web service simulado con manejo de `simularSinAulas`) y `reservar_aula_virtual` del administrativo.
+- [x] `habilitar_acceso_empresa`: automática.
+- [x] `archivar_expediente`: asignada a `Jefe-Administrativo`.
+- [x] `messageRef` del inicio de la cancelación (`cancelacion`) y 3 `<association>` de compensación verificadas con `corregir-asociaciones.py` y `desplegar.sh`.
+- [x] Recordatorios: condición del gateway (`recordatorios >= 2` / `< 2`) y contador reiniciado en cada envío de propuesta.
+- [x] Variable de resultado unificada en `resultadoProceso` y leída por `FinProcesoListener`.
 
 ---
 
-### 6. Pendientes de la web
-- [ ] Actualizar los IDs de las tareas (tabla de la sección 3) y los usuarios y grupos (`Jefe-Administrativo`, `Equipo-Administrativo`, etc.) en los mocks.
-- [ ] PR de `luka/web-base` → `main`, y después merge de `main` en `backend`.
-- [ ] Pasar del mock al backend real endpoint por endpoint, a medida que cada etapa queda 🚀.
-- [ ] Etapa 9 en la web: Definir docente con `contexto.docentes` (`usuarioId`, `nombre`, `esJefe`), Desarrollar curso con `POST .../finalizacion-dictado`, y Enviar informe con `contexto.informe` y el botón del PDF (`/cursos/{id}/informe/pdf`) cuando `pdfDisponible` es `true`.
+### 6. Estado de la web
+- [x] IDs de las tareas reales del BPMN en `web/src/tareas/catalogo.ts` y usuarios/grupos de Flowable.
+- [x] Conectada al backend real (`/api/v1`) con soporte para todas las etapas (1 a 11).
+- [x] Etapa 9 en la web: Definir docente con `contexto.docentes`, Desarrollar curso con `POST .../finalizacion-dictado`, y Archivar expediente con `contexto.informe` y descarga de `/cursos/{id}/informe/pdf`.
 - [x] CSRF (etapa 11): `CsrfFilter` en backend y envío de `X-XSRF-TOKEN` en `web/src/api/cliente.ts`.
 
 ---
 
-### 7. Pendientes de la consigna fuera del backend (V3)
+### 7. Entregables de la consigna fuera del backend (V3)
 
 #### 7.1 App de Materiales (`app-materiales/`, sección 4.2.1)
-- [ ] Aplicación de escritorio con interfaz gráfica en Java conectada **directamente a la base `flowable` de Postgres mediante la API Java de Flowable** (`TaskService`, `IdentityService`; sin pasar por el backend REST ni usar H2 en memoria).
-- [ ] Permitir identificarse a un administrativo, consultar tareas `preparar_materiales` asignadas o disponibles para su grupo, reclamar y completar la tarea.
+- [x] Aplicación de escritorio con interfaz gráfica en Java conectada **directamente a la base `flowable` de Postgres mediante la API Java de Flowable** (`TaskService`, `IdentityService`; sin pasar por el backend REST ni usar H2 en memoria).
+- [x] Permitir identificarse a un administrativo, consultar tareas `preparar_materiales` asignadas o disponibles para su grupo, reclamar y completar la tarea.
 
 #### 7.2 Consultas históricas sobre Flowable (sección 4.3)
-Pueden integrarse en `app-materiales/` o ejecutarse y mostrarse por consola:
-- [ ] **4.3.1 Resultados de las solicitudes:** tabla con cantidad y porcentaje sobre el total de instancias terminadas (`FINALIZADO`, `CANCELADO`, `RECHAZADO`, `NO_VIABLE`, `CERRADO_SIN_RESPUESTA`).
-- [ ] **4.3.2 Análisis de la preparación paralela:** duración promedio de las ramas de inscripciones, materiales y recursos (desde activación hasta finalización completa, excluyendo preparaciones canceladas).
-- [ ] **4.3.3 Distribución de tareas:** tabla con cantidad de tareas de usuario completadas por cada administrativo y docente (excluyendo pendientes, interrumpidas o canceladas).
+Integradas en `app-materiales/` (botón **«Análisis histórico (§4.3)»** en la GUI y flag `--analisis` por consola):
+- [x] **4.3.1 Resultados de las solicitudes:** tabla con cantidad y porcentaje sobre el total de instancias terminadas (`FINALIZADO`, `CANCELADO`, `RECHAZADO`, `NO_VIABLE`, `CERRADO_SIN_RESPUESTA`).
+- [x] **4.3.2 Análisis de la preparación paralela:** duración promedio de las ramas de inscripciones, materiales y recursos (desde activación hasta finalización completa, excluyendo preparaciones canceladas).
+- [x] **4.3.3 Distribución de tareas:** tabla con cantidad de tareas de usuario completadas por cada administrativo y docente (excluyendo pendientes, interrumpidas o canceladas).
 
 #### 7.3 Introducción a la minería de procesos con PM4Py (sección 4.4)
-- [ ] Exportar CSV de actividades históricas de la etapa de negociación adaptando `exportar_history.py` al proceso implementado.
-- [ ] Ejecutar análisis con `analizar.py` / PM4Py para obtener representación gráfica e identificar los **3 recorridos más frecuentes** (cantidad y %).
-- [ ] Redactar conclusión breve comparando los resultados con el modelo BPMN (coincidencias, diferencias y limitaciones) y guardar CSV, código/instrucciones y captura.
+Implementada en [`mineria-procesos/`](../mineria-procesos/README.md):
+- [x] Exportar CSV de actividades históricas de la etapa de negociación adaptando `exportar_history.py` al proceso implementado (`negociacion_history.csv`).
+- [x] Ejecutar análisis con `analizar.py` / PM4Py para obtener representación gráfica (`comportamiento_negociacion.png` / `.svg`) e identificar los **3 recorridos más frecuentes** (cantidad y %).
+- [x] Redactar conclusión breve comparando los resultados con el modelo BPMN (coincidencias, diferencias y limitaciones) y guardar CSV, código/instrucciones y captura (`captura_resultados.png` y `mineria-procesos/README.md`).
 
 #### 7.4 Entregables escritos y de demostración (sección 5)
-- [ ] Informe breve explicando variables del proceso, *listeners* y decisiones de implementación.
-- [ ] Instrucciones para configurar usuarios/grupos y ejecutar el motor y las 3 aplicaciones externas (`web`/`backend`, `app-materiales`, `simulador-rest`).
+- [x] Informe breve explicando variables del proceso, *listeners*, decisiones de implementación y guía de los 11 escenarios: **[docs/INFORME_ENTREGA.md](INFORME_ENTREGA.md)**.
+- [x] Instrucciones para configurar usuarios/grupos y ejecutar el motor y las 3 aplicaciones externas (`web`/`backend`, `app-materiales`, `simulador-rest`): **[README.md](../README.md)**.
 
 ---
 

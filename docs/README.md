@@ -4,13 +4,16 @@ Responsables: **Alejo, Lauty y Luka**; cada uno mantiene los acuerdos de su comp
 
 ## Índice
 
-La documentación está unificada en tres documentos:
+La documentación del proyecto se organiza en los siguientes documentos:
 
 | Documento | Contenido |
 |---|---|
-| [README.md](README.md) (este) | Instalación con Docker, almacenamiento de PDFs, notas y tips de las clases grabadas. |
-| [BACKEND.md](BACKEND.md) | Guía del backend, avance por etapas, contrato de endpoints de la web, etapa 6, integración del primer recorrido y **correcciones pendientes del BPMN**. **Empezar por «Avance y etapas».** |
-| [MODELO_Y_INTEGRACION.md](MODELO_Y_INTEGRACION.md) | Acuerdo de integración (ids, variables, estados, permisos), referencias del modelo BPMN y guía de la app de materiales. |
+| **[../README.md](../README.md)** | **Guía principal de instalación y ejecución:** configuración de `.env`, Docker, usuarios y grupos de Flowable, despliegue de listeners y del `.bar`, ejecución de las 3 aplicaciones externas (`web`, `app-materiales`, `simulador-rest`), consultas históricas (§4.3) y minería de procesos (§4.4). |
+| **[INFORME_ENTREGA.md](INFORME_ENTREGA.md)** | **Informe breve de entrega (§5):** diccionario de variables del proceso, regla de negocio DMN, listeners (`AsignarListaListener` y `FinProcesoListener`), decisiones de implementación y guía para demostrar los **11 escenarios de defensa**. |
+| **[../mineria-procesos/README.md](../mineria-procesos/README.md)** | **Minería de procesos con PM4Py (§4.4):** scripts `exportar_history.py` y `analizar.py`, CSV de eventos, representación gráfica del comportamiento observado (DFG), los 3 recorridos más frecuentes y conclusión comparativa con el BPMN. |
+| **[BACKEND.md](BACKEND.md)** | Guía del backend, resumen de avance, contrato de endpoints de la web (`/api/v1`) y colecciones de Postman. |
+| **[MODELO_Y_INTEGRACION.md](MODELO_Y_INTEGRACION.md)** | Acuerdo de integración inicial entre las partes, referencias del modelo BPMN y guía detallada de la app de materiales. |
+| **[README.md](README.md) (este archivo)** | Índice documental, persistencia de PDFs en Docker y notas de cátedra. |
 
 ### Colecciones de Postman
 

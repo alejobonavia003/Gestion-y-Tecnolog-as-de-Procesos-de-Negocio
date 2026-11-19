@@ -7,14 +7,20 @@ import java.awt.GraphicsEnvironment;
 public final class Main {
     public static void main(String[] args) {
         try {
-            Path archivo=null; boolean diagnostico=false;
+            Path archivo=null; boolean diagnostico=false; boolean analisis=false;
             for(int i=0;i<args.length;i++) {
                 if("--config".equals(args[i]) && i+1<args.length) archivo=Path.of(args[++i]);
                 else if("--diagnostico".equals(args[i])) diagnostico=true;
-                else throw new IllegalArgumentException("Uso: java -jar app-materiales.jar [--config archivo] [--diagnostico]");
+                else if("--analisis".equals(args[i])) analisis=true;
+                else throw new IllegalArgumentException("Uso: java -jar app-materiales.jar [--config archivo] [--diagnostico] [--analisis]");
             }
             Configuracion config=Configuracion.cargar(archivo);
-            if(diagnostico) {
+            if(analisis) {
+                try(Motor m=new Motor(config)) {
+                    var reporte=new AnalisisHistoricoService(m.engine(),config).generarReporte();
+                    System.out.println(reporte.formatearConsola());
+                }
+            } else if(diagnostico) {
                 try(Motor m=new Motor(config)) {
                     var d=m.engine().getRepositoryService().createProcessDefinitionQuery().processDefinitionKey(config.proceso()).latestVersion().singleResult();
                     if(d==null) throw new ErrorAplicacion("No está publicado el proceso configurado.");
@@ -24,7 +30,7 @@ public final class Main {
                     System.out.println("Diagnóstico de lectura finalizado; no se iniciaron ni completaron instancias.");
                 }
             } else {
-                if(GraphicsEnvironment.isHeadless()) throw new ErrorAplicacion("No hay entorno gráfico. Usá --diagnostico para comprobar conexión por consola.");
+                if(GraphicsEnvironment.isHeadless()) throw new ErrorAplicacion("No hay entorno gráfico. Usá --analisis o --diagnostico por consola.");
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
                 SwingUtilities.invokeLater(()->new Ventana(config).setVisible(true));
             }
