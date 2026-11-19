@@ -282,12 +282,3 @@ Para evitar que los grupos se traben con configuraciones externas irrelevantes p
 * **Variables desde el inicio:** Al iniciar una instancia desde el formulario web mediante la API REST (`/runtime/process-instances`), enviar en el cuerpo JSON el arreglo `variables` con los datos iniciales de la solicitud para que viajen durante todo el ciclo de vida del proceso.
 * **Historial y trazas:** Para las consultas históricas y la extracción de logs hacia PM4Py, tener en cuenta que la API de historial (`HistoryService` / `/history/historic-activity-instances`) devuelve todos los elementos ejecutados (incluyendo compuertas y flujos de secuencia); se debe filtrar por tipo de actividad (`activityType == "userTask"`, `"serviceTask"`, etc.) y asegurarse de que **todos los elementos del BPMN tengan `ID` y `Name` descriptivos**.
 
----
-
-### 5. Uso de Inteligencia Artificial y Criterios de Evaluación (Defensa)
-* **Uso permitido pero supervisado:** El docente alienta el uso de IA (Cursor, ChatGPT, Claude) para acelerar el desarrollo de SQL, frontend y llamadas REST, pero advirtió sobre dos fallos frecuentes:
-  1. **Eliminación silenciosa de código:** Al pedir modificaciones sobre archivos grandes, los asistentes suelen borrar funciones previas que ya andaban.
-  2. **Complacencia (*Sycophancy*):** La IA suele dar la razón ante premisas incorrectas del usuario sobre cómo funciona Flowable.
-* **Criterio de aprobación y nota:**
-  * No es excluyente tener el 100% de las funcionalidades secundarias terminadas para aprobar; la nota es proporcional al alcance funcional logrado y a la correcta ejecución de los escenarios.
-  * **Defensa oral:** Dado que se asume el uso de IA para generar código, la evaluación se centrará en **preguntas técnicas sobre el código y el modelo BPMN** durante la demostración para comprobar que el grupo comprende cómo funciona la solución entregada.
