@@ -79,30 +79,35 @@ bash motor-flowable/idm/crear-usuarios.sh
 El script crea los usuarios y grupos faltantes; por defecto los usuarios nuevos
 tienen clave `1234`. No cambia la clave de usuarios que ya existían.
 
-En Flowable Modeler importar el BPMN actualizado de
-`motor-flowable/modelos/organizacion-cursos.bpmn20.xml` y la tabla
-`motor-flowable/modelos/reglaViabilidad.dmn`, incorporarlos a la aplicación y
-publicarla. Ver `motor-flowable/modelos/README.md`: los ZIP/BAR anteriores no
-incluyen todas las correcciones de etapa 6.
+### Extensiones (listeners) y despliegue del modelo Flowable
 
-La tabla `reglaViabilidad` debe leer `cantCursos` (number) y devolver
-`resultadoViabilidad` (boolean): `< 5` → `true`, `>= 5` → `false`.
-Si el motor menciona `otrasInstanciasActivas`, todavía ejecuta una regla antigua.
-Guardar en Modeler no basta: hay que publicar. Las instancias existentes conservan
+Con Flowable levantado, copiar el JAR de listeners al contenedor y reiniciarlo (ver [motor-flowable/README.md](../motor-flowable/README.md)):
+
+```bash
+docker cp motor-flowable/extensiones/flowable-extensiones.jar flowable-persistente:/app/WEB-INF/lib/flowable-extensiones.jar
+docker restart flowable-persistente
+```
+
+Luego desplegar el archivo `.bar` actualizado con `desplegar.sh` (ver [motor-flowable/modelos/README.md](../motor-flowable/modelos/README.md); **no usar *Publish* en el Modeler**, porque rompe las asociaciones de compensación):
+
+```bash
+bash motor-flowable/modelos/desplegar.sh
+```
+
+La tabla `reglaViabilidad` incluida en el `.bar` lee `cantCursos` (number) y devuelve
+`resultadoViabilidad` (boolean): `< 5` → `true`, `>= 5` → `false`. Las instancias existentes conservan
 la definición de proceso con la que se iniciaron.
 
 ### Comprobación y archivos para compartir
 
 ```bash
 curl -i http://localhost:8081/api/v1/estado
-curl -i http://localhost:8081/api/v1/diagnostico/flowable
 ```
 
 La web está en http://localhost:5173 y Flowable en http://localhost:8080/flowable-ui/.
-Importar en Postman `docs/postman/Etapa_6.postman_collection.json` y
-`docs/postman/Local.postman_environment.json`; ajustar usuarios y claves y seguir
-el orden de `docs/postman/README.md`. El diagnóstico comprueba acceso al motor,
-pero la creación de solicitud comprueba además la ejecución de la regla DMN.
+*(Nota: `GET /api/v1/diagnostico/flowable` fue eliminado en la etapa 11 como parte de la limpieza de entrega).*
+Importar en Postman `docs/postman/etapa 9/` o `docs/postman/etapa 10/`, ajustar usuarios y claves y seguir
+el orden de sus respectivos README.
 
 Compartir la rama y `env.example`, ambos disponibles en Git. No hace falta enviar
 el `.env` personal: cada integrante lo crea con sus credenciales. Si se comparten

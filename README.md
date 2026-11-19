@@ -4,21 +4,18 @@ Proyecto académico (GyTPN, UNRC): proceso de **organización de cursos de capac
 para empresas, ejecutado en **Flowable 6.8** con un backend propio, una web y aplicaciones
 auxiliares.
 
-## Estado actual (17/11/2026)
+## Estado actual (18/11/2026)
 
 | Parte | Estado |
 |---|---|
-| Infraestructura Docker (Flowable UI, PostgreSQL, pgAdmin, web) | ✅ Funcionando |
+| Infraestructura Docker (Flowable UI, PostgreSQL, pgAdmin, backend, web) | ✅ Funcionando |
 | Usuarios y grupos de Flowable (`motor-flowable/idm/crear-usuarios.sh`) | ✅ |
-| Modelo del proceso + regla DMN de viabilidad | ✅ Se publica (con tareas automáticas marcadoras) |
-| Backend etapas 1 a 5 (base, datos, cliente Flowable, sesiones, solicitudes) | ✅ Implementadas y probadas |
-| Backend etapas 6 a 8 (tareas, propuestas y PDF, portal de empresa) | 🔧 Implementadas; falta validarlas desde la web |
-| Backend etapa 9 (docente, dictado, informe) | ✅ Completa: #17, #18 y #19 probados con Postman contra Flowable real |
-| Backend etapa 10 (simulación de la empresa) | 🔧 Implementada; falta validarla con Flowable real |
-| Backend etapa 11 (integración final) | ⏳ Pendiente; antes hay que cerrar el modelo BPMN (ver [docs/BACKEND.md](docs/BACKEND.md#correcciones-pendientes-del-bpmn)) |
-| Web (React + Vite) | ✅ Completa contra mocks; falta conectarla al backend real |
-| App de materiales y simulador REST | 🔧 Código en el repo; falta validarlos de punta a punta |
-| Listeners del motor | ⏳ Pendientes |
+| Modelo del proceso + regla DMN de viabilidad | ✅ Corregido (3 `<association>` de compensación) y desplegado con `desplegar.sh` |
+| Backend etapas 1 a 10 | ✅ Implementadas (sesiones, solicitudes, tareas, propuestas/PDF, portal empresa, dictado/informe y simulación) |
+| Backend etapa 11 (integración final) | ✅ Implementada (sincronización de estados en `CursoService`/`TareaService`, `CsrfFilter`, limpieza de `DiagnosticoController` y despliegue Docker). Pendiente: correr validación E2E de los 11 escenarios |
+| Web (React + Vite) | ✅ Conectada al backend real (incluye envío de `X-XSRF-TOKEN` por CSRF) |
+| App de materiales y simulador REST | ✅ Implementados y probados contra motor/backend |
+| Listeners del motor (`motor-flowable/extensiones/`) | ✅ `AsignarListaListener` y `FinProcesoListener` compilados en `flowable-extensiones.jar`, cargados en `flowable-persistente` y asociados al BPMN |
 
 El detalle de qué está hecho y qué falta está en
 [docs/BACKEND.md (avance y etapas)](docs/BACKEND.md#avance-y-etapas).
@@ -118,11 +115,19 @@ Crea `Equipo-Administrativo`, `Equipo-Docente` y los usuarios `Jefe-Administrati
 Correrlo con `bash` (en fish o si el archivo no tiene permiso de ejecución,
 `./crear-usuarios.sh` falla).
 
-### 5. Importar y publicar el proceso
+### 5. Cargar el JAR de listeners y desplegar el proceso
 
-Ver [motor-flowable/modelos/README.md](motor-flowable/modelos/README.md). Resumen:
-Flowable UI → Modeler → Apps → Import App → `Organizacion de cursos.zip` →
-**verificar que la tabla `reglaViabilidad` use la variable `cantCursos`** → Publish.
+Ver [motor-flowable/README.md](motor-flowable/README.md) y [motor-flowable/modelos/README.md](motor-flowable/modelos/README.md). Resumen:
+
+1. Copiar el JAR de listeners dentro del contenedor de Flowable y reiniciarlo:
+   ```bash
+   docker cp motor-flowable/extensiones/flowable-extensiones.jar flowable-persistente:/app/WEB-INF/lib/flowable-extensiones.jar
+   docker restart flowable-persistente
+   ```
+2. Desplegar el `.bar` por REST (**no usar *Publish* en el Modeler**, porque rompe las asociaciones de compensación):
+   ```bash
+   bash motor-flowable/modelos/desplegar.sh
+   ```
 
 ### 6. Backend
 
@@ -138,7 +143,6 @@ Tiene que aparecer `Tomcat started on port 8081`. Comprobar:
 
 ```bash
 curl -i http://localhost:8081/api/v1/estado
-curl -i http://localhost:8081/api/v1/diagnostico/flowable
 ```
 
 Más detalle en [docs/BACKEND.md](docs/BACKEND.md).

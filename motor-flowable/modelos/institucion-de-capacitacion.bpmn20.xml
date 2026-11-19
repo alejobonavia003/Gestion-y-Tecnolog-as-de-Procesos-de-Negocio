@@ -9,6 +9,9 @@
   <message id="aceptacion" name="aceptacion"></message>
   <message id="cancelacion" name="cancelacion"></message>
   <process id="process" name="institucion-de-capacitacion " isExecutable="true">
+    <extensionElements>
+      <flowable:executionListener event="end" class="ar.edu.cursos.motor.FinProcesoListener"></flowable:executionListener>
+    </extensionElements>
     <laneSet id="laneSet_process">
       <lane id="sid-AB239F35-A034-48F9-81EC-BCAF34433557" name="Area-administracion">
         <flowNodeRef>recibir_solicitud</flowNodeRef>
@@ -185,6 +188,7 @@ println('[Enviar recordatorio] curso ' + execution.getVariable('cursoId') + ' - 
       <inclusiveGateway id="gw_recursos_listos"></inclusiveGateway>
       <userTask id="confeccionar_lista" name="confeccionar lista" flowable:candidateGroups="Equipo-Administrativo" flowable:formFieldValidation="true">
         <extensionElements>
+          <flowable:taskListener event="create" class="ar.edu.cursos.motor.AsignarListaListener"></flowable:taskListener>
           <modeler:group-info-name-Equipo-Administrativo xmlns:modeler="http://flowable.org/modeler"><![CDATA[Equipo-Administrativo]]></modeler:group-info-name-Equipo-Administrativo>
           <modeler:activiti-idm-candidate-group xmlns:modeler="http://flowable.org/modeler"><![CDATA[true]]></modeler:activiti-idm-candidate-group>
           <modeler:initiator-can-complete xmlns:modeler="http://flowable.org/modeler"><![CDATA[false]]></modeler:initiator-can-complete>
@@ -522,7 +526,7 @@ println('[Sin aulas] curso ' + execution.getVariable('cursoId') + ' cancelado po
         <omgdc:Bounds height="40.0" width="40.0" x="1856.7395235394406" y="800.7669957513755"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="confeccionar_lista" id="BPMNShape_confeccionar_lista">
-        <omgdc:Bounds height="80.0" width="100.0" x="1577.3034520076299" y="451.6023642624017"></omgdc:Bounds>
+        <omgdc:Bounds height="80.0" width="100.0" x="1574.9999765306716" y="451.6023575330022"></omgdc:Bounds>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape bpmnElement="fin_parallelo_preparar_curso" id="BPMNShape_fin_parallelo_preparar_curso">
         <omgdc:Bounds height="40.0" width="40.0" x="1950.7021341740437" y="587.7281030944022"></omgdc:Bounds>
@@ -671,7 +675,7 @@ println('[Sin aulas] curso ' + execution.getVariable('cursoId') + ' cancelado po
         <omgdi:waypoint x="876.7044319126773" y="326.78244581956903"></omgdi:waypoint>
         <omgdi:waypoint x="941.8738441661899" y="326.78244581956903"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge bpmnElement="flow_cancelado_si" id="BPMNEdge_flow_cancelado_si" flowable:sourceDockerX="20.0" flowable:sourceDockerY="20.0" flowable:targetDockerX="50.00000000000006" flowable:targetDockerY="40.0">
+      <bpmndi:BPMNEdge bpmnElement="flow_cancelado_si" id="BPMNEdge_flow_cancelado_si" flowable:sourceDockerX="20.000000000000057" flowable:sourceDockerY="20.0" flowable:targetDockerX="50.00000000000006" flowable:targetDockerY="40.0">
         <omgdi:waypoint x="1669.65" y="1200.0"></omgdi:waypoint>
         <omgdi:waypoint x="1213.0" y="1200.0"></omgdi:waypoint>
         <omgdi:waypoint x="1213.0169476489173" y="1215.0"></omgdi:waypoint>
@@ -699,9 +703,9 @@ println('[Sin aulas] curso ' + execution.getVariable('cursoId') + ' cancelado po
         <omgdi:waypoint x="851.9358082477513" y="315.43928106072576"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="sid-2EBCF241-DBF7-49A7-B474-64DD6A0D1968" id="BPMNEdge_sid-2EBCF241-DBF7-49A7-B474-64DD6A0D1968" flowable:sourceDockerX="50.0" flowable:sourceDockerY="40.0" flowable:targetDockerX="20.0" flowable:targetDockerY="20.0">
-        <omgdi:waypoint x="1677.2534520076003" y="491.51473401619756"></omgdi:waypoint>
-        <omgdi:waypoint x="1971.0" y="491.0"></omgdi:waypoint>
-        <omgdi:waypoint x="1970.7529128455014" y="587.7790090307008"></omgdi:waypoint>
+        <omgdi:waypoint x="1674.9499765305914" y="491.6023575330022"></omgdi:waypoint>
+        <omgdi:waypoint x="1971.0" y="491.6023575330022"></omgdi:waypoint>
+        <omgdi:waypoint x="1970.7531755663954" y="587.7792724100431"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="sid-B9F705AE-DEAB-487A-8F6E-FEA95A7B8582" id="BPMNEdge_sid-B9F705AE-DEAB-487A-8F6E-FEA95A7B8582" flowable:sourceDockerX="15.25" flowable:sourceDockerY="15.0" flowable:targetDockerX="50.0" flowable:targetDockerY="40.0">
         <omgdi:waypoint x="228.02603278491648" y="127.90059106560045"></omgdi:waypoint>
@@ -736,17 +740,17 @@ println('[Sin aulas] curso ' + execution.getVariable('cursoId') + ' cancelado po
         <omgdi:waypoint x="458.0173679877373" y="127.90059106560045"></omgdi:waypoint>
         <omgdi:waypoint x="503.0760343647586" y="127.90059106560045"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge bpmnElement="sid-C8AD3EBE-E6EC-4164-AE57-9D0444D7DE89" id="BPMNEdge_sid-C8AD3EBE-E6EC-4164-AE57-9D0444D7DE89" flowable:sourceDockerX="537.3896396534385" flowable:sourceDockerY="376.3439371900305" flowable:targetDockerX="20.0" flowable:targetDockerY="20.0">
+      <bpmndi:BPMNEdge bpmnElement="sid-C8AD3EBE-E6EC-4164-AE57-9D0444D7DE89" id="BPMNEdge_sid-C8AD3EBE-E6EC-4164-AE57-9D0444D7DE89" flowable:sourceDockerX="537.3896396534385" flowable:sourceDockerY="376.3439371900305" flowable:targetDockerX="20.000000000000057" flowable:targetDockerY="20.0">
         <omgdi:waypoint x="1689.6502655425681" y="1164.1605237371239"></omgdi:waypoint>
         <omgdi:waypoint x="1689.6501480193479" y="1180.0001483903231"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge bpmnElement="flow_hay_aula_no" id="BPMNEdge_flow_hay_aula_no" flowable:sourceDockerX="20.0" flowable:sourceDockerY="20.0" flowable:targetDockerX="15.0" flowable:targetDockerY="15.0">
+      <bpmndi:BPMNEdge bpmnElement="flow_hay_aula_no" id="BPMNEdge_flow_hay_aula_no" flowable:sourceDockerX="20.0" flowable:sourceDockerY="20.0" flowable:targetDockerX="15.0" flowable:targetDockerY="15.000000000000028">
         <omgdi:waypoint x="1720.0" y="839.9318965517241"></omgdi:waypoint>
         <omgdi:waypoint x="1720.0" y="875.0"></omgdi:waypoint>
         <omgdi:waypoint x="2015.0" y="875.0"></omgdi:waypoint>
         <omgdi:waypoint x="2015.0" y="900.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge bpmnElement="sid-33ACA4F8-E8B4-4F7E-8CF0-FA5357A8CDF2" id="BPMNEdge_sid-33ACA4F8-E8B4-4F7E-8CF0-FA5357A8CDF2" flowable:sourceDockerX="50.0" flowable:sourceDockerY="40.0" flowable:targetDockerX="50.00000000000006" flowable:targetDockerY="40.0">
+      <bpmndi:BPMNEdge bpmnElement="sid-33ACA4F8-E8B4-4F7E-8CF0-FA5357A8CDF2" id="BPMNEdge_sid-33ACA4F8-E8B4-4F7E-8CF0-FA5357A8CDF2" flowable:sourceDockerX="50.00000000000006" flowable:sourceDockerY="40.0" flowable:targetDockerX="50.00000000000006" flowable:targetDockerY="40.0">
         <omgdi:waypoint x="1689.6504286359157" y="1339.95"></omgdi:waypoint>
         <omgdi:waypoint x="1689.6526286808337" y="1545.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
@@ -764,10 +768,10 @@ println('[Sin aulas] curso ' + execution.getVariable('cursoId') + ' cancelado po
         <omgdi:waypoint x="1724.9999999999998" y="745.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge bpmnElement="sid-8F805188-09AC-4F46-882F-10F12262F677" id="BPMNEdge_sid-8F805188-09AC-4F46-882F-10F12262F677" flowable:sourceDockerX="50.0" flowable:sourceDockerY="40.0" flowable:targetDockerX="50.0" flowable:targetDockerY="40.0">
-        <omgdi:waypoint x="1454.7570927871886" y="491.6023642624017"></omgdi:waypoint>
-        <omgdi:waypoint x="1577.303452007451" y="491.6023642624017"></omgdi:waypoint>
+        <omgdi:waypoint x="1454.757091462593" y="491.60236273433253"></omgdi:waypoint>
+        <omgdi:waypoint x="1574.9999765306716" y="491.6023590595434"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge bpmnElement="flow_cancelado_no" id="BPMNEdge_flow_cancelado_no" flowable:sourceDockerX="20.0" flowable:sourceDockerY="20.0" flowable:targetDockerX="50.0" flowable:targetDockerY="40.0">
+      <bpmndi:BPMNEdge bpmnElement="flow_cancelado_no" id="BPMNEdge_flow_cancelado_no" flowable:sourceDockerX="20.000000000000057" flowable:sourceDockerY="20.0" flowable:targetDockerX="50.00000000000006" flowable:targetDockerY="40.0">
         <omgdi:waypoint x="1689.65" y="1219.940034965035"></omgdi:waypoint>
         <omgdi:waypoint x="1689.65" y="1260.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
@@ -868,15 +872,15 @@ println('[Sin aulas] curso ' + execution.getVariable('cursoId') + ' cancelado po
         <omgdi:waypoint x="1264.9499926992935" y="1100.0"></omgdi:waypoint>
         <omgdi:waypoint x="1285.0" y="1100.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge bpmnElement="flow_sa_2" id="BPMNEdge_flow_sa_2" flowable:sourceDockerX="15.0" flowable:sourceDockerY="15.0" flowable:targetDockerX="15.0" flowable:targetDockerY="15.0">
-        <omgdi:waypoint x="2015.0" y="929.949994928665"></omgdi:waypoint>
+      <bpmndi:BPMNEdge bpmnElement="flow_sa_2" id="BPMNEdge_flow_sa_2" flowable:sourceDockerX="15.0" flowable:sourceDockerY="15.000000000000028" flowable:targetDockerX="15.0" flowable:targetDockerY="15.000000000000028">
+        <omgdi:waypoint x="2015.0" y="929.9499949286651"></omgdi:waypoint>
         <omgdi:waypoint x="2015.0" y="960.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge bpmnElement="flow_sa_3" id="BPMNEdge_flow_sa_3" flowable:sourceDockerX="15.0" flowable:sourceDockerY="15.0" flowable:targetDockerX="45.0" flowable:targetDockerY="27.5">
-        <omgdi:waypoint x="2015.0" y="989.949995992321"></omgdi:waypoint>
+      <bpmndi:BPMNEdge bpmnElement="flow_sa_3" id="BPMNEdge_flow_sa_3" flowable:sourceDockerX="15.0" flowable:sourceDockerY="15.000000000000028" flowable:targetDockerX="45.0" flowable:targetDockerY="27.50000000000003">
+        <omgdi:waypoint x="2015.0" y="989.9499959923211"></omgdi:waypoint>
         <omgdi:waypoint x="2015.0" y="1015.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge bpmnElement="flow_sa_4" id="BPMNEdge_flow_sa_4" flowable:sourceDockerX="45.0" flowable:sourceDockerY="27.5" flowable:targetDockerX="14.0" flowable:targetDockerY="14.0">
+      <bpmndi:BPMNEdge bpmnElement="flow_sa_4" id="BPMNEdge_flow_sa_4" flowable:sourceDockerX="45.0" flowable:sourceDockerY="27.50000000000003" flowable:targetDockerX="14.0" flowable:targetDockerY="14.000000000000028">
         <omgdi:waypoint x="2015.0" y="1069.95"></omgdi:waypoint>
         <omgdi:waypoint x="2015.0" y="1096.0"></omgdi:waypoint>
       </bpmndi:BPMNEdge>

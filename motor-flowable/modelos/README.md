@@ -16,12 +16,17 @@
 
 ## Desplegar el modelo en tu Flowable (una vez, y cada vez que cambie)
 
+Antes de desplegar, asegurarse de haber copiado `flowable-extensiones.jar` en
+`flowable-persistente:/app/WEB-INF/lib/` y reiniciado el contenedor (ver [../README.md](../README.md)),
+ya que el proceso utiliza `AsignarListaListener` y `FinProcesoListener`.
+
 Con Flowable levantado (`http://localhost:8080/flowable-ui`):
 
 ```bash
-cd motor-flowable/modelos
-./desplegar.sh
+bash motor-flowable/modelos/desplegar.sh
 ```
+
+*(En Windows con PowerShell + Python instalado fuera de WSL, para regenerar el `.bar` usar `py -3 motor-flowable/modelos/corregir-asociaciones.py motor-flowable/modelos/institucion-de-capacitacion.bpmn20.xml --bar` y luego `bash motor-flowable/modelos/desplegar.sh`).*
 
 El script toma `FLOWABLE_URL` (por defecto `http://localhost:8080/flowable-ui`),
 `FLOWABLE_REST_USUARIO` (`admin`) y `FLOWABLE_REST_CLAVE` (`test`). Hace el `POST` del
@@ -106,7 +111,8 @@ Si al crear una solicitud el backend responde 503, el log del backend dice el mo
 | Proceso | id `process` (= `FLOWABLE_PROCESO_CLAVE`) | 5 |
 | `reglaViabilidad` | entrada `cantCursos`, salida `resultadoViabilidad` | 5 |
 | `registrar_elaborar_propuesta`, `revisar_propuesta` | assignee `Jefe-Administrativo` | 6–7 |
-| `confeccionar_lista` | una sola tarea (no multi-instancia) | 6 |
+| `confeccionar_lista` | una sola tarea (no multi-instancia) + `TaskListener` `create` (`ar.edu.cursos.motor.AsignarListaListener`) | 6 / 11 |
+| Proceso `process` | `ExecutionListener` `end` (`ar.edu.cursos.motor.FinProcesoListener`) | 11 |
 | Gateway inclusivo después de `evaluar_recursos` | condiciones `${requiereAula}`, `${requierePlataforma}`, `${requiereEquipamiento}` en cada salida | 6 |
 | `archivar_expediente` | assignee `Jefe-Administrativo` | 6 |
 | `definir_docente` | assignee `Jefe-Docente` | 9 |

@@ -6,14 +6,15 @@ Un solo documento con: guía del backend, avance por etapas, contrato de endpoin
 
 ## Guía del backend
 
-El módulo `backend/` usa Java 21, Maven y Spring Boot 3.5.16. Habla con Flowable solo por su API REST y guarda los datos institucionales (empresas, cursos, propuestas) en la base `institucion` de PostgreSQL. Implementa las etapas 1 a 10 (la 11 es la integración final; ver [BACKEND_PROGRESO_Y_ETAPAS.md](#avance-y-etapas)).
+El módulo `backend/` usa Java 21, Maven y Spring Boot 3.5.16. Habla con Flowable solo por su API REST y guarda los datos institucionales (empresas, cursos, propuestas) en la base `institucion` de PostgreSQL. Implementa las etapas 1 a 11 (ver [avance y etapas](#avance-y-etapas)).
 
 ### Estructura
 
 - `src/main/java/ar/edu/cursos/CursosApplication.java`: inicio de Spring Boot.
 - `src/main/java/ar/edu/cursos/EstadoController.java`: `GET /api/v1/estado`.
 - `src/main/resources/application.properties`: puerto, base de datos, URLs de Flowable, grupos y jefes. Lee las credenciales de `../.env`.
-- `controllers/`, `services/`, `dto/`: API, lógica y contratos (sesiones, solicitudes, tareas, propuestas, cursos y dictado).
+- `config/DatosDemo.java` y `config/CsrfFilter.java`: datos demo opcionales y protección CSRF (`XSRF-TOKEN` / `X-XSRF-TOKEN`).
+- `controllers/`, `services/`, `dto/`: API, lógica y contratos (sesiones, solicitudes, tareas, propuestas, cursos, dictado, informe y simulación).
 - `services/TareasProceso.java`: **único lugar** con los IDs de las tareas del BPMN.
 - `config/DatosDemo.java`: crea `empresa-demo` / `1234` si `CURSOS_DATOS_DEMO=true`.
 - `clients/FlowableClient.java`: único cliente REST del motor.
@@ -48,14 +49,11 @@ curl -i http://localhost:8081/api/v1/estado
 La respuesta confirma que el backend está funcionando; no verifica Flowable ni la base de datos.
 
 La ejecución requiere el `.env` en la raíz del repo, la base `institucion` creada en
-el Postgres de Docker (`localhost:5433`) y Flowable levantado con la app publicada.
+el Postgres de Docker (`localhost:5433`) y Flowable levantado con la app desplegada (`motor-flowable/modelos/desplegar.sh`).
 Los pasos de la primera instalación están en el [README principal](../README.md).
-Para comprobar la conexión con Flowable: `GET /api/v1/diagnostico/flowable`.
+*(Nota: `DiagnosticoController` y su ruta `/api/v1/diagnostico/flowable` fueron eliminados en la etapa 11).*
 
-En esta rama el servicio `backend` del `docker-compose.yml` todavía no recibe las
-variables de Postgres y Flowable, así que en desarrollo se corre con Maven. La
-configuración completa del backend en Docker llega con la integración de `main`
-(etapa 11).
+El servicio `backend` del `docker-compose.yml` ya recibe las variables de Postgres y Flowable, y también puede correrse en desarrollo con Maven (`mvn spring-boot:run`).
 
 Para los contratos previstos entre componentes, consultar el [acuerdo de integración](MODELO_Y_INTEGRACION.md#acuerdo-de-integración).
 
@@ -142,7 +140,7 @@ Contrato remoto consultado: [API REST oficial de Flowable](https://www.flowable.
 
 ## Avance y etapas
 
-Proyecto **Organización de cursos de capacitación** (GyTPN, UNRC). Estado al **17/11/2026**, rama **`backend-lauty`** (todavía sin el merge de `main`).
+Proyecto **Organización de cursos de capacitación** (GyTPN, UNRC). Estado al **18/11/2026**, rama **`backend-lauty`**.
 
 Este documento sirve para seguir el avance: qué quedó implementado y probado, y qué etapas faltan para completar todos los endpoints que usa la web (sección «Contrato de endpoints de la web») y los entregables de la consigna V3.
 
@@ -152,18 +150,13 @@ Este documento sirve para seguir el avance: qué quedó implementado y probado, 
 
 | Parte | Estado |
 |---|---|
-| Infraestructura (Docker, Postgres, `.env`, `.gitignore`) | ✅ Funcionando en las máquinas de Luka y Lauty (reinstalada desde cero en la PC nueva de Luka el 17/11) |
+| Infraestructura (Docker, Postgres, `.env`, `.gitignore`) | ✅ Funcionando con `web`, `backend`, `flowable`, `postgres`, `institucion-db` y `pgadmin` |
 | Usuarios y grupos en Flowable (`motor-flowable/idm`) | ✅ Script idempotente |
-| Modelo del proceso publicado en Flowable | ✅ Se despliega (con marcadores en tareas automáticas). ⚠️ El `.zip` del repo está desactualizado (ver 2.2) |
-| Backend etapas 1 a 5 | ✅ Implementadas y probadas |
-| Backend etapa 6 | Implementada; validación integrada con motor/web pendiente |
-| Backend etapa 7 | Implementada; validación integrada con motor/web pendiente |
-| Backend etapa 8 | Implementada; validación integrada con motor/web pendiente |
-| Backend etapa 9 | ✅ Completa: #17, #18 y #19 probados con Postman contra Flowable real |
-| Backend etapa 10 (simulación de la empresa) | 🚀 Implementada (`SimulacionController` / `SimulacionService`) y probada con `simulador-rest`, web y Postman (`docs/postman/etapa 10/`) |
-| Backend etapa 11 (integración final y 11 escenarios) | ⏳ Pendiente. **Antes hay que cerrar los listeners del BPMN** (las asociaciones de compensación ya están corregidas; ver «Correcciones pendientes del BPMN») |
-| Web (etapas 1 a 9) | 🚀 Conectada al backend real con los `taskDefinitionKey` reales del BPMN (`catalogo.ts`, `DetalleTarea.tsx`, `FormPropuesta.tsx`) |
-| Extensiones del motor (listeners en Java) | ⏳ Pendiente |
+| Modelo del proceso desplegado en Flowable | ✅ Desplegado vía `desplegar.sh` (`Organizacion_de_cursos.bar`, con las 3 `<association>` de compensación, `AsignarListaListener` y `FinProcesoListener`) |
+| Backend etapas 1 a 10 | ✅ Implementadas (solicitudes, sesiones, tareas, propuestas/PDF, portal empresa, docente/dictado/informe y simulación) |
+| Backend etapa 11 (integración final) | ✅ Implementada (`CursoService`/`TareaService` con sincronización de estados, `CsrfFilter`, limpieza de `DiagnosticoController`, Docker). Pendiente: validación E2E completa de los 11 escenarios |
+| Web (etapas 1 a 9 + CSRF) | 🚀 Conectada al backend real con los `taskDefinitionKey` reales del BPMN y envío de `X-XSRF-TOKEN` (`web/src/api/cliente.ts`) |
+| Extensiones del motor (listeners en Java) | ✅ Implementadas en `motor-flowable/extensiones/` (`AsignarListaListener`, `FinProcesoListener`, 4 tests en verde), instaladas en `flowable-persistente:/app/WEB-INF/lib/` y asociadas al BPMN |
 | App de Materiales (`app-materiales/`, API Java) | 🚀 Probada contra el proceso publicado (reclamo y completado de `preparar_materiales` por API Java) |
 | Simulador REST (`simulador-rest/`) | 🚀 Probado contra el backend y el motor (recepción y apertura de PDF de propuesta, modificaciones, aceptación con habilitación de cuenta de empresa y envío de nómina; botonera en 2 filas con `Cancelar curso` visible) |
 | Consultas históricas (4.3) y Minería PM4Py (4.4) | ⏳ Pendiente |
@@ -486,13 +479,14 @@ Si no hay una ejecución suscrita, la acción no está habilitada en ese momento
 
 ---
 
-#### Etapa 11 — Integración final
-- **Cierre del curso:** el estado final (`FINALIZADO`, `CANCELADO`, `RECHAZADO`, `CERRADO_SIN_RESPUESTA`, `NO_VIABLE`) lo escribe el `FinProcesoListener` del motor (ver la sección 5) a partir de `resultadoProceso`.
-- **CSRF** en las peticiones que modifican datos: token en una cookie y header `X-XSRF-TOKEN` en la web.
-- **Servir la web:** copiar el `dist/` de la web a `static/` del backend, o seguir sirviéndola aparte con el proxy (en ese caso, revisar CORS).
-- **Backend en Docker:** descomentar el servicio del compose (el Dockerfile multi-stage ya existe) y usar `FLOWABLE_REST_URL=http://flowable:8080/...` y `postgres:5432` dentro de la red.
-- **Sacar** `DiagnosticoController` y `motor-flowable/prueba/`.
-- **Escenarios de punta a punta:** verificar los 11 escenarios de demostración de la sección 5 de la V3 (aceptación y finalización con liberación de recursos, modificaciones, rechazo, falta de respuesta, no viable por límite de 5 cursos, cancelación con compensaciones, falta de aulas disponibles, asignación/reclamo de tareas, solicitud web, portal de empresa, y app de materiales por API Java + simulador REST).
+#### Etapa 11 — Integración final (implementada el 18/11/2026)
+- **Cierre y sincronización de estados:**
+  - `FinProcesoListener` (en `motor-flowable/extensiones/`) actualiza `curso.estado` en `institucion` por JDBC al terminar la instancia según `resultadoProceso` (`FINALIZADO`, `CANCELADO`, `RECHAZADO`, `CERRADO_SIN_RESPUESTA`, `NO_VIABLE`).
+  - `CursoService` sincroniza estados intermedios/finales desde Flowable al consultar cursos (`CONFIRMADO_PENDIENTE_INICIO`, `EN_DESARROLLO`, `EN_ELABORACION_INFORME`, `EN_CIERRE`, o terminal), y `TareaService` actualiza al completar `archivar_solicitud`, `enviar_informe` y `archivar_expediente`.
+- **Asignación automática de lista:** `AsignarListaListener` (`create` en `confeccionar_lista`) asigna al integrante de `Equipo-Administrativo` con menos tareas activas asignadas (desempate por ID alfabético).
+- **CSRF:** `CsrfFilter` emite la cookie `XSRF-TOKEN` y exige el header `X-XSRF-TOKEN` en peticiones mutables de navegador (salvo `/api/v1/simulacion/**`). `web/src/api/cliente.ts` lee la cookie y envía el header.
+- **Limpieza y Docker:** eliminado `DiagnosticoController`; backend y web reconstruidos con `docker compose up -d --build` (41 tests en backend + 4 tests en extensiones en verde).
+- **Pendiente de validación en ejecución:** correr y documentar los 11 escenarios de demostración de punta a punta contra el entorno levantado.
 
 ---
 
@@ -511,12 +505,12 @@ Si no hay una ejecución suscrita, la acción no está habilitada en ese momento
 
 ---
 
-### 5. Pendientes del motor (`motor-flowable/`)
+### 5. Extensiones del motor (`motor-flowable/extensiones/`)
 
-**Extensiones (jar con `maven.compiler.release=11`, que se carga en `/app/WEB-INF/lib/` del contenedor de Flowable UI):**
-- `AsignarListaListener`: Task Listener en el evento `create` de `confeccionar_lista`; consulta el grupo `Equipo-Administrativo`, cuenta solo tareas de usuario pendientes **asignadas** (sin contar candidatas sin reclamar) y asigna al que tenga menos.
-- `FinProcesoListener`: Execution Listener de fin; escribe el estado final en `institucion` por JDBC (`postgres:5432`) según `resultadoProceso`.
-- Dockerfile o script de copia del `.jar` a `flowable-persistente:/app/WEB-INF/lib/` y reinicio del contenedor.
+**Implementado (jar con `maven.compiler.release=11`, cargado en `/app/WEB-INF/lib/` de `flowable-persistente`):**
+- `ar.edu.cursos.motor.AsignarListaListener`: Task Listener en el evento `create` de `confeccionar_lista`; consulta el grupo `Equipo-Administrativo`, cuenta solo tareas de usuario pendientes **asignadas** (sin contar candidatas sin reclamar) y asigna al que tenga menos.
+- `ar.edu.cursos.motor.FinProcesoListener`: Execution Listener en el evento `end` de `process`; escribe el estado final en `institucion` por JDBC según `resultadoProceso`.
+- JAR compilado en `motor-flowable/extensiones/flowable-extensiones.jar` (ver [motor-flowable/README.md](../motor-flowable/README.md)).
 
 **Correcciones del modelo que quedan** (de `INICIO_Y_VIABILIDAD.md`, sección 7):
 - [x] `desarrollar_curso` con `assignee="${docenteId}"` y timer previo *Fecha programada* leyendo `${fechaCurso}` (publicado en el Flowable de Luka; falta exportar el `.zip`).
@@ -542,7 +536,7 @@ Si no hay una ejecución suscrita, la acción no está habilitada en ese momento
 - [ ] PR de `luka/web-base` → `main`, y después merge de `main` en `backend`.
 - [ ] Pasar del mock al backend real endpoint por endpoint, a medida que cada etapa queda 🚀.
 - [ ] Etapa 9 en la web: Definir docente con `contexto.docentes` (`usuarioId`, `nombre`, `esJefe`), Desarrollar curso con `POST .../finalizacion-dictado`, y Enviar informe con `contexto.informe` y el botón del PDF (`/cursos/{id}/informe/pdf`) cuando `pdfDisponible` es `true`.
-- [ ] CSRF (etapa 11).
+- [x] CSRF (etapa 11): `CsrfFilter` en backend y envío de `X-XSRF-TOKEN` en `web/src/api/cliente.ts`.
 
 ---
 
@@ -831,7 +825,7 @@ Se eligió la alternativa más simple: la lista de docentes viene en `contexto.d
 ### Pendientes de definir con el back
 - [ ] Base `/api/v1` o `/api` (el acuerdo y la arquitectura no coinciden).
 - [ ] Nombres de variables definitivos (deben coincidir con el BPMN): `requierePlataforma` vs `requiereAulaVirtual`, `fechaCurso` vs `fechaInicioCurso`, `docenteId` vs `docenteSeleccionado`.
-- [ ] Protección CSRF: cómo obtiene la web el token y en qué header lo envía.
+- [x] Protección CSRF: cookie `XSRF-TOKEN` (`HttpOnly=false`) y header `X-XSRF-TOKEN` (`CsrfFilter`).
 - [ ] Si la web se sirve desde el backend (`static/`) o por separado (y si hace falta CORS).
 - [ ] Si `Enviar propuesta` es tarea humana (necesita pantalla) o automática.
 
@@ -1231,7 +1225,7 @@ Revisión del 18/11/2026 contra la consigna V3 (`contexto/ProyectoCursos_V3_1686
 | 10 | Viabilidad: contar instancias dentro del modelo | ❌ sigue dependiendo de `cantCursos` del backend |
 | 11 | Scripts marcadores | 🔧 quedan `println` en `enviar_confirmacion`, `enviar_informe`, `habilitar_acceso_empresa`, `notificarCierre` |
 | 12 | Ids y nombres | 🔧 quedan ids `sid-...` y los nombres «Liberar equipamento» y «confeccionar lista» |
-| 13 | Listeners `AsignarListaListener` y `FinProcesoListener` | ❌ `motor-flowable/extensiones/` sigue vacío |
+| 13 | Listeners `AsignarListaListener` y `FinProcesoListener` | ✅ Implementados en `motor-flowable/extensiones/`, compilados en `flowable-extensiones.jar`, instalados en `flowable-persistente:/app/WEB-INF/lib/` y asociados en `institucion-de-capacitacion.bpmn20.xml` + `Organizacion_de_cursos.bar` |
 | 14 | `.zip` y `.bar` actualizados | ✅ del 18/11. El `.bar` se genera con `corregir-asociaciones.py --bar` y es **lo que se despliega**; el `.zip` es el export del Modeler (sirve para editar, trae las asociaciones rotas) |
 | 15 | **Conectores de los 3 eventos de borde de compensación** (`liberar_aula`, `liberar_aula_virtual`, `liberar_equipamiento`) | ✅ Son `<association ... associationDirection="One">` dentro de `preparar_curso` (versión 11 de `process`, 18/11). El Modeler 6.8.0 las vuelve a convertir en `<sequenceFlow>` cuando el modelo tiene pool (al importar, exportar y en **Publish**), y entonces el motor lanza `Compensation activity could not be found` al completar `reservar_aula_fisica`, `reservar_aula_virtual` o `contratar_equipamiento`. Por eso **no se publica desde el Modeler**: se exporta el XML, se corre `motor-flowable/modelos/corregir-asociaciones.py --bar` y se despliega con `desplegar.sh` (ver `motor-flowable/modelos/README.md`). Verificado por REST: cancelación con las tres compensaciones y cierre `CANCELADO` |
 
