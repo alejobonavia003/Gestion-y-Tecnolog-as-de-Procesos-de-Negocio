@@ -2,7 +2,7 @@
 
 **Asignatura:** Gestión y Tecnologías de Procesos de Negocio (UNRC)  
 **Proyecto:** Proceso de organización de cursos de capacitación para empresas (Flowable 6.8)  
-**Integrantes:** Alejo, Lauty y Luka
+**Integrantes:** Alejo, Lauty, Luka y Manu
 
 ---
 
