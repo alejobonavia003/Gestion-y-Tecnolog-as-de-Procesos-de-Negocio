@@ -1,6 +1,6 @@
 # Guía del equipo
 
-Responsables: **Alejo, Lauty y Luka**; cada uno mantiene los acuerdos de su componente. Este directorio no contiene credenciales ni reemplaza los materiales de [contexto/](../contexto/).
+Responsables: **Alejo, Lauty, Luka y Manu**; cada uno mantiene los acuerdos de su componente. Este directorio no contiene credenciales ni reemplaza los materiales de [contexto/](../contexto/).
 
 ## Índice
 
