@@ -15,7 +15,7 @@ type Props = {
  * y muestra las observaciones de la empresa y las versiones anteriores.
  */
 export function FormPropuesta({ tarea, alCompletar }: Props) {
-  const esRevision = tarea.taskDefinitionKey === 'Revisar'
+  const esRevision = tarea.taskDefinitionKey === 'revisar_propuesta' || tarea.taskDefinitionKey === 'Revisar'
   const { solicitud, propuestaVigente, observacionesEmpresa } = tarea.contexto
 
   const [programa, setPrograma] = useState(propuestaVigente?.programa ?? '')
@@ -69,8 +69,11 @@ export function FormPropuesta({ tarea, alCompletar }: Props) {
         programa: programa.trim(),
         presupuesto: { importe: importeNumero.toFixed(2), moneda },
         fechasPosibles: fechasCompletas.map(localAIso),
+        ...(esRevision && propuestaVigente ? { versionBase: propuestaVigente.version } : {}),
       })
-      alCompletar(`Se generó la propuesta versión ${creada.propuestaVersion} con su PDF.`)
+      alCompletar(
+        `Se generó y envió la propuesta versión ${creada.propuestaVersion} con su PDF (disponible para la empresa en el simulador REST).`,
+      )
     } catch (err) {
       if (err instanceof ApiError && err.codigo === 'VERSION_DESACTUALIZADA') {
         setError(`${err.message} Volvé a la bandeja y abrí la tarea de nuevo.`)
@@ -159,6 +162,7 @@ export function FormPropuesta({ tarea, alCompletar }: Props) {
             <select value={moneda} onChange={(e) => setMoneda(e.target.value)}>
               <option value="ARS">ARS</option>
               <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
             </select>
           </label>
         </div>

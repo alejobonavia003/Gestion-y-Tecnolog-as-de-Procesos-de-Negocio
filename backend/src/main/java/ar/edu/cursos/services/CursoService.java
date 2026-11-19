@@ -48,7 +48,17 @@ public class CursoService {
             "confeccionar_lista", "Confeccionar lista definitiva",
             "evaluar_recursos", "Evaluar recursos",
             "preparar_materiales", "Preparar materiales",
+            "reservar_aula_virtual", "Reservar aula virtual",
+            "contratar_equipamiento", "Contratar equipamiento",
             "definir_docente", "Definir docente"
+    );
+
+    private static final Set<EstadoCurso> ESTADOS_SINCRONIZABLES = Set.of(
+            EstadoCurso.EN_PREPARACION,
+            EstadoCurso.CONFIRMADO_PENDIENTE_INICIO,
+            EstadoCurso.EN_DESARROLLO,
+            EstadoCurso.EN_ELABORACION_INFORME,
+            EstadoCurso.EN_CIERRE
     );
 
     private final CursoRepository cursoRepository;
@@ -59,6 +69,7 @@ public class CursoService {
         this.flowableClient = flowableClient;
     }
 
+    @Transactional
     public Map<String, Object> listarDeEmpresa(SesionUsuario sesion, int page, int size) {
         if (page < 0 || size < 1 || size > 100) {
             throw ApiException.validacion("Paginación inválida (page >= 0, size entre 1 y 100).");
@@ -67,6 +78,7 @@ public class CursoService {
                 sesion.empresaIdNumerico(),
                 PageRequest.of(page, size)
         );
+        pagina.getContent().forEach(this::sincronizarEstadoSiCorresponde);
         List<CursoResumenResponse> items = pagina.getContent().stream()
                 .map(this::aResumen)
                 .toList();
@@ -78,8 +90,10 @@ public class CursoService {
         );
     }
 
+    @Transactional
     public CursoDetalleResponse detalle(UUID cursoId, SesionUsuario sesion) {
         Curso curso = obtenerYVerificarAcceso(cursoId, sesion);
+        sincronizarEstadoSiCorresponde(curso);
         return new CursoDetalleResponse(
                 curso.getId().toString(),
                 curso.getTematica(),
@@ -144,5 +158,73 @@ public class CursoService {
 
     private String etiqueta(EstadoCurso estado) {
         return ETIQUETAS_ESTADO.getOrDefault(estado, estado.name());
+    }
+
+    private void sincronizarEstadoSiCorresponde(Curso curso) {
+        String pid = curso.getProcessInstanceId();
+        if (pid == null || curso.getEstado() == null || !ESTADOS_SINCRONIZABLES.contains(curso.getEstado())) {
+            return;
+        }
+        try {
+            JsonNode tareas = flowableClient.tareasDeInstancia(pid);
+            if (tareas == null || !tareas.path("data").isArray()) {
+                return;
+            }
+            Set<String> keys = new LinkedHashSet<>();
+            for (JsonNode t : tareas.path("data")) {
+                String k = t.path("taskDefinitionKey").asText("");
+                if (!k.isBlank()) keys.add(k);
+            }
+
+            EstadoCurso nuevo = null;
+            if (keys.contains(TareasProceso.DEFINIR_DOCENTE)) {
+                nuevo = EstadoCurso.CONFIRMADO_PENDIENTE_INICIO;
+            } else if (keys.contains(TareasProceso.DESARROLLAR_CURSO)) {
+                nuevo = EstadoCurso.EN_DESARROLLO;
+            } else if (keys.contains(TareasProceso.ELABORAR_INFORME)) {
+                nuevo = EstadoCurso.EN_ELABORACION_INFORME;
+            } else if (keys.contains(TareasProceso.ARCHIVAR_EXPEDIENTE)
+                    || keys.contains(TareasProceso.ENVIAR_INFORME)
+                    || (curso.getEstado() != EstadoCurso.EN_PREPARACION && keys.contains("liberar_equipamiento"))) {
+                nuevo = EstadoCurso.EN_CIERRE;
+            } else if (keys.isEmpty()) {
+                JsonNode ejecuciones = flowableClient.ejecucionesDeInstancia(pid);
+                if (ejecuciones != null && ejecuciones.path("data").isArray()) {
+                    boolean esperandoFecha = false;
+                    for (JsonNode e : ejecuciones.path("data")) {
+                        if ("fecha_programa".equals(e.path("activityId").asText(""))) {
+                            esperandoFecha = true;
+                            break;
+                        }
+                    }
+                    if (esperandoFecha) {
+                        nuevo = EstadoCurso.CONFIRMADO_PENDIENTE_INICIO;
+                    } else if (ejecuciones.path("data").isEmpty()) {
+                        nuevo = flowableClient.variableHistorica(pid, "resultadoProceso")
+                                .map(this::mapearResultadoFinal)
+                                .orElse(null);
+                    }
+                }
+            }
+
+            if (nuevo != null && nuevo != curso.getEstado()) {
+                curso.setEstado(nuevo);
+                cursoRepository.save(curso);
+            }
+        } catch (ApiException ignored) {
+            // Si el motor no está disponible en la lectura, se conserva el último estado persistido.
+        }
+    }
+
+    private EstadoCurso mapearResultadoFinal(String valor) {
+        if (valor == null) return null;
+        return switch (valor.trim().toUpperCase()) {
+            case "FINALIZADO" -> EstadoCurso.FINALIZADO;
+            case "CANCELADO" -> EstadoCurso.CANCELADO;
+            case "RECHAZADO" -> EstadoCurso.RECHAZADO;
+            case "CERRADO_SIN_RESPUESTA", "SIN_RESPUESTA" -> EstadoCurso.CERRADO_SIN_RESPUESTA;
+            case "NO_VIABLE" -> EstadoCurso.NO_VIABLE;
+            default -> null;
+        };
     }
 }

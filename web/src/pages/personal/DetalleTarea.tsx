@@ -75,19 +75,28 @@ export function DetalleTarea() {
 
 function renderFormulario(tarea: TareaDetalle, alCompletar: (mensaje: string) => void) {
   switch (tarea.taskDefinitionKey) {
+    case 'registrar_elaborar_propuesta':
     case 'Propuesta':
+    case 'revisar_propuesta':
     case 'Revisar':
       return <FormPropuesta tarea={tarea} alCompletar={alCompletar} />
+    case 'archivar_solicitud':
     case 'Archivar':
       return <FormArchivar tarea={tarea} alCompletar={alCompletar} />
+    case 'confeccionar_lista':
     case 'Lista':
       return <FormLista tarea={tarea} alCompletar={alCompletar} />
+    case 'evaluar_recursos':
     case 'Activity_12i2hpf':
       return <FormRecursos tarea={tarea} alCompletar={alCompletar} />
+    case 'definir_docente':
     case 'Activity_1018bdz':
       return <FormDocente tarea={tarea} alCompletar={alCompletar} />
+    case 'desarrollar_curso':
     case 'Dictar':
       return <FormDictado tarea={tarea} alCompletar={alCompletar} />
+    case 'archivar_expediente':
+    case 'enviar_informe':
     case 'EnviarInforme':
       return <FormEnviarInforme tarea={tarea} alCompletar={alCompletar} />
     default: {

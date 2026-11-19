@@ -13,7 +13,7 @@ import ar.edu.cursos.dto.SolicitudCreada;
 import ar.edu.cursos.services.SolicitudService;
 import jakarta.validation.Valid;
 
-/** Endpoint #1 de ENDPOINTS_WEB.md. Público: no requiere sesión. */
+/** Endpoint #1 de docs/BACKEND.md (contrato de endpoints). Público: no requiere sesión. */
 @RestController
 @RequestMapping("/api/v1/solicitudes")
 public class SolicitudController {

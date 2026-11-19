@@ -15,7 +15,7 @@ export function obtenerTarea(taskId: string) {
   return api<TareaDetalle>(`/tareas/${taskId}`)
 }
 
-/** Completa una tarea simple. `datos` depende del tipo de tarea (ver ENDPOINTS_WEB.md #12). */
+/** Completa una tarea simple. `datos` depende del tipo de tarea (ver docs/BACKEND.md (contrato de endpoints) #12). */
 export function completarTarea(taskId: string, datos: Record<string, unknown> = {}) {
   return api<void>(`/tareas/${taskId}/completado`, { method: 'POST', body: JSON.stringify({ datos }) })
 }

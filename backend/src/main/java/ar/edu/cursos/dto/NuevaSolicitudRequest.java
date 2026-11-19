@@ -8,7 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-/** Cuerpo de POST /solicitudes (formulario público). Ver ENDPOINTS_WEB.md #1. */
+/** Cuerpo de POST /solicitudes (formulario público). Ver docs/BACKEND.md (contrato de endpoints) #1. */
 public record NuevaSolicitudRequest(
         @NotNull(message = "Faltan los datos de la empresa.") @Valid Empresa empresa,
         @NotNull(message = "Faltan los datos de contacto.") @Valid Contacto contacto,

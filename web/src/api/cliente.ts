@@ -14,18 +14,33 @@ export class ApiError extends Error {
   }
 }
 
+function leerCookieCsrf(): string | null {
+  if (typeof document === 'undefined' || !document.cookie) return null
+  const prefijo = 'XSRF-TOKEN='
+  for (const parte of document.cookie.split(';')) {
+    const limpia = parte.trim()
+    if (limpia.startsWith(prefijo)) {
+      return decodeURIComponent(limpia.slice(prefijo.length))
+    }
+  }
+  return null
+}
+
 /**
  * Llama a la API del backend.
  * - Siempre manda la cookie de sesión (credentials: 'include').
+ * - Envía el header X-XSRF-TOKEN si la cookie XSRF-TOKEN está presente.
  * - Si la respuesta no es 2xx lanza ApiError con el código del contrato.
  */
 export async function api<T>(ruta: string, opciones: RequestInit = {}): Promise<T> {
+  const csrf = leerCookieCsrf()
   const respuesta = await fetch(BASE + ruta, {
     credentials: 'include',
     ...opciones,
     headers: {
       Accept: 'application/json',
       ...(opciones.body ? { 'Content-Type': 'application/json' } : {}),
+      ...(csrf ? { 'X-XSRF-TOKEN': csrf } : {}),
       ...opciones.headers,
     },
   })

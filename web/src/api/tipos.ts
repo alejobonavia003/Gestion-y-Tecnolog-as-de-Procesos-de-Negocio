@@ -1,4 +1,4 @@
-// Tipos compartidos con el backend (ver ENDPOINTS_WEB.md)
+// Tipos compartidos con el backend (ver docs/BACKEND.md (contrato de endpoints))
 
 export type SesionPersonal = {
   tipo: 'PERSONAL'
@@ -125,6 +125,7 @@ export type NuevaPropuesta = {
   programa: string
   presupuesto: Presupuesto
   fechasPosibles: string[]
+  versionBase?: number
 }
 
 export type PropuestaCreada = {

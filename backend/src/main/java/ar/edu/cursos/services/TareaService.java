@@ -11,6 +11,7 @@ import ar.edu.cursos.clients.FlowableClient;
 import ar.edu.cursos.dto.*;
 import ar.edu.cursos.exceptions.ApiException;
 import ar.edu.cursos.model.Curso;
+import ar.edu.cursos.model.EstadoCurso;
 import ar.edu.cursos.repositories.*;
 
 @Service
@@ -124,10 +125,11 @@ public class TareaService {
         return resumen(reclamada, curso(reclamada));
     }
 
+    @Transactional
     public void completar(String id, SesionUsuario usuario, JsonNode cuerpo) {
         JsonNode tarea = motor.tarea(id);
         if (!usuario.usuarioId().equals(asignado(tarea))) throw ApiException.sinPermiso("Solo el asignado puede completar la tarea.");
-        curso(tarea);
+        Curso curso = curso(tarea);
         String key = tarea.path("taskDefinitionKey").asText();
         if (!Set.of(LISTA, RECURSOS, ARCHIVAR_SOLICITUD, ENVIAR_INFORME, ARCHIVAR_EXPEDIENTE).contains(key))
             throw ApiException.conflicto("ESTADO_INCOMPATIBLE", "Esta tarea no admite completado simple; usá su operación específica.");
@@ -156,6 +158,24 @@ public class TareaService {
             if (!alguno) throw ApiException.validacion("Seleccioná al menos un recurso.");
         } else soloCampos(datos, Set.of());
         motor.completar(id, variables);
+        actualizarEstadoPostCompletado(curso, key);
+    }
+
+    private void actualizarEstadoPostCompletado(Curso curso, String key) {
+        String pid = curso.getProcessInstanceId();
+        if (pid == null) return;
+        if (ARCHIVAR_SOLICITUD.equals(key)) {
+            String respuesta = motor.variableHistorica(pid, "respuestaEmpresa").orElse("");
+            curso.setEstado("RECHAZADA".equalsIgnoreCase(respuesta)
+                    ? EstadoCurso.RECHAZADO
+                    : EstadoCurso.CERRADO_SIN_RESPUESTA);
+            cursos.save(curso);
+        } else if (ARCHIVAR_EXPEDIENTE.equals(key) || ENVIAR_INFORME.equals(key)) {
+            JsonNode restantes = motor.tareasDeInstancia(pid);
+            boolean quedanTareas = restantes != null && restantes.path("data").isArray() && !restantes.path("data").isEmpty();
+            curso.setEstado(quedanTareas ? EstadoCurso.EN_CIERRE : EstadoCurso.FINALIZADO);
+            cursos.save(curso);
+        }
     }
 
     private void soloCampos(JsonNode datos, Set<String> campos) {

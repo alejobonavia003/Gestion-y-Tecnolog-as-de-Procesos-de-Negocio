@@ -9,6 +9,8 @@ public record SolicitudSimulacionResponse(
         String empresaNombre,
         String estado,
         Integer propuestaVersionVigente,
+        String programaPropuesto,
+        String presupuestoPropuesto,
         List<OffsetDateTime> fechasPosibles,
         List<String> accionesHabilitadas
 ) {}
