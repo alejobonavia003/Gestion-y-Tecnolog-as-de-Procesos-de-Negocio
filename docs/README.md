@@ -37,8 +37,8 @@ Descargar la rama completa; no copiar archivos sueltos del backend:
 
 ```bash
 git fetch origin
-git switch backend-alejo
-git pull --ff-only origin backend-alejo
+git switch backend-lauty
+git pull --ff-only origin backend-lauty
 ```
 
 En una instalación nueva, desde la raíz:
