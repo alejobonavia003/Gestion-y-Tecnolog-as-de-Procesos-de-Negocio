@@ -40,7 +40,16 @@ export function FormRecursos({ tarea, alCompletar }: Props) {
   const [error, setError] = useState('')
   const [enviando, setEnviando] = useState(false)
 
+  const aulas = tarea.contexto.aulas
+  const sinAulasDisponibles = aulas !== undefined && !aulas.hayDisponibles
   const algunoElegido = Object.values(seleccion).some(Boolean)
+
+  function detalleOpcion(o: (typeof OPCIONES)[number]) {
+    if (o.variable !== 'requiereAula' || !aulas) return o.detalle
+    return aulas.hayDisponibles
+      ? `Se reserva automáticamente (${aulas.disponibles} de ${aulas.total} disponibles).`
+      : `Sin aulas físicas disponibles (0 de ${aulas.total}).`
+  }
 
   async function confirmar(e: FormEvent) {
     e.preventDefault()
@@ -52,8 +61,18 @@ export function FormRecursos({ tarea, alCompletar }: Props) {
 
     setEnviando(true)
     try {
-      await completarTarea(tarea.taskId, seleccion)
-      const elegidos = OPCIONES.filter((o) => seleccion[o.variable]).map((o) => o.titulo.toLowerCase())
+      const resultado = await completarTarea(tarea.taskId, seleccion)
+      if (resultado?.sinAulas) {
+        alCompletar(
+          'No había aulas físicas disponibles. Se disparó la excepción del proceso: se compensaron los demás recursos y el curso fue cancelado.',
+        )
+        return
+      }
+      const elegidos = OPCIONES.filter((o) => seleccion[o.variable]).map((o) =>
+        o.variable === 'requiereAula' && resultado?.aulaAsignada
+          ? `aula física (${resultado.aulaAsignada})`
+          : o.titulo.toLowerCase(),
+      )
       alCompletar(`Recursos confirmados: ${elegidos.join(', ')}.`)
     } catch (err) {
       setError(err instanceof ApiError && err.status === 400 ? err.message : 'No se pudieron guardar los recursos.')
@@ -76,11 +95,18 @@ export function FormRecursos({ tarea, alCompletar }: Props) {
             />
             <span>
               <strong>{o.titulo}</strong>
-              <span className="detalle">{o.detalle}</span>
+              <span className="detalle">{detalleOpcion(o)}</span>
             </span>
           </label>
         ))}
       </div>
+
+      {seleccion.requiereAula && sinAulasDisponibles && (
+        <p className="advertencia" role="alert">
+          No hay aulas físicas disponibles en este momento (0 de {aulas.total}). Si confirmás, el proceso registrará la
+          falta de aulas, compensará los demás recursos y cancelará el curso automáticamente.
+        </p>
+      )}
 
       {error && <p className="error">{error}</p>}
 

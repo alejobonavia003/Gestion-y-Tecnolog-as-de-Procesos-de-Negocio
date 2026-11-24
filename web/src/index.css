@@ -241,6 +241,14 @@ h2 {
   color: #1e6b3a;
 }
 
+.advertencia {
+  padding: 0.7rem 0.95rem;
+  border-radius: 6px;
+  background: #fff6e0;
+  border: 1px solid #f0c36d;
+  color: #7a4f01;
+}
+
 .contenido button.secundario {
   background: white;
   color: var(--color-primario);

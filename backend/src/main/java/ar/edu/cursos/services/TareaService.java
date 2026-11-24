@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import ar.edu.cursos.clients.FlowableClient;
 import ar.edu.cursos.dto.*;
 import ar.edu.cursos.exceptions.ApiException;
+import ar.edu.cursos.model.Aula;
 import ar.edu.cursos.model.Curso;
 import ar.edu.cursos.model.EstadoCurso;
 import ar.edu.cursos.repositories.*;
@@ -20,20 +21,26 @@ public class TareaService {
     private final FlowableClient motor;
     private final CursoRepository cursos;
     private final PropuestaRepository propuestas;
+    private final AulaService aulas;
     private final String grupoDocentes;
     private final String jefeDocente;
 
     @Autowired
     public TareaService(FlowableClient motor, CursoRepository cursos, PropuestaRepository propuestas,
+            AulaService aulas,
             @Value("${cursos.grupo.docentes}") String grupoDocentes,
             @Value("${cursos.usuario.jefe-docente}") String jefeDocente) {
-        this.motor = motor; this.cursos = cursos; this.propuestas = propuestas;
+        this.motor = motor; this.cursos = cursos; this.propuestas = propuestas; this.aulas = aulas;
         this.grupoDocentes = grupoDocentes; this.jefeDocente = jefeDocente;
     }
 
     /** Para los tests: usa los nombres por defecto del grupo y del jefe docente. */
     public TareaService(FlowableClient motor, CursoRepository cursos, PropuestaRepository propuestas) {
-        this(motor, cursos, propuestas, "Equipo-Docente", "Jefe-Docente");
+        this(motor, cursos, propuestas, null, "Equipo-Docente", "Jefe-Docente");
+    }
+
+    public TareaService(FlowableClient motor, CursoRepository cursos, PropuestaRepository propuestas, AulaService aulas) {
+        this(motor, cursos, propuestas, aulas, "Equipo-Docente", "Jefe-Docente");
     }
 
     /** Los docentes que se pueden elegir en definir_docente (el jefe incluido). */
@@ -91,6 +98,7 @@ public class TareaService {
             });
         }
         if (LISTA.equals(key)) contexto.put("participantes", variables.getOrDefault("participantes", List.of()));
+        if (RECURSOS.equals(key) && aulas != null) contexto.put("aulas", aulas.resumenDisponibilidad());
         if (ARCHIVAR_SOLICITUD.equals(key)) {
             Object respuesta = variables.get("respuestaEmpresa");
             contexto.put("motivoArchivo", respuesta instanceof JsonNode n && "RECHAZADA".equals(n.asText()) ? "RECHAZADA" : "SIN_RESPUESTA");
@@ -126,7 +134,7 @@ public class TareaService {
     }
 
     @Transactional
-    public void completar(String id, SesionUsuario usuario, JsonNode cuerpo) {
+    public Map<String, Object> completar(String id, SesionUsuario usuario, JsonNode cuerpo) {
         JsonNode tarea = motor.tarea(id);
         if (!usuario.usuarioId().equals(asignado(tarea))) throw ApiException.sinPermiso("Solo el asignado puede completar la tarea.");
         Curso curso = curso(tarea);
@@ -137,6 +145,9 @@ public class TareaService {
             throw ApiException.validacion("Enviá un objeto datos.");
         JsonNode datos = cuerpo.get("datos");
         Map<String, Object> variables = new LinkedHashMap<>();
+        Map<String, Object> resultado = new LinkedHashMap<>();
+        resultado.put("completada", true);
+        boolean sinAulas = false;
         if (LISTA.equals(key)) {
             soloCampos(datos, Set.of("participantes"));
             JsonNode participantes = datos.path("participantes");
@@ -156,15 +167,32 @@ public class TareaService {
                 boolean valor = datos.get(campo).asBoolean(); alguno |= valor; variables.put(campo, valor);
             }
             if (!alguno) throw ApiException.validacion("Seleccioná al menos un recurso.");
+            if (Boolean.TRUE.equals(variables.get("requiereAula")) && aulas != null) {
+                Optional<Aula> reservada = aulas.reservarPrimeraDisponible(curso);
+                if (reservada.isPresent()) {
+                    String codigo = reservada.get().getCodigo();
+                    variables.put("aulaAsignada", codigo);
+                    resultado.put("aulaAsignada", codigo);
+                    resultado.put("sinAulas", false);
+                } else {
+                    sinAulas = true;
+                    variables.put("simularSinAulas", "true");
+                    resultado.put("sinAulas", true);
+                }
+            }
         } else soloCampos(datos, Set.of());
         motor.completar(id, variables);
-        actualizarEstadoPostCompletado(curso, key);
+        actualizarEstadoPostCompletado(curso, key, sinAulas);
+        return resultado;
     }
 
-    private void actualizarEstadoPostCompletado(Curso curso, String key) {
+    private void actualizarEstadoPostCompletado(Curso curso, String key, boolean sinAulas) {
         String pid = curso.getProcessInstanceId();
         if (pid == null) return;
-        if (ARCHIVAR_SOLICITUD.equals(key)) {
+        if (RECURSOS.equals(key) && sinAulas) {
+            curso.setEstado(EstadoCurso.CANCELADO);
+            cursos.save(curso);
+        } else if (ARCHIVAR_SOLICITUD.equals(key)) {
             String respuesta = motor.variableHistorica(pid, "respuestaEmpresa").orElse("");
             curso.setEstado("RECHAZADA".equalsIgnoreCase(respuesta)
                     ? EstadoCurso.RECHAZADO

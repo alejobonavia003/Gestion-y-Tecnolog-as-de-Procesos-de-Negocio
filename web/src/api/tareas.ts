@@ -1,5 +1,13 @@
 import { abrirArchivo, api } from './cliente'
-import type { NuevaPropuesta, Pagina, Propuesta, PropuestaCreada, TareaDetalle, TareaResumen } from './tipos'
+import type {
+  NuevaPropuesta,
+  Pagina,
+  Propuesta,
+  PropuestaCreada,
+  ResultadoCompletado,
+  TareaDetalle,
+  TareaResumen,
+} from './tipos'
 
 export type Bandeja = 'asignadas' | 'disponibles'
 
@@ -17,7 +25,7 @@ export function obtenerTarea(taskId: string) {
 
 /** Completa una tarea simple. `datos` depende del tipo de tarea (ver docs/BACKEND.md (contrato de endpoints) #12). */
 export function completarTarea(taskId: string, datos: Record<string, unknown> = {}) {
-  return api<void>(`/tareas/${taskId}/completado`, { method: 'POST', body: JSON.stringify({ datos }) })
+  return api<ResultadoCompletado>(`/tareas/${taskId}/completado`, { method: 'POST', body: JSON.stringify({ datos }) })
 }
 
 /** Registrar/elaborar o revisar propuesta: genera una versión nueva con su PDF y completa la tarea. */

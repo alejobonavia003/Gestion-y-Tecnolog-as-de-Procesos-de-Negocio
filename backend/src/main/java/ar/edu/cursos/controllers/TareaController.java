@@ -28,8 +28,7 @@ public class TareaController {
         return tareas.reclamar(id, sesiones.requerirPersonal(request));
     }
     @PostMapping("/{id}/completado")
-    public Map<String, Boolean> completar(@PathVariable String id, @RequestBody JsonNode cuerpo, HttpServletRequest request) {
-        tareas.completar(id, sesiones.requerirPersonal(request), cuerpo);
-        return Map.of("completada", true);
+    public Map<String, Object> completar(@PathVariable String id, @RequestBody JsonNode cuerpo, HttpServletRequest request) {
+        return tareas.completar(id, sesiones.requerirPersonal(request), cuerpo);
     }
 }

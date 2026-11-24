@@ -61,6 +61,10 @@ public class Curso {
     @Column(name = "informe_resumen", columnDefinition = "text")
     private String informeResumen;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "aula_id")
+    private Aula aula;
+
     // --- Estado y vínculo con Flowable ---
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 40)
@@ -118,6 +122,8 @@ public class Curso {
     public void setFechaCurso(OffsetDateTime fechaCurso) { this.fechaCurso = fechaCurso; }
     public String getInformeResumen() { return informeResumen; }
     public void setInformeResumen(String informeResumen) { this.informeResumen = informeResumen; }
+    public Aula getAula() { return aula; }
+    public void setAula(Aula aula) { this.aula = aula; }
     public EstadoCurso getEstado() { return estado; }
     public void setEstado(EstadoCurso estado) { this.estado = estado; }
     public String getProcessInstanceId() { return processInstanceId; }

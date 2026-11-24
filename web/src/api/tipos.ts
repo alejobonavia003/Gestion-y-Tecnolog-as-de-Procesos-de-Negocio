@@ -105,6 +105,18 @@ export type Informe = {
   pdfDisponible: boolean
 }
 
+export type ResumenAulas = {
+  total: number
+  disponibles: number
+  hayDisponibles: boolean
+}
+
+export type ResultadoCompletado = {
+  completada?: boolean
+  aulaAsignada?: string
+  sinAulas?: boolean
+}
+
 /** Datos extra que trae GET /tareas/{taskId} según el tipo de tarea. */
 export type ContextoTarea = {
   solicitud?: DatosSolicitud
@@ -112,6 +124,7 @@ export type ContextoTarea = {
   observacionesEmpresa?: string
   motivoArchivo?: 'RECHAZADA' | 'SIN_RESPUESTA'
   participantes?: Participante[] // nómina enviada por la empresa (tarea Lista)
+  aulas?: ResumenAulas // disponibilidad de aulas físicas (tarea Evaluar recursos)
   curso?: DatosCursoTarea // Definir docente, Desarrollar curso y Enviar informe
   docentes?: Docente[] // opciones de Definir docente
   informe?: Informe // Enviar informe y archivar expediente

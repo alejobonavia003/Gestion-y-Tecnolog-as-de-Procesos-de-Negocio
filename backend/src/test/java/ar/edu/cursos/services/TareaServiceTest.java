@@ -89,4 +89,36 @@ class TareaServiceTest {
         error("VALIDACION", () -> servicio.completar("t1", usuario, cuerpo));
         verify(motor, never()).completar(anyString(), anyMap());
     }
+    @Test void recursosConAulaDisponibleAsignaAula() throws Exception {
+        AulaService aulas = mock(AulaService.class);
+        Aula aula = new Aula("AULA-101", "Aula 101", 30);
+        when(aulas.reservarPrimeraDisponible(curso)).thenReturn(Optional.of(aula));
+        TareaService conAulas = new TareaService(motor, cursos, propuestas, aulas);
+        when(motor.tarea("t1")).thenReturn(tarea("evaluar_recursos", "alejo"));
+
+        Map<String, Object> res = conAulas.completar("t1", usuario,
+                json.readTree("{\"datos\":{\"requiereAula\":true,\"requierePlataforma\":false,\"requiereEquipamiento\":false}}"));
+
+        assertEquals("AULA-101", res.get("aulaAsignada"));
+        assertEquals(false, res.get("sinAulas"));
+        verify(motor).completar("t1", Map.of(
+                "requiereAula", true, "requierePlataforma", false, "requiereEquipamiento", false,
+                "aulaAsignada", "AULA-101"));
+    }
+    @Test void recursosSinAulasEnviaSimularSinAulasYCancelaCurso() throws Exception {
+        AulaService aulas = mock(AulaService.class);
+        when(aulas.reservarPrimeraDisponible(curso)).thenReturn(Optional.empty());
+        TareaService conAulas = new TareaService(motor, cursos, propuestas, aulas);
+        when(motor.tarea("t1")).thenReturn(tarea("evaluar_recursos", "alejo"));
+
+        Map<String, Object> res = conAulas.completar("t1", usuario,
+                json.readTree("{\"datos\":{\"requiereAula\":true,\"requierePlataforma\":true,\"requiereEquipamiento\":false}}"));
+
+        assertEquals(true, res.get("sinAulas"));
+        verify(motor).completar("t1", Map.of(
+                "requiereAula", true, "requierePlataforma", true, "requiereEquipamiento", false,
+                "simularSinAulas", "true"));
+        verify(curso).setEstado(EstadoCurso.CANCELADO);
+        verify(cursos).save(curso);
+    }
 }
