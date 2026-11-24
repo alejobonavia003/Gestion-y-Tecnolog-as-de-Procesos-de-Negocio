@@ -39,3 +39,12 @@ Todas las claves son `1234`.
 | App de materiales | `empleado-administrativo`, `Jefe-Administrativo` |
 | Portal de empresa | El identificador de la empresa (por ejemplo `software-andino`). Existe recién después de aceptar la propuesta. |
 | Flowable UI como admin | `admin` / `test` |
+
+| Empresa | Usuario | ¿Puede entrar ahora? |
+|---|---|---|
+| Lácteos del Sur SA | `lacteos-sur` | **Sí.** Ya aceptó (B está esperando la fecha del curso) |
+| Metalúrgica Río Cuarto SA | `metalurgica-rc` | No, todavía no aceptó la propuesta |
+| Agro Pampa SRL | `agro-pampa` | No, todavía no aceptó la propuesta |
+| Software Andino SA | `software-andino` | No, todavía no aceptó la propuesta |
+
+Clave de todas las cuentas: `1234`. La cuenta se habilita recién cuando la empresa acepta la propuesta en el simulador.

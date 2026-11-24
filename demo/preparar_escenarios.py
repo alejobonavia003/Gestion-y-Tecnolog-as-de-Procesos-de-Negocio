@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-VERSION 7 (23/11)
+VERSION 8 (23/11)
 Preparación de los escenarios de la defensa (GyTPN, proceso de organización de cursos).
 
 Deja 4 instancias reales avanzadas hasta el punto justo, usando la API del backend
@@ -607,38 +607,80 @@ def cmd_estado(fl):
             print(f"        login empresa: {est[letra]['usuarioEmpresa']} / 1234")
 
 
+def _jobs(fl, lista, pid):
+    return (fl.req("GET", f"/management/{lista}?processInstanceId={pid}") or {}).get("data", [])
+
+
+def _error_de_jobs(fl, pid):
+    """Primer mensaje de error que Flowable tenga registrado en los jobs de la instancia."""
+    for lista in ("deadletter-jobs", "jobs", "timer-jobs"):
+        for j in _jobs(fl, lista, pid):
+            if j.get("exceptionMessage"):
+                return f"[{lista}] {j['exceptionMessage']}"
+    return None
+
+
+def _forzar_timer(fl, pid):
+    """Ejecuta YA el timer pendiente, sin depender del ejecutor asíncrono de Flowable.
+
+    1. Recupera jobs que quedaron apartados (dead letter) por fallos anteriores.
+    2. Pasa el timer pendiente a la cola de ejecución ('move').
+    3. Ejecuta esos jobs en el momento ('execute'): si falla, Flowable devuelve el error real.
+    """
+    for j in _jobs(fl, "deadletter-jobs", pid):
+        fl.req("POST", f"/management/deadletter-jobs/{j['id']}", {"action": "move"})
+        paso("se recuperó un job que había fallado antes")
+    timers = fl.timer_jobs(pid)
+    for t in timers:
+        fl.req("POST", f"/management/timer-jobs/{t['id']}", {"action": "move"})
+    ejecutables = _jobs(fl, "jobs", pid)
+    if not timers and not ejecutables:
+        raise ErrorDemo(f"La instancia {pid} no tiene timers pendientes.")
+    for j in ejecutables:
+        try:
+            fl.req("POST", f"/management/jobs/{j['id']}", {"action": "execute"})
+        except ErrorDemo as e:
+            if "HTTP 404" in str(e):
+                continue  # ya lo había tomado el ejecutor asíncrono
+            detalle = _error_de_jobs(fl, pid) or str(e)
+            raise ErrorDemo("Flowable no pudo ejecutar el timer. Error del motor:\n     " + detalle)
+
+
+def _esperando_fecha(fl, pid):
+    return any(e.get("activityId") == "fecha_programa" for e in fl.ejecuciones(pid))
+
+
 def cmd_timer(fl, objetivo):
     pid = resolver_pid(objetivo)
     jobs = fl.timer_jobs(pid)
-    if not jobs:
-        raise ErrorDemo(f"La instancia {pid} no tiene timers pendientes.")
-    job = jobs[0]
-    antes = fl.variable(pid, "recordatorios")
-    if antes is None:
-        titulo(f"Disparando timer {job['id']} (fecha del curso: {job.get('dueDate')})")
+    vence = jobs[0].get("dueDate") if jobs else "?"
+    viejos = {j["id"] for j in jobs}
+    es_fecha = _esperando_fecha(fl, pid)
+    if es_fecha:
+        titulo(f"Adelantando la fecha del curso (estaba programada para {vence})")
     else:
-        titulo(f"Disparando timer {job['id']} (vencía {job.get('dueDate')}) · recordatorios={antes}")
-    try:
-        fl.req("POST", f"/management/timer-jobs/{job['id']}", {"action": "move"})
-    except ErrorDemo as e:
-        raise ErrorDemo(f"Flowable no aceptó 'move': {e}\n     Alternativa: management/jobs/{{id}} con "
-                        '{"action":"execute"} (ver docs/postman/etapa 10/README.md).')
-    for _ in range(40):
-        time.sleep(0.5)
+        titulo(f"Adelantando el timer de 5 días (vencía {vence}) · recordatorios={fl.variable(pid, 'recordatorios')}")
+    _forzar_timer(fl, pid)
+    for _ in range(60):
         dictado = fl.tareas(pid, "desarrollar_curso")
         if dictado:
             ok(f"llegó la fecha del curso · 'Desarrollar curso' asignada a {dictado[0].get('assignee')}")
             return
         if fl.tareas(pid, "archivar_solicitud"):
-            ok(f"archivar_solicitud creada para {JEFE_ADM} · resultadoProceso="
-               f"{fl.variable(pid, 'resultadoProceso')}")
+            ok(f"cierre por falta de respuesta · archivar_solicitud creada para {JEFE_ADM} · "
+               f"resultadoProceso={fl.variable(pid, 'resultadoProceso')}")
             return
-        nuevos = fl.timer_jobs(pid)
-        if nuevos and nuevos[0]["id"] != job["id"]:
-            ok(f"recordatorio enviado · recordatorios={fl.variable(pid, 'recordatorios')} · "
-               f"nuevo timer vence {nuevos[0].get('dueDate')}")
-            return
-    aviso("El job se movió pero todavía no se ejecutó (el async executor puede tardar). Corré 'estado'.")
+        if not es_fecha:
+            nuevos = [j for j in fl.timer_jobs(pid) if j["id"] not in viejos]
+            if nuevos:
+                ok(f"recordatorio enviado · recordatorios={fl.variable(pid, 'recordatorios')} · "
+                   f"nuevo timer vence {nuevos[0].get('dueDate')}")
+                return
+        time.sleep(0.5)
+    error = _error_de_jobs(fl, pid)
+    if error:
+        raise ErrorDemo(f"El timer no avanzó. Error del motor:\n     {error}")
+    aviso("El timer se ejecutó pero no veo el resultado esperado. Corré 'estado' para ver en qué quedó.")
 
 
 def cmd_informe(fl, objetivo, texto):
@@ -765,18 +807,19 @@ def _estado_institucion(curso_id):
 def _disparar_y_esperar(fl, pid):
     """Dispara el timer pendiente. Devuelve ('recordatorio', n, vence) o ('cierre', resultado, None)."""
     jobs = fl.timer_jobs(pid)
-    if not jobs:
+    if not jobs and not _jobs(fl, "deadletter-jobs", pid):
         raise ErrorDemo("La instancia no tiene el timer de 5 días pendiente (¿ya respondió la empresa?).")
-    viejo = jobs[0]["id"]
-    fl.req("POST", f"/management/timer-jobs/{viejo}", {"action": "move"})
+    viejos = {j["id"] for j in jobs}
+    _forzar_timer(fl, pid)
     for _ in range(60):
-        time.sleep(0.5)
         if fl.tareas(pid, "archivar_solicitud"):
             return "cierre", fl.variable(pid, "resultadoProceso"), None
-        nuevos = fl.timer_jobs(pid)
-        if nuevos and nuevos[0]["id"] != viejo:
+        nuevos = [j for j in fl.timer_jobs(pid) if j["id"] not in viejos]
+        if nuevos:
             return "recordatorio", fl.variable(pid, "recordatorios"), nuevos[0].get("dueDate")
-    raise ErrorDemo("El timer se movió pero Flowable no lo ejecutó en 30 s. Corré 'estado' y reintentá.")
+        time.sleep(0.5)
+    error = _error_de_jobs(fl, pid)
+    raise ErrorDemo("El timer no avanzó." + (f" Error del motor:\n     {error}" if error else " Corré 'estado'."))
 
 
 def _buscar_instancia_escenario4(fl):
