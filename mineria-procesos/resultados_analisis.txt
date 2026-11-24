@@ -1,51 +1,53 @@
 ========================================================================================
  4.4 INTRODUCCIÓN A LA MINERÍA DE PROCESOS — ETAPA DE NEGOCIACIÓN (PM4Py)
 ========================================================================================
-Motor de análisis      : PM4Py compatible (analizador DFG/variantes integrado)
-Instancias analizadas  : 25
-Eventos en el log CSV  : 161
+Motor de análisis      : PM4Py 2.7.23.15
+Instancias analizadas  : 8
+Eventos en el log CSV  : 55
 Recorridos distintos   : 5
+Verificación           : PM4Py y el cálculo interno coinciden en recorridos y DFG
 
 ----------------------------------------------------------------------------------------
  TRES RECORRIDOS MÁS FRECUENTES (SECCIÓN 4.4.2)
 ----------------------------------------------------------------------------------------
-Recorrido #1: 10 instancias (40.00%)
+Recorrido #1: 2 instancias (25.00%)
   Secuencia : Solicitud recibida -> Evaluar viabilidad -> Registrar y elaborar propuesta -> Enviar propuesta -> Aceptacion -> Habilitar acceso de la empresa
 
-Recorrido #2: 6 instancias (24.00%)
+Recorrido #2: 2 instancias (25.00%)
   Secuencia : Solicitud recibida -> Evaluar viabilidad -> Registrar y elaborar propuesta -> Enviar propuesta -> Modificaciones -> Revisar propuesta -> Enviar propuesta -> Aceptacion -> Habilitar acceso de la empresa
 
-Recorrido #3: 4 instancias (16.00%)
+Recorrido #3: 2 instancias (25.00%)
   Secuencia : Solicitud recibida -> Evaluar viabilidad -> Registrar y elaborar propuesta -> Enviar propuesta -> Rechazo -> Archivar solicitud
 
-Cobertura de los 3 recorridos más frecuentes: 20/25 instancias (80.00%)
+Cobertura de los 3 recorridos más frecuentes: 6/8 instancias (75.00%)
 
 ----------------------------------------------------------------------------------------
  TABLA COMPLETA DE RECORRIDOS OBSERVADOS EN LA ETAPA DE NEGOCIACIÓN
 ----------------------------------------------------------------------------------------
 #    | Instancias |  Porcentaje | Recorrido observado
 -----+------------+-------------+-------------------------------------------------------
-1    |         10 |      40.00% | Solicitud recibida -> Evaluar viabilidad -> Registrar y elaborar propuesta -> Enviar propuesta -> Aceptacion -> Habilitar acceso de la empresa
-2    |          6 |      24.00% | Solicitud recibida -> Evaluar viabilidad -> Registrar y elaborar propuesta -> Enviar propuesta -> Modificaciones -> Revisar propuesta -> Enviar propuesta -> Aceptacion -> Habilitar acceso de la empresa
-3    |          4 |      16.00% | Solicitud recibida -> Evaluar viabilidad -> Registrar y elaborar propuesta -> Enviar propuesta -> Rechazo -> Archivar solicitud
-4    |          3 |      12.00% | Solicitud recibida -> Evaluar viabilidad -> Notificar decision
-5    |          2 |       8.00% | Solicitud recibida -> Evaluar viabilidad -> Registrar y elaborar propuesta -> Enviar propuesta -> Enviar recordatorios -> Enviar recordatorios -> Archivar solicitud
+1    |          2 |      25.00% | Solicitud recibida -> Evaluar viabilidad -> Registrar y elaborar propuesta -> Enviar propuesta -> Aceptacion -> Habilitar acceso de la empresa
+2    |          2 |      25.00% | Solicitud recibida -> Evaluar viabilidad -> Registrar y elaborar propuesta -> Enviar propuesta -> Modificaciones -> Revisar propuesta -> Enviar propuesta -> Aceptacion -> Habilitar acceso de la empresa
+3    |          2 |      25.00% | Solicitud recibida -> Evaluar viabilidad -> Registrar y elaborar propuesta -> Enviar propuesta -> Rechazo -> Archivar solicitud
+4    |          1 |      12.50% | Solicitud recibida -> Evaluar viabilidad -> Notificar decision
+5    |          1 |      12.50% | Solicitud recibida -> Evaluar viabilidad -> Registrar y elaborar propuesta -> Enviar propuesta -> Vencimiento sin respuesta -> Enviar recordatorios -> Vencimiento sin respuesta -> Enviar recordatorios -> Vencimiento sin respuesta -> Archivar solicitud
 
 ----------------------------------------------------------------------------------------
  GRAFO DE FLUJO DIRECTO (DFG) — TRANSICIONES OBSERVADAS
 ----------------------------------------------------------------------------------------
-  Solicitud recibida                 ---> Evaluar viabilidad                 (25 veces)
-  Evaluar viabilidad                 ---> Registrar y elaborar propuesta     (22 veces)
-  Registrar y elaborar propuesta     ---> Enviar propuesta                   (22 veces)
-  Aceptacion                         ---> Habilitar acceso de la empresa     (16 veces)
-  Enviar propuesta                   ---> Aceptacion                         (16 veces)
-  Enviar propuesta                   ---> Modificaciones                     (6 veces)
-  Modificaciones                     ---> Revisar propuesta                  (6 veces)
-  Revisar propuesta                  ---> Enviar propuesta                   (6 veces)
-  Enviar propuesta                   ---> Rechazo                            (4 veces)
-  Rechazo                            ---> Archivar solicitud                 (4 veces)
-  Evaluar viabilidad                 ---> Notificar decision                 (3 veces)
-  Enviar propuesta                   ---> Enviar recordatorios               (2 veces)
-  Enviar recordatorios               ---> Archivar solicitud                 (2 veces)
-  Enviar recordatorios               ---> Enviar recordatorios               (2 veces)
+  Solicitud recibida                 ---> Evaluar viabilidad                 (8 veces)
+  Evaluar viabilidad                 ---> Registrar y elaborar propuesta     (7 veces)
+  Registrar y elaborar propuesta     ---> Enviar propuesta                   (7 veces)
+  Aceptacion                         ---> Habilitar acceso de la empresa     (4 veces)
+  Enviar propuesta                   ---> Aceptacion                         (4 veces)
+  Enviar propuesta                   ---> Modificaciones                     (2 veces)
+  Enviar propuesta                   ---> Rechazo                            (2 veces)
+  Enviar recordatorios               ---> Vencimiento sin respuesta          (2 veces)
+  Modificaciones                     ---> Revisar propuesta                  (2 veces)
+  Rechazo                            ---> Archivar solicitud                 (2 veces)
+  Revisar propuesta                  ---> Enviar propuesta                   (2 veces)
+  Vencimiento sin respuesta          ---> Enviar recordatorios               (2 veces)
+  Enviar propuesta                   ---> Vencimiento sin respuesta          (1 veces)
+  Evaluar viabilidad                 ---> Notificar decision                 (1 veces)
+  Vencimiento sin respuesta          ---> Archivar solicitud                 (1 veces)
 ========================================================================================

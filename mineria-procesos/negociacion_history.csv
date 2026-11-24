@@ -1,162 +1,56 @@
 case_id,activity,activity_id,timestamp,end_time,assignee,duration_ms
-inst-negociacion-001,Solicitud recibida,recibir_solicitud,2026-11-01T15:00:00-03:00,2026-11-01T15:00:01-03:00,,150
-inst-negociacion-001,Evaluar viabilidad,evaluar_viabilidad,2026-11-01T15:05:01-03:00,2026-11-01T15:05:02-03:00,,320
-inst-negociacion-001,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-01T15:10:02-03:00,2026-11-01T15:40:02-03:00,Jefe-Administrativo,1800000
-inst-negociacion-001,Enviar propuesta,enviar_propuesta,2026-11-01T15:45:02-03:00,2026-11-01T15:45:03-03:00,,210
-inst-negociacion-001,Aceptacion,evento-aceptacion,2026-11-01T15:50:03-03:00,2026-11-02T06:50:03-03:00,,54000000
-inst-negociacion-001,Habilitar acceso de la empresa,habilitar_acceso_empresa,2026-11-02T06:55:03-03:00,2026-11-02T06:55:04-03:00,,420
-inst-negociacion-002,Solicitud recibida,recibir_solicitud,2026-11-01T22:00:00-03:00,2026-11-01T22:00:01-03:00,,150
-inst-negociacion-002,Evaluar viabilidad,evaluar_viabilidad,2026-11-01T22:05:01-03:00,2026-11-01T22:05:02-03:00,,320
-inst-negociacion-002,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-01T22:10:02-03:00,2026-11-01T22:40:02-03:00,Jefe-Administrativo,1800000
-inst-negociacion-002,Enviar propuesta,enviar_propuesta,2026-11-01T22:45:02-03:00,2026-11-01T22:45:03-03:00,,210
-inst-negociacion-002,Aceptacion,evento-aceptacion,2026-11-01T22:50:03-03:00,2026-11-02T13:50:03-03:00,,54000000
-inst-negociacion-002,Habilitar acceso de la empresa,habilitar_acceso_empresa,2026-11-02T13:55:03-03:00,2026-11-02T13:55:04-03:00,,420
-inst-negociacion-003,Solicitud recibida,recibir_solicitud,2026-11-02T05:00:00-03:00,2026-11-02T05:00:01-03:00,,150
-inst-negociacion-003,Evaluar viabilidad,evaluar_viabilidad,2026-11-02T05:05:01-03:00,2026-11-02T05:05:02-03:00,,320
-inst-negociacion-003,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-02T05:10:02-03:00,2026-11-02T05:40:02-03:00,Jefe-Administrativo,1800000
-inst-negociacion-003,Enviar propuesta,enviar_propuesta,2026-11-02T05:45:02-03:00,2026-11-02T05:45:03-03:00,,210
-inst-negociacion-003,Aceptacion,evento-aceptacion,2026-11-02T05:50:03-03:00,2026-11-02T20:50:03-03:00,,54000000
-inst-negociacion-003,Habilitar acceso de la empresa,habilitar_acceso_empresa,2026-11-02T20:55:03-03:00,2026-11-02T20:55:04-03:00,,420
-inst-negociacion-004,Solicitud recibida,recibir_solicitud,2026-11-02T12:00:00-03:00,2026-11-02T12:00:01-03:00,,150
-inst-negociacion-004,Evaluar viabilidad,evaluar_viabilidad,2026-11-02T12:05:01-03:00,2026-11-02T12:05:02-03:00,,320
-inst-negociacion-004,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-02T12:10:02-03:00,2026-11-02T12:40:02-03:00,Jefe-Administrativo,1800000
-inst-negociacion-004,Enviar propuesta,enviar_propuesta,2026-11-02T12:45:02-03:00,2026-11-02T12:45:03-03:00,,210
-inst-negociacion-004,Aceptacion,evento-aceptacion,2026-11-02T12:50:03-03:00,2026-11-03T03:50:03-03:00,,54000000
-inst-negociacion-004,Habilitar acceso de la empresa,habilitar_acceso_empresa,2026-11-03T03:55:03-03:00,2026-11-03T03:55:04-03:00,,420
-inst-negociacion-005,Solicitud recibida,recibir_solicitud,2026-11-02T19:00:00-03:00,2026-11-02T19:00:01-03:00,,150
-inst-negociacion-005,Evaluar viabilidad,evaluar_viabilidad,2026-11-02T19:05:01-03:00,2026-11-02T19:05:02-03:00,,320
-inst-negociacion-005,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-02T19:10:02-03:00,2026-11-02T19:40:02-03:00,Jefe-Administrativo,1800000
-inst-negociacion-005,Enviar propuesta,enviar_propuesta,2026-11-02T19:45:02-03:00,2026-11-02T19:45:03-03:00,,210
-inst-negociacion-005,Aceptacion,evento-aceptacion,2026-11-02T19:50:03-03:00,2026-11-03T10:50:03-03:00,,54000000
-inst-negociacion-005,Habilitar acceso de la empresa,habilitar_acceso_empresa,2026-11-03T10:55:03-03:00,2026-11-03T10:55:04-03:00,,420
-inst-negociacion-006,Solicitud recibida,recibir_solicitud,2026-11-03T02:00:00-03:00,2026-11-03T02:00:01-03:00,,150
-inst-negociacion-006,Evaluar viabilidad,evaluar_viabilidad,2026-11-03T02:05:01-03:00,2026-11-03T02:05:02-03:00,,320
-inst-negociacion-006,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-03T02:10:02-03:00,2026-11-03T02:40:02-03:00,Jefe-Administrativo,1800000
-inst-negociacion-006,Enviar propuesta,enviar_propuesta,2026-11-03T02:45:02-03:00,2026-11-03T02:45:03-03:00,,210
-inst-negociacion-006,Aceptacion,evento-aceptacion,2026-11-03T02:50:03-03:00,2026-11-03T17:50:03-03:00,,54000000
-inst-negociacion-006,Habilitar acceso de la empresa,habilitar_acceso_empresa,2026-11-03T17:55:03-03:00,2026-11-03T17:55:04-03:00,,420
-inst-negociacion-007,Solicitud recibida,recibir_solicitud,2026-11-03T09:00:00-03:00,2026-11-03T09:00:01-03:00,,150
-inst-negociacion-007,Evaluar viabilidad,evaluar_viabilidad,2026-11-03T09:05:01-03:00,2026-11-03T09:05:02-03:00,,320
-inst-negociacion-007,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-03T09:10:02-03:00,2026-11-03T09:40:02-03:00,Jefe-Administrativo,1800000
-inst-negociacion-007,Enviar propuesta,enviar_propuesta,2026-11-03T09:45:02-03:00,2026-11-03T09:45:03-03:00,,210
-inst-negociacion-007,Aceptacion,evento-aceptacion,2026-11-03T09:50:03-03:00,2026-11-04T00:50:03-03:00,,54000000
-inst-negociacion-007,Habilitar acceso de la empresa,habilitar_acceso_empresa,2026-11-04T00:55:03-03:00,2026-11-04T00:55:04-03:00,,420
-inst-negociacion-008,Solicitud recibida,recibir_solicitud,2026-11-03T16:00:00-03:00,2026-11-03T16:00:01-03:00,,150
-inst-negociacion-008,Evaluar viabilidad,evaluar_viabilidad,2026-11-03T16:05:01-03:00,2026-11-03T16:05:02-03:00,,320
-inst-negociacion-008,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-03T16:10:02-03:00,2026-11-03T16:40:02-03:00,Jefe-Administrativo,1800000
-inst-negociacion-008,Enviar propuesta,enviar_propuesta,2026-11-03T16:45:02-03:00,2026-11-03T16:45:03-03:00,,210
-inst-negociacion-008,Aceptacion,evento-aceptacion,2026-11-03T16:50:03-03:00,2026-11-04T07:50:03-03:00,,54000000
-inst-negociacion-008,Habilitar acceso de la empresa,habilitar_acceso_empresa,2026-11-04T07:55:03-03:00,2026-11-04T07:55:04-03:00,,420
-inst-negociacion-009,Solicitud recibida,recibir_solicitud,2026-11-03T23:00:00-03:00,2026-11-03T23:00:01-03:00,,150
-inst-negociacion-009,Evaluar viabilidad,evaluar_viabilidad,2026-11-03T23:05:01-03:00,2026-11-03T23:05:02-03:00,,320
-inst-negociacion-009,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-03T23:10:02-03:00,2026-11-03T23:40:02-03:00,Jefe-Administrativo,1800000
-inst-negociacion-009,Enviar propuesta,enviar_propuesta,2026-11-03T23:45:02-03:00,2026-11-03T23:45:03-03:00,,210
-inst-negociacion-009,Aceptacion,evento-aceptacion,2026-11-03T23:50:03-03:00,2026-11-04T14:50:03-03:00,,54000000
-inst-negociacion-009,Habilitar acceso de la empresa,habilitar_acceso_empresa,2026-11-04T14:55:03-03:00,2026-11-04T14:55:04-03:00,,420
-inst-negociacion-010,Solicitud recibida,recibir_solicitud,2026-11-04T06:00:00-03:00,2026-11-04T06:00:01-03:00,,150
-inst-negociacion-010,Evaluar viabilidad,evaluar_viabilidad,2026-11-04T06:05:01-03:00,2026-11-04T06:05:02-03:00,,320
-inst-negociacion-010,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-04T06:10:02-03:00,2026-11-04T06:40:02-03:00,Jefe-Administrativo,1800000
-inst-negociacion-010,Enviar propuesta,enviar_propuesta,2026-11-04T06:45:02-03:00,2026-11-04T06:45:03-03:00,,210
-inst-negociacion-010,Aceptacion,evento-aceptacion,2026-11-04T06:50:03-03:00,2026-11-04T21:50:03-03:00,,54000000
-inst-negociacion-010,Habilitar acceso de la empresa,habilitar_acceso_empresa,2026-11-04T21:55:03-03:00,2026-11-04T21:55:04-03:00,,420
-inst-negociacion-011,Solicitud recibida,recibir_solicitud,2026-11-04T03:00:00-03:00,2026-11-04T03:00:01-03:00,,140
-inst-negociacion-011,Evaluar viabilidad,evaluar_viabilidad,2026-11-04T03:05:01-03:00,2026-11-04T03:05:02-03:00,,290
-inst-negociacion-011,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-04T03:10:02-03:00,2026-11-04T03:45:02-03:00,Jefe-Administrativo,2100000
-inst-negociacion-011,Enviar propuesta,enviar_propuesta,2026-11-04T03:50:02-03:00,2026-11-04T03:50:03-03:00,,190
-inst-negociacion-011,Modificaciones,evento-modificacion,2026-11-04T03:55:03-03:00,2026-11-04T15:55:03-03:00,,43200000
-inst-negociacion-011,Revisar propuesta,revisar_propuesta,2026-11-04T16:00:03-03:00,2026-11-04T16:25:03-03:00,Jefe-Administrativo,1500000
-inst-negociacion-011,Enviar propuesta,enviar_propuesta,2026-11-04T16:30:03-03:00,2026-11-04T16:30:04-03:00,,180
-inst-negociacion-011,Aceptacion,evento-aceptacion,2026-11-04T16:35:04-03:00,2026-11-05T02:35:04-03:00,,36000000
-inst-negociacion-011,Habilitar acceso de la empresa,habilitar_acceso_empresa,2026-11-05T02:40:04-03:00,2026-11-05T02:40:05-03:00,,390
-inst-negociacion-012,Solicitud recibida,recibir_solicitud,2026-11-04T10:00:00-03:00,2026-11-04T10:00:01-03:00,,140
-inst-negociacion-012,Evaluar viabilidad,evaluar_viabilidad,2026-11-04T10:05:01-03:00,2026-11-04T10:05:02-03:00,,290
-inst-negociacion-012,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-04T10:10:02-03:00,2026-11-04T10:45:02-03:00,Jefe-Administrativo,2100000
-inst-negociacion-012,Enviar propuesta,enviar_propuesta,2026-11-04T10:50:02-03:00,2026-11-04T10:50:03-03:00,,190
-inst-negociacion-012,Modificaciones,evento-modificacion,2026-11-04T10:55:03-03:00,2026-11-04T22:55:03-03:00,,43200000
-inst-negociacion-012,Revisar propuesta,revisar_propuesta,2026-11-04T23:00:03-03:00,2026-11-04T23:25:03-03:00,Jefe-Administrativo,1500000
-inst-negociacion-012,Enviar propuesta,enviar_propuesta,2026-11-04T23:30:03-03:00,2026-11-04T23:30:04-03:00,,180
-inst-negociacion-012,Aceptacion,evento-aceptacion,2026-11-04T23:35:04-03:00,2026-11-05T09:35:04-03:00,,36000000
-inst-negociacion-012,Habilitar acceso de la empresa,habilitar_acceso_empresa,2026-11-05T09:40:04-03:00,2026-11-05T09:40:05-03:00,,390
-inst-negociacion-013,Solicitud recibida,recibir_solicitud,2026-11-04T17:00:00-03:00,2026-11-04T17:00:01-03:00,,140
-inst-negociacion-013,Evaluar viabilidad,evaluar_viabilidad,2026-11-04T17:05:01-03:00,2026-11-04T17:05:02-03:00,,290
-inst-negociacion-013,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-04T17:10:02-03:00,2026-11-04T17:45:02-03:00,Jefe-Administrativo,2100000
-inst-negociacion-013,Enviar propuesta,enviar_propuesta,2026-11-04T17:50:02-03:00,2026-11-04T17:50:03-03:00,,190
-inst-negociacion-013,Modificaciones,evento-modificacion,2026-11-04T17:55:03-03:00,2026-11-05T05:55:03-03:00,,43200000
-inst-negociacion-013,Revisar propuesta,revisar_propuesta,2026-11-05T06:00:03-03:00,2026-11-05T06:25:03-03:00,Jefe-Administrativo,1500000
-inst-negociacion-013,Enviar propuesta,enviar_propuesta,2026-11-05T06:30:03-03:00,2026-11-05T06:30:04-03:00,,180
-inst-negociacion-013,Aceptacion,evento-aceptacion,2026-11-05T06:35:04-03:00,2026-11-05T16:35:04-03:00,,36000000
-inst-negociacion-013,Habilitar acceso de la empresa,habilitar_acceso_empresa,2026-11-05T16:40:04-03:00,2026-11-05T16:40:05-03:00,,390
-inst-negociacion-014,Solicitud recibida,recibir_solicitud,2026-11-05T00:00:00-03:00,2026-11-05T00:00:01-03:00,,140
-inst-negociacion-014,Evaluar viabilidad,evaluar_viabilidad,2026-11-05T00:05:01-03:00,2026-11-05T00:05:02-03:00,,290
-inst-negociacion-014,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-05T00:10:02-03:00,2026-11-05T00:45:02-03:00,Jefe-Administrativo,2100000
-inst-negociacion-014,Enviar propuesta,enviar_propuesta,2026-11-05T00:50:02-03:00,2026-11-05T00:50:03-03:00,,190
-inst-negociacion-014,Modificaciones,evento-modificacion,2026-11-05T00:55:03-03:00,2026-11-05T12:55:03-03:00,,43200000
-inst-negociacion-014,Revisar propuesta,revisar_propuesta,2026-11-05T13:00:03-03:00,2026-11-05T13:25:03-03:00,Jefe-Administrativo,1500000
-inst-negociacion-014,Enviar propuesta,enviar_propuesta,2026-11-05T13:30:03-03:00,2026-11-05T13:30:04-03:00,,180
-inst-negociacion-014,Aceptacion,evento-aceptacion,2026-11-05T13:35:04-03:00,2026-11-05T23:35:04-03:00,,36000000
-inst-negociacion-014,Habilitar acceso de la empresa,habilitar_acceso_empresa,2026-11-05T23:40:04-03:00,2026-11-05T23:40:05-03:00,,390
-inst-negociacion-015,Solicitud recibida,recibir_solicitud,2026-11-05T07:00:00-03:00,2026-11-05T07:00:01-03:00,,140
-inst-negociacion-015,Evaluar viabilidad,evaluar_viabilidad,2026-11-05T07:05:01-03:00,2026-11-05T07:05:02-03:00,,290
-inst-negociacion-015,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-05T07:10:02-03:00,2026-11-05T07:45:02-03:00,Jefe-Administrativo,2100000
-inst-negociacion-015,Enviar propuesta,enviar_propuesta,2026-11-05T07:50:02-03:00,2026-11-05T07:50:03-03:00,,190
-inst-negociacion-015,Modificaciones,evento-modificacion,2026-11-05T07:55:03-03:00,2026-11-05T19:55:03-03:00,,43200000
-inst-negociacion-015,Revisar propuesta,revisar_propuesta,2026-11-05T20:00:03-03:00,2026-11-05T20:25:03-03:00,Jefe-Administrativo,1500000
-inst-negociacion-015,Enviar propuesta,enviar_propuesta,2026-11-05T20:30:03-03:00,2026-11-05T20:30:04-03:00,,180
-inst-negociacion-015,Aceptacion,evento-aceptacion,2026-11-05T20:35:04-03:00,2026-11-06T06:35:04-03:00,,36000000
-inst-negociacion-015,Habilitar acceso de la empresa,habilitar_acceso_empresa,2026-11-06T06:40:04-03:00,2026-11-06T06:40:05-03:00,,390
-inst-negociacion-016,Solicitud recibida,recibir_solicitud,2026-11-05T14:00:00-03:00,2026-11-05T14:00:01-03:00,,140
-inst-negociacion-016,Evaluar viabilidad,evaluar_viabilidad,2026-11-05T14:05:01-03:00,2026-11-05T14:05:02-03:00,,290
-inst-negociacion-016,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-05T14:10:02-03:00,2026-11-05T14:45:02-03:00,Jefe-Administrativo,2100000
-inst-negociacion-016,Enviar propuesta,enviar_propuesta,2026-11-05T14:50:02-03:00,2026-11-05T14:50:03-03:00,,190
-inst-negociacion-016,Modificaciones,evento-modificacion,2026-11-05T14:55:03-03:00,2026-11-06T02:55:03-03:00,,43200000
-inst-negociacion-016,Revisar propuesta,revisar_propuesta,2026-11-06T03:00:03-03:00,2026-11-06T03:25:03-03:00,Jefe-Administrativo,1500000
-inst-negociacion-016,Enviar propuesta,enviar_propuesta,2026-11-06T03:30:03-03:00,2026-11-06T03:30:04-03:00,,180
-inst-negociacion-016,Aceptacion,evento-aceptacion,2026-11-06T03:35:04-03:00,2026-11-06T13:35:04-03:00,,36000000
-inst-negociacion-016,Habilitar acceso de la empresa,habilitar_acceso_empresa,2026-11-06T13:40:04-03:00,2026-11-06T13:40:05-03:00,,390
-inst-negociacion-017,Solicitud recibida,recibir_solicitud,2026-11-05T15:00:00-03:00,2026-11-05T15:00:01-03:00,,130
-inst-negociacion-017,Evaluar viabilidad,evaluar_viabilidad,2026-11-05T15:05:01-03:00,2026-11-05T15:05:02-03:00,,280
-inst-negociacion-017,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-05T15:10:02-03:00,2026-11-05T15:37:32-03:00,Jefe-Administrativo,1650000
-inst-negociacion-017,Enviar propuesta,enviar_propuesta,2026-11-05T15:42:32-03:00,2026-11-05T15:42:33-03:00,,200
-inst-negociacion-017,Rechazo,evento-rechazo,2026-11-05T15:47:33-03:00,2026-11-06T11:47:33-03:00,,72000000
-inst-negociacion-017,Archivar solicitud,archivar_solicitud,2026-11-06T11:52:33-03:00,2026-11-06T12:02:33-03:00,Jefe-Administrativo,600000
-inst-negociacion-018,Solicitud recibida,recibir_solicitud,2026-11-05T22:00:00-03:00,2026-11-05T22:00:01-03:00,,130
-inst-negociacion-018,Evaluar viabilidad,evaluar_viabilidad,2026-11-05T22:05:01-03:00,2026-11-05T22:05:02-03:00,,280
-inst-negociacion-018,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-05T22:10:02-03:00,2026-11-05T22:37:32-03:00,Jefe-Administrativo,1650000
-inst-negociacion-018,Enviar propuesta,enviar_propuesta,2026-11-05T22:42:32-03:00,2026-11-05T22:42:33-03:00,,200
-inst-negociacion-018,Rechazo,evento-rechazo,2026-11-05T22:47:33-03:00,2026-11-06T18:47:33-03:00,,72000000
-inst-negociacion-018,Archivar solicitud,archivar_solicitud,2026-11-06T18:52:33-03:00,2026-11-06T19:02:33-03:00,Jefe-Administrativo,600000
-inst-negociacion-019,Solicitud recibida,recibir_solicitud,2026-11-06T05:00:00-03:00,2026-11-06T05:00:01-03:00,,130
-inst-negociacion-019,Evaluar viabilidad,evaluar_viabilidad,2026-11-06T05:05:01-03:00,2026-11-06T05:05:02-03:00,,280
-inst-negociacion-019,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-06T05:10:02-03:00,2026-11-06T05:37:32-03:00,Jefe-Administrativo,1650000
-inst-negociacion-019,Enviar propuesta,enviar_propuesta,2026-11-06T05:42:32-03:00,2026-11-06T05:42:33-03:00,,200
-inst-negociacion-019,Rechazo,evento-rechazo,2026-11-06T05:47:33-03:00,2026-11-07T01:47:33-03:00,,72000000
-inst-negociacion-019,Archivar solicitud,archivar_solicitud,2026-11-07T01:52:33-03:00,2026-11-07T02:02:33-03:00,Jefe-Administrativo,600000
-inst-negociacion-020,Solicitud recibida,recibir_solicitud,2026-11-06T12:00:00-03:00,2026-11-06T12:00:01-03:00,,130
-inst-negociacion-020,Evaluar viabilidad,evaluar_viabilidad,2026-11-06T12:05:01-03:00,2026-11-06T12:05:02-03:00,,280
-inst-negociacion-020,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-06T12:10:02-03:00,2026-11-06T12:37:32-03:00,Jefe-Administrativo,1650000
-inst-negociacion-020,Enviar propuesta,enviar_propuesta,2026-11-06T12:42:32-03:00,2026-11-06T12:42:33-03:00,,200
-inst-negociacion-020,Rechazo,evento-rechazo,2026-11-06T12:47:33-03:00,2026-11-07T08:47:33-03:00,,72000000
-inst-negociacion-020,Archivar solicitud,archivar_solicitud,2026-11-07T08:52:33-03:00,2026-11-07T09:02:33-03:00,Jefe-Administrativo,600000
-inst-negociacion-021,Solicitud recibida,recibir_solicitud,2026-11-06T15:00:00-03:00,2026-11-06T15:00:01-03:00,,120
-inst-negociacion-021,Evaluar viabilidad,evaluar_viabilidad,2026-11-06T15:05:01-03:00,2026-11-06T15:05:02-03:00,,250
-inst-negociacion-021,Notificar decision,notificar_decision,2026-11-06T15:10:02-03:00,2026-11-06T15:10:03-03:00,,180
-inst-negociacion-022,Solicitud recibida,recibir_solicitud,2026-11-06T22:00:00-03:00,2026-11-06T22:00:01-03:00,,120
-inst-negociacion-022,Evaluar viabilidad,evaluar_viabilidad,2026-11-06T22:05:01-03:00,2026-11-06T22:05:02-03:00,,250
-inst-negociacion-022,Notificar decision,notificar_decision,2026-11-06T22:10:02-03:00,2026-11-06T22:10:03-03:00,,180
-inst-negociacion-023,Solicitud recibida,recibir_solicitud,2026-11-07T05:00:00-03:00,2026-11-07T05:00:01-03:00,,120
-inst-negociacion-023,Evaluar viabilidad,evaluar_viabilidad,2026-11-07T05:05:01-03:00,2026-11-07T05:05:02-03:00,,250
-inst-negociacion-023,Notificar decision,notificar_decision,2026-11-07T05:10:02-03:00,2026-11-07T05:10:03-03:00,,180
-inst-negociacion-024,Solicitud recibida,recibir_solicitud,2026-11-07T09:00:00-03:00,2026-11-07T09:00:01-03:00,,160
-inst-negociacion-024,Evaluar viabilidad,evaluar_viabilidad,2026-11-07T09:05:01-03:00,2026-11-07T09:05:02-03:00,,310
-inst-negociacion-024,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-07T09:10:02-03:00,2026-11-07T09:41:42-03:00,Jefe-Administrativo,1900000
-inst-negociacion-024,Enviar propuesta,enviar_propuesta,2026-11-07T09:46:42-03:00,2026-11-07T09:46:43-03:00,,205
-inst-negociacion-024,Enviar recordatorios,enviar_recordatorios,2026-11-07T09:51:43-03:00,2026-11-12T09:51:43-03:00,,432000000
-inst-negociacion-024,Enviar recordatorios,enviar_recordatorios,2026-11-12T09:56:43-03:00,2026-11-17T09:56:43-03:00,,432000000
-inst-negociacion-024,Archivar solicitud,archivar_solicitud,2026-11-17T10:01:43-03:00,2026-11-17T10:10:43-03:00,Jefe-Administrativo,540000
-inst-negociacion-025,Solicitud recibida,recibir_solicitud,2026-11-07T16:00:00-03:00,2026-11-07T16:00:01-03:00,,160
-inst-negociacion-025,Evaluar viabilidad,evaluar_viabilidad,2026-11-07T16:05:01-03:00,2026-11-07T16:05:02-03:00,,310
-inst-negociacion-025,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-07T16:10:02-03:00,2026-11-07T16:41:42-03:00,Jefe-Administrativo,1900000
-inst-negociacion-025,Enviar propuesta,enviar_propuesta,2026-11-07T16:46:42-03:00,2026-11-07T16:46:43-03:00,,205
-inst-negociacion-025,Enviar recordatorios,enviar_recordatorios,2026-11-07T16:51:43-03:00,2026-11-12T16:51:43-03:00,,432000000
-inst-negociacion-025,Enviar recordatorios,enviar_recordatorios,2026-11-12T16:56:43-03:00,2026-11-17T16:56:43-03:00,,432000000
-inst-negociacion-025,Archivar solicitud,archivar_solicitud,2026-11-17T17:01:43-03:00,2026-11-17T17:10:43-03:00,Jefe-Administrativo,540000
+14a34620-e848-11f1-b70d-c2aa5314bd95,Solicitud recibida,recibir_solicitud,2026-11-24T20:46:10.674+00:00,2026-11-24T20:46:10.674+00:00,,0
+14a34620-e848-11f1-b70d-c2aa5314bd95,Evaluar viabilidad,evaluar_viabilidad,2026-11-24T20:46:10.675+00:00,2026-11-24T20:46:10.675+00:00,,1
+14a34620-e848-11f1-b70d-c2aa5314bd95,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-24T20:46:10.676+00:00,2026-11-24T20:46:14.818+00:00,Jefe-Administrativo,4143
+14a34620-e848-11f1-b70d-c2aa5314bd95,Enviar propuesta,enviar_propuesta,2026-11-24T20:46:14.818+00:00,2026-11-24T20:46:14.819+00:00,,1
+14a34620-e848-11f1-b70d-c2aa5314bd95,Rechazo,evento-rechazo,2026-11-24T20:46:16.915+00:00,2026-11-24T20:46:16.915+00:00,,2094
+14a34620-e848-11f1-b70d-c2aa5314bd95,Archivar solicitud,archivar_solicitud,2026-11-24T20:46:16.916+00:00,2026-11-24T20:46:21.045+00:00,Jefe-Administrativo,4130
+1e8a37a8-e848-11f1-b70d-c2aa5314bd95,Solicitud recibida,recibir_solicitud,2026-11-24T20:46:27.287+00:00,2026-11-24T20:46:27.287+00:00,,0
+1e8a37a8-e848-11f1-b70d-c2aa5314bd95,Evaluar viabilidad,evaluar_viabilidad,2026-11-24T20:46:27.288+00:00,2026-11-24T20:46:27.289+00:00,,2
+1e8a37a8-e848-11f1-b70d-c2aa5314bd95,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-24T20:46:27.289+00:00,2026-11-24T20:46:31.429+00:00,Jefe-Administrativo,4140
+1e8a37a8-e848-11f1-b70d-c2aa5314bd95,Enviar propuesta,enviar_propuesta,2026-11-24T20:46:31.429+00:00,2026-11-24T20:46:31.431+00:00,,2
+1e8a37a8-e848-11f1-b70d-c2aa5314bd95,Rechazo,evento-rechazo,2026-11-24T20:46:33.559+00:00,2026-11-24T20:46:33.559+00:00,,2126
+1e8a37a8-e848-11f1-b70d-c2aa5314bd95,Archivar solicitud,archivar_solicitud,2026-11-24T20:46:33.560+00:00,2026-11-24T20:46:37.708+00:00,Jefe-Administrativo,4148
+2877b8e0-e848-11f1-b70d-c2aa5314bd95,Solicitud recibida,recibir_solicitud,2026-11-24T20:46:43.942+00:00,2026-11-24T20:46:43.943+00:00,,1
+2877b8e0-e848-11f1-b70d-c2aa5314bd95,Evaluar viabilidad,evaluar_viabilidad,2026-11-24T20:46:43.943+00:00,2026-11-24T20:46:43.944+00:00,,1
+2877b8e0-e848-11f1-b70d-c2aa5314bd95,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-24T20:46:43.944+00:00,2026-11-24T20:46:48.088+00:00,Jefe-Administrativo,4144
+2877b8e0-e848-11f1-b70d-c2aa5314bd95,Enviar propuesta,enviar_propuesta,2026-11-24T20:46:48.089+00:00,2026-11-24T20:46:48.090+00:00,,1
+2877b8e0-e848-11f1-b70d-c2aa5314bd95,Vencimiento sin respuesta,evento-5-dias,2026-11-24T20:46:56.318+00:00,2026-11-24T20:46:56.318+00:00,,8228
+2877b8e0-e848-11f1-b70d-c2aa5314bd95,Enviar recordatorios,enviar_recordatorios,2026-11-24T20:46:56.319+00:00,2026-11-24T20:46:56.412+00:00,,93
+2877b8e0-e848-11f1-b70d-c2aa5314bd95,Vencimiento sin respuesta,evento-5-dias,2026-11-24T20:47:10.682+00:00,2026-11-24T20:47:10.682+00:00,,14268
+2877b8e0-e848-11f1-b70d-c2aa5314bd95,Enviar recordatorios,enviar_recordatorios,2026-11-24T20:47:10.683+00:00,2026-11-24T20:47:10.687+00:00,,4
+2877b8e0-e848-11f1-b70d-c2aa5314bd95,Vencimiento sin respuesta,evento-5-dias,2026-11-24T20:47:25.083+00:00,2026-11-24T20:47:25.083+00:00,,14395
+2877b8e0-e848-11f1-b70d-c2aa5314bd95,Archivar solicitud,archivar_solicitud,2026-11-24T20:47:25.085+00:00,2026-11-24T20:47:33.272+00:00,Jefe-Administrativo,8187
+67454188-e847-11f1-b70d-c2aa5314bd95,Solicitud recibida,recibir_solicitud,2026-11-24T20:41:19.815+00:00,2026-11-24T20:41:19.818+00:00,,3
+67454188-e847-11f1-b70d-c2aa5314bd95,Evaluar viabilidad,evaluar_viabilidad,2026-11-24T20:41:19.819+00:00,2026-11-24T20:41:19.871+00:00,,52
+67454188-e847-11f1-b70d-c2aa5314bd95,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-24T20:41:19.873+00:00,2026-11-24T20:41:24.360+00:00,Jefe-Administrativo,4487
+67454188-e847-11f1-b70d-c2aa5314bd95,Enviar propuesta,enviar_propuesta,2026-11-24T20:41:24.362+00:00,2026-11-24T20:41:25.191+00:00,,829
+67454188-e847-11f1-b70d-c2aa5314bd95,Aceptacion,evento-aceptacion,2026-11-24T20:41:27.455+00:00,2026-11-24T20:41:27.455+00:00,,2238
+67454188-e847-11f1-b70d-c2aa5314bd95,Habilitar acceso de la empresa,habilitar_acceso_empresa,2026-11-24T20:41:27.456+00:00,2026-11-24T20:41:27.477+00:00,,21
+6d2fff41-e847-11f1-b70d-c2aa5314bd95,Solicitud recibida,recibir_solicitud,2026-11-24T20:41:29.738+00:00,2026-11-24T20:41:29.738+00:00,,0
+6d2fff41-e847-11f1-b70d-c2aa5314bd95,Evaluar viabilidad,evaluar_viabilidad,2026-11-24T20:41:29.739+00:00,2026-11-24T20:41:29.740+00:00,,2
+6d2fff41-e847-11f1-b70d-c2aa5314bd95,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-24T20:41:29.741+00:00,2026-11-24T20:41:33.929+00:00,Jefe-Administrativo,4188
+6d2fff41-e847-11f1-b70d-c2aa5314bd95,Enviar propuesta,enviar_propuesta,2026-11-24T20:41:33.930+00:00,2026-11-24T20:41:33.933+00:00,,3
+6d2fff41-e847-11f1-b70d-c2aa5314bd95,Modificaciones,evento-modificacion,2026-11-24T20:41:36.037+00:00,2026-11-24T20:41:36.037+00:00,,2102
+6d2fff41-e847-11f1-b70d-c2aa5314bd95,Revisar propuesta,revisar_propuesta,2026-11-24T20:41:36.038+00:00,2026-11-24T20:41:40.207+00:00,Jefe-Administrativo,4169
+6d2fff41-e847-11f1-b70d-c2aa5314bd95,Enviar propuesta,enviar_propuesta,2026-11-24T20:41:40.207+00:00,2026-11-24T20:41:40.211+00:00,,4
+6d2fff41-e847-11f1-b70d-c2aa5314bd95,Aceptacion,evento-aceptacion,2026-11-24T20:41:42.328+00:00,2026-11-24T20:41:42.328+00:00,,2113
+6d2fff41-e847-11f1-b70d-c2aa5314bd95,Habilitar acceso de la empresa,habilitar_acceso_empresa,2026-11-24T20:41:42.329+00:00,2026-11-24T20:41:42.333+00:00,,4
+76030ef4-e847-11f1-b70d-c2aa5314bd95,Solicitud recibida,recibir_solicitud,2026-11-24T20:41:44.543+00:00,2026-11-24T20:41:44.543+00:00,,0
+76030ef4-e847-11f1-b70d-c2aa5314bd95,Evaluar viabilidad,evaluar_viabilidad,2026-11-24T20:41:44.544+00:00,2026-11-24T20:41:44.545+00:00,,2
+76030ef4-e847-11f1-b70d-c2aa5314bd95,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-24T20:41:44.545+00:00,2026-11-24T20:41:48.707+00:00,Jefe-Administrativo,4162
+76030ef4-e847-11f1-b70d-c2aa5314bd95,Enviar propuesta,enviar_propuesta,2026-11-24T20:41:48.709+00:00,2026-11-24T20:41:48.710+00:00,,1
+76030ef4-e847-11f1-b70d-c2aa5314bd95,Aceptacion,evento-aceptacion,2026-11-24T20:41:50.838+00:00,2026-11-24T20:41:50.838+00:00,,2125
+76030ef4-e847-11f1-b70d-c2aa5314bd95,Habilitar acceso de la empresa,habilitar_acceso_empresa,2026-11-24T20:41:50.839+00:00,2026-11-24T20:41:50.839+00:00,,1
+7c50ad2d-e847-11f1-b70d-c2aa5314bd95,Solicitud recibida,recibir_solicitud,2026-11-24T20:41:55.118+00:00,2026-11-24T20:41:55.118+00:00,,0
+7c50ad2d-e847-11f1-b70d-c2aa5314bd95,Evaluar viabilidad,evaluar_viabilidad,2026-11-24T20:41:55.119+00:00,2026-11-24T20:41:55.120+00:00,,2
+7c50ad2d-e847-11f1-b70d-c2aa5314bd95,Notificar decision,notificar_decision,2026-11-24T20:41:55.120+00:00,2026-11-24T20:41:55.149+00:00,,29
+e963f49b-e847-11f1-b70d-c2aa5314bd95,Solicitud recibida,recibir_solicitud,2026-11-24T20:44:58.116+00:00,2026-11-24T20:44:58.117+00:00,,1
+e963f49b-e847-11f1-b70d-c2aa5314bd95,Evaluar viabilidad,evaluar_viabilidad,2026-11-24T20:44:58.117+00:00,2026-11-24T20:44:58.118+00:00,,1
+e963f49b-e847-11f1-b70d-c2aa5314bd95,Registrar y elaborar propuesta,registrar_elaborar_propuesta,2026-11-24T20:44:58.119+00:00,2026-11-24T20:45:02.281+00:00,Jefe-Administrativo,4162
+e963f49b-e847-11f1-b70d-c2aa5314bd95,Enviar propuesta,enviar_propuesta,2026-11-24T20:45:02.281+00:00,2026-11-24T20:45:02.282+00:00,,1
+e963f49b-e847-11f1-b70d-c2aa5314bd95,Modificaciones,evento-modificacion,2026-11-24T20:45:04.374+00:00,2026-11-24T20:45:04.374+00:00,,2090
+e963f49b-e847-11f1-b70d-c2aa5314bd95,Revisar propuesta,revisar_propuesta,2026-11-24T20:45:04.375+00:00,2026-11-24T20:45:08.513+00:00,Jefe-Administrativo,4138
+e963f49b-e847-11f1-b70d-c2aa5314bd95,Enviar propuesta,enviar_propuesta,2026-11-24T20:45:08.514+00:00,2026-11-24T20:45:08.515+00:00,,1
+e963f49b-e847-11f1-b70d-c2aa5314bd95,Aceptacion,evento-aceptacion,2026-11-24T20:45:10.604+00:00,2026-11-24T20:45:10.604+00:00,,2086
+e963f49b-e847-11f1-b70d-c2aa5314bd95,Habilitar acceso de la empresa,habilitar_acceso_empresa,2026-11-24T20:45:10.605+00:00,2026-11-24T20:45:10.605+00:00,,0

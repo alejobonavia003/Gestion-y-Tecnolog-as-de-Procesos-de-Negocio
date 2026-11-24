@@ -18,7 +18,9 @@ import csv
 import math
 import shutil
 import struct
+import sys
 import zlib
+from datetime import datetime
 from pathlib import Path
 
 
@@ -33,7 +35,12 @@ def cargar_eventos_csv(ruta_csv: Path) -> list[dict]:
     return filas
 
 
-def analizar_con_pm4py_si_disponible(ruta_csv: Path, ruta_grafo_png: Path):
+def analizar_con_pm4py_si_disponible(
+    ruta_csv: Path,
+    ruta_grafo_png: Path,
+    ruta_bpmn: Path | None = None,
+    ruta_bpmn_png: Path | None = None,
+):
     """Ejecuta el análisis con PM4Py si la librería está instalada en el entorno actual."""
     try:
         import pandas as pd  # type: ignore
@@ -51,9 +58,22 @@ def analizar_con_pm4py_si_disponible(ruta_csv: Path, ruta_grafo_png: Path):
     event_log = pm4py.convert_to_event_log(df)
     dfg, start_activities, end_activities = pm4py.discover_dfg(event_log)
 
-    if shutil.which("dot") is not None:
+    tiene_dot = shutil.which("dot") is not None
+    if tiene_dot:
         try:
             pm4py.save_vis_dfg(dfg, start_activities, end_activities, str(ruta_grafo_png))
+        except Exception:
+            pass
+
+    modelo = pm4py.discover_bpmn_inductive(event_log)
+    if ruta_bpmn is not None:
+        try:
+            pm4py.write_bpmn(modelo, str(ruta_bpmn), auto_layout=tiene_dot)
+        except Exception:
+            pm4py.write_bpmn(modelo, str(ruta_bpmn), auto_layout=False)
+    if ruta_bpmn_png is not None and tiene_dot:
+        try:
+            pm4py.save_vis_bpmn(modelo, str(ruta_bpmn_png))
         except Exception:
             pass
 
@@ -64,11 +84,13 @@ def analizar_con_pm4py_si_disponible(ruta_csv: Path, ruta_grafo_png: Path):
         conteo_variantes[tuple(var_tuple)] = cantidad
 
     return {
-        "dfg": dict(dfg),
-        "start_activities": dict(start_activities),
-        "end_activities": dict(end_activities),
+        "dfg": {(str(a), str(b)): int(v) for (a, b), v in dfg.items()},
+        "start_activities": {str(k): int(v) for k, v in start_activities.items()},
+        "end_activities": {str(k): int(v) for k, v in end_activities.items()},
         "variantes": conteo_variantes,
         "motor": f"PM4Py {getattr(pm4py, '__version__', '')}".strip(),
+        "bpmn_generado": bool(ruta_bpmn and ruta_bpmn.is_file()),
+        "bpmn_png_generado": bool(ruta_bpmn_png and ruta_bpmn_png.is_file()),
     }
 
 
@@ -85,7 +107,10 @@ def analizar_log(filas: list[dict]) -> dict:
     dfg: collections.Counter[tuple[str, str]] = collections.Counter()
 
     for case_id, eventos in sorted(por_caso.items()):
-        eventos_ordenados = sorted(eventos, key=lambda e: e["timestamp"])
+        eventos_ordenados = sorted(
+            eventos,
+            key=lambda e: datetime.fromisoformat(e["timestamp"].replace("Z", "+00:00")),
+        )
         secuencia = tuple(e["activity"] for e in eventos_ordenados)
         if not secuencia:
             continue
@@ -109,7 +134,12 @@ def analizar_log(filas: list[dict]) -> dict:
     }
 
 
-def formatear_reporte(datos: dict, motor_usado: str) -> str:
+def formatear_reporte(
+    datos: dict,
+    motor_usado: str,
+    verificacion: str = "",
+    es_ejemplo: bool = False,
+) -> str:
     total_casos = datos["total_casos"]
     total_eventos = datos["total_eventos"]
     variantes_ordenadas = sorted(
@@ -122,15 +152,26 @@ def formatear_reporte(datos: dict, motor_usado: str) -> str:
         "========================================================================================",
         " 4.4 INTRODUCCIÓN A LA MINERÍA DE PROCESOS — ETAPA DE NEGOCIACIÓN (PM4Py)",
         "========================================================================================",
+    ]
+    if es_ejemplo:
+        lineas.extend([
+            "!!! ATENCIÓN: DATOS DE EJEMPLO generados con --ejemplo. NO provienen del historial de Flowable. !!!",
+            "",
+        ])
+    lineas.extend([
         f"Motor de análisis      : {motor_usado}",
         f"Instancias analizadas  : {total_casos}",
         f"Eventos en el log CSV  : {total_eventos}",
         f"Recorridos distintos   : {len(variantes_ordenadas)}",
+    ])
+    if verificacion:
+        lineas.append(f"Verificación           : {verificacion}")
+    lineas.extend([
         "",
         "----------------------------------------------------------------------------------------",
         " TRES RECORRIDOS MÁS FRECUENTES (SECCIÓN 4.4.2)",
         "----------------------------------------------------------------------------------------",
-    ]
+    ])
 
     acumulado_top3 = 0
     for idx, (recorrido, cantidad) in enumerate(top_3, start=1):
@@ -175,6 +216,7 @@ POSICIONES_NODOS = {
     "Enviar propuesta": (930, 260),
     "Modificaciones": (930, 95),
     "Revisar propuesta": (1165, 95),
+    "Vencimiento sin respuesta": (690, 430),
     "Enviar recordatorios": (930, 430),
     "Rechazo": (1165, 260),
     "Archivar solicitud": (1165, 430),
@@ -545,22 +587,66 @@ def main() -> int:
     ruta_svg = ruta_png.with_suffix(".svg")
     ruta_captura = base_dir / "captura_resultados.png"
     ruta_txt = base_dir / "resultados_analisis.txt"
+    ruta_bpmn = base_dir / "modelo_descubierto.bpmn"
+    ruta_bpmn_png = base_dir / "modelo_descubierto.png"
 
-    filas = cargar_eventos_csv(ruta_csv)
-    datos = analizar_log(filas)
+    try:
+        filas = cargar_eventos_csv(ruta_csv)
+    except (FileNotFoundError, ValueError) as exc:
+        print(f"[analizar] ERROR: {exc}", file=sys.stderr)
+        return 1
+    if not filas:
+        print(f"[analizar] ERROR: El archivo CSV '{ruta_csv}' no tiene filas para analizar.", file=sys.stderr)
+        return 1
 
-    # Si PM4Py está instalado en el entorno, corre también el descubrimiento con PM4Py
-    if ruta_png.is_file():
-        ruta_png.unlink()
-    res_pm4py = analizar_con_pm4py_si_disponible(ruta_csv, ruta_png)
-    motor_usado = res_pm4py["motor"] if res_pm4py else "PM4Py compatible (analizador DFG/variantes integrado)"
+    es_ejemplo = all(
+        f.get("case_id", "").startswith(("ejemplo-", "inst-negociacion-"))
+        for f in filas
+    )
+    datos_internos = analizar_log(filas)
 
-    reporte = formatear_reporte(datos, motor_usado)
+    # Si PM4Py está instalado en el entorno, usa sus variantes y DFG y verifica contra analizar_log
+    for artefacto in (ruta_png, ruta_bpmn, ruta_bpmn_png):
+        if artefacto.is_file():
+            artefacto.unlink()
+    res_pm4py = analizar_con_pm4py_si_disponible(ruta_csv, ruta_png, ruta_bpmn, ruta_bpmn_png)
+
+    if res_pm4py:
+        motor_usado = res_pm4py["motor"]
+        coinciden = (
+            res_pm4py["variantes"] == datos_internos["variantes"]
+            and res_pm4py["dfg"] == datos_internos["dfg"]
+        )
+        verificacion = (
+            "PM4Py y el cálculo interno coinciden en recorridos y DFG"
+            if coinciden
+            else "ATENCIÓN: PM4Py y el cálculo interno NO coinciden; el reporte usa PM4Py"
+        )
+        freq_act: collections.Counter[str] = collections.Counter()
+        for recorrido, cant in res_pm4py["variantes"].items():
+            for act in recorrido:
+                freq_act[act] += cant
+        datos = {
+            "total_casos": sum(res_pm4py["variantes"].values()),
+            "total_eventos": sum(len(rec) * cant for rec, cant in res_pm4py["variantes"].items()),
+            "frecuencia_actividad": dict(freq_act),
+            "start_activities": res_pm4py["start_activities"],
+            "end_activities": res_pm4py["end_activities"],
+            "dfg": res_pm4py["dfg"],
+            "variantes": res_pm4py["variantes"],
+        }
+    else:
+        motor_usado = "Analizador interno (PM4Py no está instalado: pip install pm4py)"
+        verificacion = ""
+        datos = datos_internos
+
+    reporte = formatear_reporte(datos, motor_usado, verificacion=verificacion, es_ejemplo=es_ejemplo)
     print(reporte)
 
     ruta_txt.write_text(reporte + "\n", encoding="utf-8")
     generar_svg_dfg(datos, ruta_svg)
-    generar_png_dfg_respaldo(datos, ruta_png)
+    if not (ruta_png.is_file() and ruta_png.stat().st_size > 0):
+        generar_png_dfg_respaldo(datos, ruta_png)
     generar_captura_resultados_png(reporte, ruta_captura)
 
     print(f"\n[analizar] Artefactos generados en '{base_dir}':")
@@ -568,6 +654,12 @@ def main() -> int:
     print(f"  - Representación gráfica (SVG) : {ruta_svg.name}")
     print(f"  - Captura de resultados (PNG)  : {ruta_captura.name}")
     print(f"  - Reporte en texto             : {ruta_txt.name}")
+    if ruta_bpmn.is_file():
+        print(f"  - Modelo BPMN descubierto      : {ruta_bpmn.name}")
+    if ruta_bpmn_png.is_file():
+        print(f"  - Diagrama BPMN (PNG)          : {ruta_bpmn_png.name}")
+    elif res_pm4py:
+        print("  - Diagrama BPMN (PNG)          : no generado (requiere Graphviz 'dot' en PATH)")
     return 0
 
 
